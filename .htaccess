@@ -1,0 +1,6 @@
+RewriteEngine on
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+# ex: /folder1/index.php ...
+RewriteRule ^(.*)$ /public/index.php [NC,L,QSA]
+#RewriteRule ^(.*)$ /index.php [NC,L,QSA]
