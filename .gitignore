@@ -3,3 +3,5 @@ vendor
 .phpunit.cache
 coverage
 env.php
+.htaccess
+credentials.js

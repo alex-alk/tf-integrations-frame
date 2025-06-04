@@ -53,39 +53,6 @@
                                 <td>to[System_Software]</td>
                                 <td>
                                     <select name="to[System_Software]">
-                                        <option value="infinitehotel">infinitehotel</option>
-                                        <option value="cyberlogic">cyberlogic</option>
-                                        <option value="onetourismo">onetourismo</option>
-                                        <option value="h2b_software">h2b_software</option>
-                                        <option value="alladyn-hotels">alladyn-hotels</option>
-                                        <option value="alladyn-charters">alladyn-charters</option>
-                                        <option value="apitude">apitude</option>
-                                        <option value="eurosite">eurosite</option>
-                                        <option value="amara">amara</option>
-                                        <option value="etrip-agency">etrip-agency</option>
-                                        <option value="brostravel">brostravel</option>
-                                        <option value="odeon">odeon</option>
-                                        <option value="beapi">beapi</option>
-                                        <option value="etrip">etrip</option>
-                                        <option value="travelio">travelio</option>
-                                        <option value="travelio_v2">travelio_v2</option>
-                                        <option value="tourvisio">tourvisio</option>
-                                        <option value="tourvisio_v2">tourvisio_v2</option>
-                                        <option value="alladyn_old">alladyn_old</option>
-                                        <option value="goglobal">goglobal</option>
-                                        <option value="goglobal_v2">goglobal_v2</option>
-                                        <option value="megatec">megatec</option>
-                                        <option value="sejour">sejour</option>
-                                        <option value="sansejour">sansejour</option>
-                                        <option value="teztour_v2">teztour_v2</option>
-                                        <option value="calypso">calypso</option>
-                                        <option value="samo">samo</option>
-                                        <option value="tbo">tbo</option>
-                                        <option value="sphinx">sphinx</option>
-                                        <option value="hotelcon">hotelcon</option>
-                                        <option value="etg">etg</option>
-                                        <option value="irix">irix</option>
-                                        <option value="anex">anex</option>
                                     </select>
 
                                 </td>
@@ -96,11 +63,7 @@
                                 <td>to[Handle]</td>
                                 <td>
                                     <select name="to[Handle]">
-                                        <option value="infinitehotel-demo">infinitehotel-demo</option>
-                                        <option value="infinitehotel">infinitehotel</option>
-                                        <option value="localhost-infinitehotel">localhost-infinitehotel</option>
                                     </select>
-
                                 </td>
                                 <td></td>
                             </tr>
@@ -109,7 +72,6 @@
                                 <td>to[ApiUrl]</td>
                                 <td>
                                     <select name="to[ApiUrl]">
-                                        <option value="https://uatapi.infinitehotel.com/gekko-front/ws/v2_4">https://uatapi.infinitehotel.com/gekko-front/ws/v2_4</option>
                                     </select>
                                 </td>
                                 <td></td>

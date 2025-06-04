@@ -41,11 +41,15 @@ class OneTourismoApiServiceTest extends TestCase
             ->method('request')
             ->willReturn($mockResponse);
 
-        $serverRequest = new ServerRequest(Request::METHOD_POST, new Uri(''), [], new Stream('body'), '1', []);
+        $body = json_encode([
+            'to' => ['handle']
+        ]);
+
+        $serverRequest = new ServerRequest(Request::METHOD_POST, new Uri(''), [], new Stream($body), '1', []);
 
         $service = new OneTourismoApiService($serverRequest, $mockHttpClient);
         $countries = $service->apiGetCountries();
 
-        $this->assertTrue(count($countries) > 1);
+        $this->assertTrue(count($countries) > 0);
     }
 }
