@@ -1,12 +1,13 @@
 <?php
 
-namespace Service\Integrations\OneTourismo;
+namespace Service\OneTourismo;
 
 use HttpClient\HttpClient;
 use Models\Country;
 use Psr\Http\Message\ServerRequestInterface;
 use Service\IntegrationSupport\AbstractApiService;
 
+// todo: annotate as service
 class OneTourismoApiService extends AbstractApiService
 {
 

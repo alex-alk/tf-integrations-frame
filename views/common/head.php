@@ -26,6 +26,8 @@
     <script src="https://cdn.datatables.net/v/bs4/jq-3.7.0/dt-2.0.4/datatables.min.js"></script>
     <link rel="stylesheet" href="<?= env('APP_FOLDER') ?>/css/style.css">
 
+    <script src="<?= env('APP_FOLDER') ?>/js/common.js" defer>
+
     <?php if (isset($scripts)): ?>
         <?php foreach ($scripts as $script): ?>
             <script src="<?= env('APP_FOLDER') ?>/js/<?= $script ?>" defer></script>
