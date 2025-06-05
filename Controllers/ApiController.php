@@ -2,28 +2,24 @@
 
 namespace Controllers;
 
-use Exception;
 use HttpClient\HttpClient;
 use Psr\Http\Message\ServerRequestInterface;
 use Router\JsonResponse;
 use Service\IntegrationSupport\AbstractApiService;
-use Service\IntegrationSupport\AbstractApiServiceAdaptor;
-use Service\Omi\TF\TOInterface;
+use Service\Megatec\MegatecApiService;
+use Service\Odeon\OdeonApiService;
 use Service\OneTourismo\OneTourismoApiService;
 use Throwable;
 
 class ApiController
 {
-
-    
-
-    public function __construct(private ServerRequestInterface $request)
+    public function __construct(private ServerRequestInterface $serverRequest, private HttpClient $client)
     {
     }
 
     public function post(): JsonResponse
     {
-        $post = $this->request->getParsedBody();
+        $post = $this->serverRequest->getParsedBody();
 
         //return new JsonResponse($post);
 
@@ -63,7 +59,14 @@ class ApiController
         }
 
         // $json = new JsonResponse(['response' => $data, 'error' => $error]);
+        
         $respArr = ['response' => $data];
+        if (!empty($post['get-to-requests']) || $method === 'api_doBooking') {
+            if ($service !== null ) {
+                $toRequestResponse = $service->getResponses();
+                $respArr['toRequestsAndResponses'] = $toRequestResponse;
+            }
+        }
         $json = new JsonResponse($respArr);
         return $json;
 
@@ -78,12 +81,7 @@ class ApiController
             $respArr['error'] = $error;
         }
 
-        if (!empty($post['get-raw-data']) || $method === 'api_doBooking') {
-            if ($service !== null ) {
-                $toRequestResponse = $service->getResponses();
-                $respArr['toRequestsAndResponses'] = $toRequestResponse;
-            }
-        }
+
 
         if (!empty($post['get-raw-data'])) {
             $json = new JsonResponse($respArr);
@@ -108,7 +106,7 @@ class ApiController
 
     public function getService(): AbstractApiService
     {
-        $post = $this->request->getParsedBody();
+        $post = $this->serverRequest->getParsedBody();
 
         $serviceName = $post['to']['System_Software'];
         $service = null;
@@ -126,7 +124,7 @@ class ApiController
             //     $service = new CyberlogicApiService();
             //     break;
             case 'onetourismo':
-                $service = new OneTourismoApiService($this->request, $client);
+                $service = new OneTourismoApiService($this->serverRequest, $client);
                 break;
             // case 'alladyn-hotels':
             //     $service = new AlladynHotelsApiService();
@@ -149,9 +147,9 @@ class ApiController
             // case 'brostravel':
             //     $service = new BrosTravelApiService();
             //     break;
-            // case 'odeon':
-            //     $service = new OdeonApiService();
-            //     break;
+            case 'odeon':
+                $service = new OdeonApiService($this->serverRequest, $client);
+                break;
             // case 'beapi':
             //     $service = new DertourApiService();
             //     break;
@@ -176,9 +174,9 @@ class ApiController
             // case 'goglobal':
             //     $service = new GoGlobal_old();
             //     break;
-            // case 'megatec':
-            //     $service = new MegatecApiService($client);
-            //     break;
+            case 'megatec':
+                $service = new MegatecApiService($this->serverRequest, $this->client);
+                break;
             // case 'goglobal_v2':
             //     $service = new GoGlobalApiService();
             //     break;

@@ -6,6 +6,8 @@ use RequestHandler\ServerRequest;
 use Psr\Http\Message\ServerRequestInterface;
 use Utils\Utils;
 
+// todo: daca nu exista folderul support, notificare de clonare
+
 require_once '../autoload.php';
 require_once '../env.php';
 require_once '../support/Utils/functions.php';

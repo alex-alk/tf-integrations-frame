@@ -19,6 +19,14 @@ const systems = {
     },
     'onetourismo' : {
         'filos_onetourismo' : 'url-one'
+    },
+    'odeon' : {
+        'coral_tour' : 'https://product.coraltravel.ro/EEService.svc/json/processMessage',
+        'coraltravel-test' : 'http://testproduct.coraltravel.ro/EEService.svc/json/processMessage'
+    },
+    'megatec' : {
+        'solvex_v2' : 'https://iservice.solvex.bg/IntegrationService.asmx',
+        'solvex-test' : 'https://evaluation.solvex.bg/iservice/integrationservice.asmx'
     }
 };
 
@@ -78,7 +86,7 @@ for (let value in firstHandles) {
 $handleSelect.html(option);
 
 // get the first handle and populate urls and credentials
-populateUrlAndCredentials(Object.keys(firstHandles)[0]);
+populateUrlAndCredentials(Object.keys(systems)[0], Object.keys(firstHandles)[0]);
 
 
 const handleMap = new Map();
@@ -259,9 +267,9 @@ handleMap.set('irix', irixMap);
 handleMap.set('anex', anexMap);
 // --------------------------------------------------
 
-function populateUrlAndCredentials(handle) {
-    const url = systems[handle][Object.keys(systems[handle])[0]];
-    console.log(url);
+function populateUrlAndCredentials(system, handle) {
+    const url = systems[system][handle];
+    //console.log(url);
     $apiUrl.html('<option value="' + url + '">' + url + '</option>');
 
     const credentials = credentialsJson[handle];
@@ -305,54 +313,20 @@ function populateUrlAndCredentials(handle) {
 // changes on software change
 $softwareSelect.change(function() {
 
-    const values = systems[this.value];
+    const firstHandles = systems[this.value];
 
     let option = '';
-    for (let value in values) {
+    for (let value in firstHandles) {
         option += '<option value="' + value + '">' + value + '</option>';
     }
     $handleSelect.html(option);
-    const handleValues = handleMap.get(this.value);
-    const handle = $handleSelect.find(":selected").val();
-    const url = handleValues.get(handle);
-    $apiUrl.html('<option value="' + url + '">' + url + '</option>');
 
-    const credentials = credentialsJson[handle];
-    let username = '';
-    let password = '';
-    let context = '';
-    let code = '';
-    let bookingUsername = '';
-    let bookingPassword = '';
-    let bookingUrl = '';
+    populateUrlAndCredentials(this.value, Object.keys(firstHandles)[0]);
+});
 
-    if (credentials) {
-        username = credentials.apiUsername;
-        password = credentials.apiPassword;
-        context = credentials.apiContext;
-        code = credentials.apiCode;
-        bookingUsername = credentials.bookingUsername;
-        bookingPassword = credentials.bookingPassword;
-        bookingUrl = credentials.bookingUrl;
-    }
-    if (username !== '') {
-        $apiUsernameInput.val(username);
-    }
-    if (password !== '') {
-        $apiPasswordInput.val(password);
-    }
-    if (context !== '') {
-        $apiContextInput.val(context);
-    }
-    if (code !== '') {
-        $apiCodeInput.val(code);
-    }
-
-    if ($bookingUsernameInput.length) {
-        $bookingUsernameInput.val(bookingUsername);
-        $bookingPasswordInput.val(bookingPassword);
-        $bookingUrlInput.val(bookingUrl);
-    }
+$('.q-expand-full-json').click(function($ev) {
+    $($ev.target).next('pre').toggle();
+    $($ev.target).siblings('table').first().toggle();
 });
 
 //$softwareSelect.val(systemGet).change();*/

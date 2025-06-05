@@ -139,7 +139,7 @@
                             <tr style="display: none">
                                 <td>get-raw-data</td>
                                 <td>
-                                    <input type="hidden" name="get-raw-data" value="1">
+                                    <input type="hidden" name="get-to-requests" value="1">
                                 </td>
                                 <td></td>
                             </tr>
@@ -156,7 +156,15 @@
                     </table>
                 </form>
 
-                
+                <div class="">
+                    <hr>
+                    <div>
+                        <a href="javascript://" class="q-expand-full-json">[+ View TO requests]</a>
+                        <div class="q-expand-full-json-pre">
+                            
+</div>
+                    </div>
+                </div>
 
                 <table class='table d-none' id="table">
                 <thead>

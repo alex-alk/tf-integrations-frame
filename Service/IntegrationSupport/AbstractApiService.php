@@ -23,13 +23,12 @@ use App\Support\Collections\Custom\OfferCancelFeeCollection;
 use App\Support\Collections\Custom\OfferPaymentPolicyCollection;
 use App\Support\Collections\Custom\RegionCollection;
 use App\Support\Collections\Custom\RoomTypeCollection;
-use App\Support\Http\RequestLog;
-use App\Support\Http\RequestLogCollection;
 use App\Support\Log;
 use App\Support\Logger;
 use App\Support\Request;
 use Exception;
 use Models\Country;
+use Models\RequestLog;
 use Psr\Http\Message\ServerRequestInterface;
 use Utils\Utils;
 
@@ -45,7 +44,8 @@ abstract class AbstractApiService
     protected ?string $bookingApiUsername = null;
     protected ?string $bookingApiPassword = null;
 
-    //protected RequestLogCollection $requests;
+    /** @var RequestLog[] */
+    protected array $requests;
     protected array $post;
     // ApiUsername
     protected string $username;
@@ -81,15 +81,15 @@ abstract class AbstractApiService
         // }
         // $this->post = $post;
 
-        // $this->username = $post['to']['ApiUsername'];
-        // $this->password = $post['to']['ApiPassword'];
-        // $this->apiUrl = $post['to']['ApiUrl'];
-        // $this->bookingUrl = $post['to']['BookingUrl'] ?? null;
-        // $this->bookingApiUsername = $post['to']['BookingApiUsername'] ?? null;
-        // $this->bookingApiPassword = $post['to']['BookingApiPassword'] ?? null;
-        // $this->apiContext = $post['to']['ApiContext'] ?? null;
-        // $this->apiCode = $post['to']['ApiCode'] ?? null;
-        // $this->handle = $post['to']['Handle'];
+        $this->username = $post['to']['ApiUsername'];
+        $this->password = $post['to']['ApiPassword'];
+        $this->apiUrl = $post['to']['ApiUrl'];
+        $this->bookingUrl = $post['to']['BookingUrl'] ?? null;
+        $this->bookingApiUsername = $post['to']['BookingApiUsername'] ?? null;
+        $this->bookingApiPassword = $post['to']['BookingApiPassword'] ?? null;
+        $this->apiContext = $post['to']['ApiContext'] ?? null;
+        $this->apiCode = $post['to']['ApiCode'] ?? null;
+        $this->handle = $post['to']['Handle'];
         // $this->software = $post['to']['System_Software'];
 
         // $this->getLatestCache = filter_var($post['to']['getLatestCache'] ?? false, FILTER_VALIDATE_BOOL);
@@ -268,48 +268,48 @@ abstract class AbstractApiService
     //     return $ok;
     // }
 
-    // // get response/responses objects from api calls
-    // function getResponses(): RequestLogCollection
-    // {
-    //     return $this->requests;
-    // }
+    // get response/responses objects from api calls
+    function getResponses(): array
+    {
+        return $this->requests;
+    }
 
-    // public function showRequest(string $method, string $url, array $options, string $response, int $statusCode, float $duration = 0): void
-    // {
-    //     $storagePath = Utils::getStoragePath();
+    public function showRequest(string $method, string $url, string $body, $headers, string $response, int $statusCode, float $duration = 0): void
+    {
+        // $storagePath = Utils::getStoragePath();
 
-    //     if (file_exists($storagePath . '/Logs/settings.json')) {
-    //         $settingsJson = file_get_contents($storagePath . '/Logs/settings.json');
-    //         $settings = json_decode($settingsJson, true);
-    //     }
+        // if (file_exists($storagePath . '/Logs/settings.json')) {
+        //     $settingsJson = file_get_contents($storagePath . '/Logs/settings.json');
+        //     $settings = json_decode($settingsJson, true);
+        // }
 
-    //     $activatedRequestsLogs = [];
-    //     if (isset($settings['activatedRequestsLogs'])) {
-    //         $activatedRequestsLogs = $settings['activatedRequestsLogs'];
-    //     }
+        // $activatedRequestsLogs = [];
+        // if (isset($settings['activatedRequestsLogs'])) {
+        //     $activatedRequestsLogs = $settings['activatedRequestsLogs'];
+        // }
 
-    //     $activatedLog = false;
-    //     foreach ($activatedRequestsLogs as $top) {
-    //         if ($top === $this->handle) {
-    //             $activatedLog = true;
-    //             break;
-    //         }
-    //     }
+        // $activatedLog = false;
+        // foreach ($activatedRequestsLogs as $top) {
+        //     if ($top === $this->handle) {
+        //         $activatedLog = true;
+        //         break;
+        //     }
+        // }
 
-    //     $requestLog = new RequestLog($method, $url, $options);
-    //     $requestLog->statusCode = $statusCode;
-    //     $requestLog->duration = $duration;
+        $requestLog = new RequestLog($method, $url, $body, $headers);
+        $requestLog->statusCode = $statusCode;
+        $requestLog->duration = $duration;
 
-    //     if ($this->isWeb || isset($this->post['method']) && $this->post['method'] === 'api_doBooking') {
-    //         $requestLog->response = $response;
-    //     } else {
-    //         $shortResp = substr($response, 0, 500);
+        if ($this->isWeb || isset($this->post['method']) && $this->post['method'] === 'api_doBooking') {
+            $requestLog->response = $response;
+        } else {
+            $shortResp = substr($response, 0, 500);
 
-    //         if (strlen($shortResp) === 500) {
-    //             $shortResp .= ' ...';
-    //         }
-    //         $requestLog->response = $shortResp;
-    //     }
-    //     $this->requests->add($requestLog);
-    // }
+            if (strlen($shortResp) === 500) {
+                $shortResp .= ' ...';
+            }
+            $requestLog->response = $shortResp;
+        }
+        $this->requests[] = $requestLog;
+    }
 }

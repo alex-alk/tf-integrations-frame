@@ -41,89 +41,122 @@ $(document).ready(function() {
         let table = null;
         $submitBtn.click(function() {
 
-            $submitBtn.prop('disabled', true);
-            $formSpinner.toggleClass('sr-only');
-            $sendText.toggleClass('sr-only');
-
-            $('#table').removeClass('d-none');
-            i++;
-            if (i > 1) {
-                table.ajax.reload();
-            } else {
-                table = new DataTable('#table', {
-                    columns: getColumns(),
-                    order: getOrder(),
-                    ajax: {
-                        url: '/public/api',
-                        type: 'POST',
-                        data: function ( data ) {
-                            return JSON.stringify( $form.serializeControls() );
-                        },
-                        dataSrc: function (json) {
-                            
-
-                            jsontest = JSON.parse(`{
-                                "response": {
-                                    "plane~city|23~city|2393": {
-                                    "Id": "plane~city|23~city|2393",
-                                    "Content": {
-                                        "Active": true
-                                    },
-                                    "From": {
-                                        "City": {
-                                        "Id": "23",
-                                        "Name": "Bucuresti",
-                                        "Country": {
-                                            "Id": "176",
-                                            "Code": "RO",
-                                            "Name": "Romania"
-                                        },
-                                        "County": null
-                                        }
-                                    },
-                                    "To": {
-                                        "City": {
-                                        "Id": "2393",
-                                        "Name": "Paris",
-                                        "Country": {
-                                            "Id": "5",
-                                            "Code": "FR",
-                                            "Name": "Franta"
-                                        },
-                                        "County": null
-                                        }
-                                    },
-                                    "TransportType": "plane",
-                                    "Dates": {
-                                        "2025-05-09": {
-                                        "Date": "2025-05-09",
-                                        "Nights": {
-                                            "6": {
-                                            "Nights": 6
-                                            },
-                                            "7": {
-                                            "Nights": 7
-                                            }
-                                        }
-                                        }
-                                    }
-                                    }
-                                }
-                                }`);
-
-                            let obj = json.response;
-
-                            response = Object.keys(obj).map((key) => obj[key]);
-
-                            $formSpinner.toggleClass('sr-only');
-                            $sendText.toggleClass('sr-only');
-                            $submitBtn.prop('disabled', false);
-                            return response;
-                        },
-                        contentType: 'application/json',
+            jsontest = JSON.parse(`{
+                "response": {
+                    "1": {
+                        "Id": "1",
+                        "Code" : "2",
+                        "Name" : "3"
                     }
-                });
+                },
+                "toRequestsAndResponses" : [
+                    {
+                        "method" : "m",
+                        "url": "u",
+                        "body": "b",
+                        "headers" : "h"
+                    }, 
+                    {
+                        "method" : "m2",
+                        "url": "u2",
+                        "body": "b2",
+                        "headers" : "h2"
+                    }
+                ]
+            }`);
+            console.log(jsontest);
+
+            let toRequests = $('.q-expand-full-json-pre');
+
+            for (let request of jsontest['toRequestsAndResponses']) {
+                const method = request['method'];
+                toRequests.html('<div>Method: ' + method + '</div>');
             }
+
+            
+
+            // $submitBtn.prop('disabled', true);
+            // $formSpinner.toggleClass('sr-only');
+            // $sendText.toggleClass('sr-only');
+
+            // $('#table').removeClass('d-none');
+            // i++;
+            // if (i > 1) {
+            //     table.ajax.reload();
+            // } else {
+            //     table = new DataTable('#table', {
+            //         columns: getColumns(),
+            //         order: getOrder(),
+            //         ajax: {
+            //             url: '/public/api',
+            //             type: 'POST',
+            //             data: function ( data ) {
+            //                 return JSON.stringify( $form.serializeControls() );
+            //             },
+            //             dataSrc: function (json) {
+                            
+            //                 jsontest = JSON.parse(`{
+            //                     "response": {
+            //                         "plane~city|23~city|2393": {
+            //                         "Id": "plane~city|23~city|2393",
+            //                         "Content": {
+            //                             "Active": true
+            //                         },
+            //                         "From": {
+            //                             "City": {
+            //                             "Id": "23",
+            //                             "Name": "Bucuresti",
+            //                             "Country": {
+            //                                 "Id": "176",
+            //                                 "Code": "RO",
+            //                                 "Name": "Romania"
+            //                             },
+            //                             "County": null
+            //                             }
+            //                         },
+            //                         "To": {
+            //                             "City": {
+            //                             "Id": "2393",
+            //                             "Name": "Paris",
+            //                             "Country": {
+            //                                 "Id": "5",
+            //                                 "Code": "FR",
+            //                                 "Name": "Franta"
+            //                             },
+            //                             "County": null
+            //                             }
+            //                         },
+            //                         "TransportType": "plane",
+            //                         "Dates": {
+            //                             "2025-05-09": {
+            //                             "Date": "2025-05-09",
+            //                             "Nights": {
+            //                                 "6": {
+            //                                 "Nights": 6
+            //                                 },
+            //                                 "7": {
+            //                                 "Nights": 7
+            //                                 }
+            //                             }
+            //                             }
+            //                         }
+            //                         }
+            //                     }
+            //                     }`);
+
+            //                 let obj = json.response;
+
+            //                 response = Object.keys(obj).map((key) => obj[key]);
+
+            //                 $formSpinner.toggleClass('sr-only');
+            //                 $sendText.toggleClass('sr-only');
+            //                 $submitBtn.prop('disabled', false);
+            //                 return response;
+            //             },
+            //             contentType: 'application/json',
+            //         }
+            //     });
+            // }
             
         });
 

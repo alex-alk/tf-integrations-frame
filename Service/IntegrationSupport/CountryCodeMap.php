@@ -1,6 +1,6 @@
 <?php
 
-namespace IntegrationSupport;
+namespace Service\IntegrationSupport;
 
 class CountryCodeMap
 {
