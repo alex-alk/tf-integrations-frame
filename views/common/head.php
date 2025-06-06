@@ -30,7 +30,7 @@
 
     <?php if (isset($scripts)): ?>
         <?php foreach ($scripts as $script): ?>
-            <script src="<?= env('APP_FOLDER') ?>/js/<?= $script ?>" defer></script>
+            <script type="module" src="<?= env('APP_FOLDER') ?>/js/<?= $script ?>" defer></script>
         <?php endforeach ?>
     <?php endif ?>
 </head>

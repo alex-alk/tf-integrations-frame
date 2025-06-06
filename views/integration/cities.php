@@ -1,4 +1,4 @@
-<?php $scripts['countries'] = 'countries.js' ?>
+<?php $scripts['countries'] = 'regions.js' ?>
 
 <?php require __DIR__ . '/../common/head.php' ?>
 
@@ -10,9 +10,9 @@
                 <?php require __DIR__ . '/../common/menu.php' ?>
             </div>
             <main class="col-md-9 col-xl-8 py-md-3 pl-md-5 bd-content" role="main">
-                <h3 class="bd-title" id="content">Geography - Countries</h3>
+                <h3 class="bd-title" id="content">Geography - Cities</h3>
                 <div>
-                    <pre class="q-expand-full-json-pre">This service provides the list of all the countries.</pre>
+                    <pre class="">This service provides the list of all the cities.</pre>
                 </div>
                 <br>
                 <form id="form" action="/countries" method="POST">
@@ -115,22 +115,7 @@
                                 <td>method</td>
                                 <td>
                                     <select name="method">
-                                        <option value="api_getCountries" selected="true">api_getCountries</option>
-                                        <option disabled="" value="api_getCities">api_getCities</option>
-                                        <option disabled="" value="api_getRegions">api_getRegions</option>
-                                        <option disabled="" value="api_getHotels">api_getHotels</option>
-                                        <option disabled="" value="api_getHotelDetails">api_getHotelDetails</option>
-                                        <option disabled="" value="api_getRoomTypes">api_getRoomTypes</option>
-                                        <option disabled="" value="api_getOffers">api_getOffers</option>
-                                        <option disabled="" value="api_doBooking">api_doBooking</option>
-                                        <option disabled="" value="api_getAvailabilityDates">api_getAvailabilityDates</option>
-                                        <option disabled="" value="api_getOfferCancelFees">api_getOfferCancelFees</option>
-                                        <option disabled="" value="api_getOfferCancelFeesPaymentsAvailabilityAndPrice">api_getOfferCancelFeesPaymentsAvailabilityAndPrice</option>
-                                        <option disabled="" value="api_getOfferPaymentsPlan">api_getOfferPaymentsPlan</option>
-                                        <option disabled="" value="api_testConnection">api_testConnection</option>
-                                        <option disabled="" value="api_getTours">api_getTours</option>
-                                        <option disabled="" value="api_downloadOffers">api_downloadOffers</option>
-                                        <option disabled="" value="cache_TOP_Data">cache_TOP_Data</option>
+                                        <option value="api_getCities">api_getCities</option>
                                     </select>
                                 </td>
                                 <td> </td>
@@ -156,13 +141,12 @@
                     </table>
                 </form>
 
-                <div class="">
+                <div class="mb-5">
                     <hr>
                     <div>
                         <a href="javascript://" class="q-expand-full-json">[+ View TO requests]</a>
-                        <div class="q-expand-full-json-pre">
-                            
-</div>
+                        <div class="q-expand-full-json-pre" style="display: none;">
+                        </div>
                     </div>
                 </div>
 
@@ -170,8 +154,8 @@
                 <thead>
                     <tr>
                         <td>Id</td>
-                        <td>Code</td>
                         <td>Name</td>
+                        <td>Country</td>
                     </tr>
                     
                 </thead>

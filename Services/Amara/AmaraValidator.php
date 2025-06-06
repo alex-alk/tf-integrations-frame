@@ -1,10 +1,7 @@
 <?php
 
-namespace Integrations\Amara;
+namespace Services\Amara;
 
-use App\Filters\AvailabilityFilter;
-use App\Filters\BookHotelFilter;
-use Exception;
 use IntegrationSupport\Validator;
 
 // some fields are mandatory only for this service

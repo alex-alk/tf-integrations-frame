@@ -5,10 +5,10 @@ namespace Controllers;
 use HttpClient\HttpClient;
 use Psr\Http\Message\ServerRequestInterface;
 use Router\JsonResponse;
-use Service\IntegrationSupport\AbstractApiService;
-use Service\Megatec\MegatecApiService;
-use Service\Odeon\OdeonApiService;
-use Service\OneTourismo\OneTourismoApiService;
+use Services\IntegrationSupport\AbstractApiService;
+use Services\Megatec\MegatecApiService;
+use Services\Odeon\OdeonApiService;
+use Services\OneTourismo\OneTourismoApiService;
 use Throwable;
 
 class ApiController
@@ -230,7 +230,11 @@ class ApiController
     private function methodMap(): array
     {
         return [
-            'api_getCountries' => 'apiGetCountries'
+            'api_getCountries' => 'apiGetCountries',
+            'api_getRegions' => 'apiGetRegions',
+            'api_getCities' => 'apiGetCities',
+            'api_getHotels' => 'apiGetHotels',
+            'api_getOffers' => 'apiGetOffers'
         ];
     }
 }

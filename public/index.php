@@ -6,6 +6,8 @@ use RequestHandler\ServerRequest;
 use Psr\Http\Message\ServerRequestInterface;
 use Utils\Utils;
 
+set_time_limit(3600);
+
 // todo: daca nu exista folderul support, notificare de clonare
 
 require_once '../autoload.php';

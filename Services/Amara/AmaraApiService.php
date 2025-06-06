@@ -1,66 +1,8 @@
 <?php
 
-namespace Integrations\Amara;
+namespace Services\Amara;
 
-use App\Entities\Availability\AirportTaxesCategory;
-use App\Entities\Availability\Availability;
-use App\Entities\Availability\Currency;
-use App\Entities\Availability\DepartureTransportItem;
-use App\Entities\Availability\MealItem;
-use App\Entities\Availability\MealMerch;
-use App\Entities\Availability\MealMerchType;
-use App\Entities\Availability\Offer;
-use App\Entities\Availability\OfferCancelFee;
-use App\Entities\Availability\OfferCollection;
-use App\Entities\Availability\OfferPaymentPolicy;
-use App\Entities\Availability\ReturnTransportItem;
-use App\Entities\Availability\Room;
-use App\Entities\Availability\RoomCollection;
-use App\Entities\Availability\RoomMerch;
-use App\Entities\Availability\RoomMerchType;
-use App\Entities\Availability\TransferCategory;
-use App\Entities\Availability\TransportMerch;
-use App\Entities\Availability\TransportMerchCategory;
-use App\Entities\Availability\TransportMerchLocation;
-use App\Entities\AvailabilityDates\AvailabilityDates;
-use App\Entities\AvailabilityDates\AvailabilityDatesCollection;
-use App\Entities\AvailabilityDates\DateNight;
-use App\Entities\AvailabilityDates\DateNightCollection;
-use App\Entities\AvailabilityDates\TransportCity;
-use App\Entities\AvailabilityDates\TransportContent;
-use App\Entities\AvailabilityDates\TransportDate;
-use App\Entities\AvailabilityDates\TransportDateCollection;
-use App\Entities\Booking;
-use App\Entities\City;
-use App\Entities\Country;
-use App\Entities\Hotels\HotelImageGallery;
-use App\Entities\Hotels\HotelImageGalleryItem;
-use App\Entities\Hotels\HotelImageGalleryItemCollection;
-use App\Entities\Hotels\Hotel;
-use App\Entities\Hotels\HotelAddress;
-use App\Entities\Hotels\HotelContent;
-use App\Filters\AvailabilityDatesFilter;
-use App\Filters\AvailabilityFilter;
-use App\Filters\BookHotelFilter;
-use App\Filters\CitiesFilter;
-use App\Filters\HotelsFilter;
-use App\Support\Collections\Custom\AvailabilityCollection;
-use App\Support\Collections\Custom\BookingCollection;
-use App\Support\Collections\Custom\CityCollection;
-use App\Support\Collections\Custom\CountryCollection;
-use App\Support\Collections\Custom\HotelCollection;
-use App\Support\Collections\Custom\OfferCancelFeeCollection;
-use App\Support\Collections\Custom\OfferPaymentPolicyCollection;
-use App\Support\Http\SimpleAsync\HttpClient;
-use DateTime;
-use DateTimeImmutable;
-use Exception;
-use IntegrationSupport\AbstractApiService;
-use IntegrationSupport\IntegrationFunctions;
-use IntegrationSupport\Validator;
-use SimpleXMLElement;
-use stdClass;
-use Utils\Utils;
+use Service\IntegrationSupport\AbstractApiService;
 
 class AmaraApiService extends AbstractApiService
 {

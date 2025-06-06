@@ -1,33 +1,14 @@
 <?php
 
-namespace Service\IntegrationSupport;
+namespace Services\IntegrationSupport;
 
-use App\Entities\AvailabilityDates\AvailabilityDatesCollection;
-use App\Entities\Hotels\Hotel;
-use App\Entities\Tours\TourCollection;
-use App\Filters\AvailabilityDatesFilter;
-use App\Filters\AvailabilityFilter;
-use App\Filters\BookHotelFilter;
-use App\Filters\CancellationFeeFilter;
-use App\Filters\CitiesFilter;
 use App\Filters\HotelDetailsFilter;
 use App\Filters\HotelsFilter;
-use App\Filters\PaymentPlansFilter;
-use App\Support\Collections\Custom\AvailabilityCollection;
-use App\Support\Collections\Custom\BoardTypeCollection;
-use App\Support\Collections\Custom\CityCollection;
-use App\Support\Collections\Custom\CountryCollection;
-use App\Support\Collections\Custom\HotelCollection;
-use App\Support\Collections\Custom\HotelFacilitiesCollection;
-use App\Support\Collections\Custom\OfferCancelFeeCollection;
-use App\Support\Collections\Custom\OfferPaymentPolicyCollection;
-use App\Support\Collections\Custom\RegionCollection;
-use App\Support\Collections\Custom\RoomTypeCollection;
-use App\Support\Log;
-use App\Support\Logger;
-use App\Support\Request;
 use Exception;
+use Models\City;
 use Models\Country;
+use Models\Hotel;
+use Models\Region;
 use Models\RequestLog;
 use Psr\Http\Message\ServerRequestInterface;
 use Utils\Utils;
@@ -73,7 +54,7 @@ abstract class AbstractApiService
 
         if (!empty($post['json'])) {
             $post = json_decode($post['json'], true);
-            $post['get-raw-data'] = true;
+            $post['get-to-requests'] = true;
         }
 
         // if (count($post) == 0) {
@@ -105,7 +86,7 @@ abstract class AbstractApiService
         // $this->requests = new RequestLogCollection();
         // $this->request = new Request();
 
-        if ($post['get-raw-data'] ?? false) {
+        if ($post['get-to-requests'] ?? false) {
             $this->isWeb = true;
         } else {
             $this->isApi = true;
@@ -178,8 +159,8 @@ abstract class AbstractApiService
     /** @return Country[] */
     abstract function apiGetCountries(): array;
 
-    
-    // abstract function apiGetCities(?CitiesFilter $filter = null): CityCollection;
+    /** @return City[] */
+    abstract function apiGetCities(): array;
 
     // public function getBoardTypes(): BoardTypeCollection
     // {
@@ -188,26 +169,19 @@ abstract class AbstractApiService
 
     // public function getTOPminimumRequests() {}
 
-    // public function apiGetRegions(): RegionCollection
-    // {
-    //     return new RegionCollection();
-    // }
+    /** @return Region[] */
+    public function apiGetRegions(): array
+    {
+        return [];
+    }
 
-    // public function getHotelFacilities(): HotelFacilitiesCollection
-    // {
-    //     return new HotelFacilitiesCollection();
-    // }
-
-    // public function getRoomTypes(): RoomTypeCollection
-    // {
-    //     return new RoomTypeCollection();
-    // }
-
-    // /** hotel list can be created from the hotels returned from offers */
-    // public function apiGetHotels(?HotelsFilter $filter = null): HotelCollection
-    // {
-    //     return new HotelCollection();
-    // }
+    /** Note: hotels can be imported from offers 
+     * @return Hotel[]
+    */
+    public function apiGetHotels(): array
+    {
+        return [];
+    }
 
     // /**  use only if there is a separate api endpoint */
     // public function apiGetHotelDetails(HotelDetailsFilter $filter): Hotel
@@ -242,7 +216,7 @@ abstract class AbstractApiService
 
     // public function downloadOffers(): void {}
 
-    // abstract function apiGetOffers(AvailabilityFilter $filter): AvailabilityCollection;
+    abstract function apiGetOffers(): array;
 
     // /** array with booking object and raw response */
     // abstract function apiDoBooking(BookHotelFilter $filter): array;
