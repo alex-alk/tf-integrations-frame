@@ -1209,7 +1209,7 @@ class AlladynChartersApiService extends AbstractApiService
         return [$response, $responseStringBook];
     }
 
-    public function apiGetHotels(?HotelsFilter $filter = null): []
+    public function apiGetHotels(): []
     {
         //Validator::make()->validateUsernameAndPassword($this->post);
         $hotels = [];

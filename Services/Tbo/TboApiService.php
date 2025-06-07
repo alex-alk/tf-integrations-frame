@@ -112,7 +112,7 @@ class TboApiService extends AbstractApiService
 
     // todo: de facut lista la fel ca la karpaten
     // 
-    public function apiGetHotels(?HotelsFilter $filter = null): []
+    public function apiGetHotels(): []
     {
         if (empty($filter->CityId)) {
             throw new Exception('CityId is required');

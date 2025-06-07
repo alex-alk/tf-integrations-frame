@@ -480,7 +480,7 @@ class CyberlogicApiService extends AbstractApiService
         return [$booking, json_encode($response)];
     }
 
-    public function apiGetHotels(?HotelsFilter $filter = null): []
+    public function apiGetHotels(): []
     {
         Validator::make()->validateUsernameAndPassword($this->post);
         $requestArr = [

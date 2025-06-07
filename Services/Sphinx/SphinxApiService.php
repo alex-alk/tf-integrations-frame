@@ -455,7 +455,7 @@ class SphinxApiService extends AbstractApiService
         return $payments;
     }
 
-    public function apiGetHotels(?HotelsFilter $filter = null): []
+    public function apiGetHotels(): []
     {
         $hotels = [];
         $cities = $this->apiGetCities();

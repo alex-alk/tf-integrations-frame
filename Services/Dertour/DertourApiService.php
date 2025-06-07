@@ -2412,7 +2412,7 @@ class DertourApiService extends AbstractApiService
         return $price;
     }
 
-    public function apiGetHotels(?HotelsFilter $filter = null): []
+    public function apiGetHotels(): []
     {
         $file = $this->requestFile(self::DOWNLOAD_HOTELS);
 

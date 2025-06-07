@@ -152,7 +152,7 @@ class SanSejourApiService extends AbstractApiService
         return (string) $token;
     }
 
-    public function apiGetHotels(?HotelsFilter $filter = null): []
+    public function apiGetHotels(): []
     {
         $file = 'hotels';
         $json = Utils::getFromCache($this->handle, $file);

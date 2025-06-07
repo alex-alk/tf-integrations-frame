@@ -446,7 +446,7 @@ class BrosTravelApiService extends AbstractApiService
         ]; 
     }
 
-    public function apiGetHotels(?HotelsFilter $filter = null): []
+    public function apiGetHotels(): []
     {
         Validator::make()->validateUsernameAndPassword($this->post);
         $cities = $this->apiGetCities();

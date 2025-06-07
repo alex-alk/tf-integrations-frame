@@ -382,7 +382,7 @@ class GoGlobalApiService extends AbstractApiService
         return $response;
     }
 
-    public function apiGetHotels(?HotelsFilter $filter = null): []
+    public function apiGetHotels(): []
     {
         Validator::make()->validateUsernameAndPassword($this->post);
         $client = HttpClient::create(['user_agent' => 'curl/' . curl_version()['version']]);

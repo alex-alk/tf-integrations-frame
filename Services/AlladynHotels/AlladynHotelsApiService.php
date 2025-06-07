@@ -424,7 +424,7 @@ class AlladynHotelsApiService extends AbstractApiService
         return [$response, json_encode($booking)];
     }
 
-    public function apiGetHotels(?HotelsFilter $filter = null): []
+    public function apiGetHotels(): []
     {
         set_time_limit(1800);
         $countries = $this->apiGetCountries();

@@ -1166,7 +1166,7 @@ class EtripApiService extends AbstractApiService
         return $countries;
     }
 
-    public function apiGetHotels(?HotelsFilter $filter = null): []
+    public function apiGetHotels(): []
     {
         $getAllCities = [Handles::TUI_TRAVEL_CENTER_V2, Handles::CHRISTIAN_TOUR_V2, TestHandles::LOCALHOST_HOLIDAYOFFICE_TOUR_ONLY];
         $includedCountry = [Handles::HOLIDAYOFFICE, 147];
@@ -1409,7 +1409,7 @@ class EtripApiService extends AbstractApiService
         return $hotels;
     }
 
-    public function getTourHotels(?HotelsFilter $filter = null): []
+    public function getTourHotels(): []
     {
         Validator::make()
             ->validateUsernameAndPassword($this->post);

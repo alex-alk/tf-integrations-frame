@@ -485,7 +485,7 @@ class HotelconApiService extends AbstractApiService
         return $availabilities;
     }
 
-    public function apiGetHotels(?HotelsFilter $filter = null): []
+    public function apiGetHotels(): []
     {
         $response = $this->getHotelsArr($this->handle);
 

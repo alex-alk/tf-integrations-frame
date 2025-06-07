@@ -219,7 +219,7 @@ class OneTourismoApiService extends AbstractApiService
     // // hotelurile cu city de pe hotel case nu se potrivesc cu punctul 1 si 2 de mai sus
     // // hotel oras mappedlocation perfect partial(pot fi mai multe)
     // // un orase se poate potrivi cu mai multe orase?
-    // public function apiGetHotels(?HotelsFilter $filter = null): []
+    // public function apiGetHotels(): []
     // {
 
     //     $file = 'hotels';

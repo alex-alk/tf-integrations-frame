@@ -234,7 +234,7 @@ class EtgApiService extends AbstractApiService
         return $result;
     }
  
-    public function apiGetHotels(?HotelsFilter $filter = null): []
+    public function apiGetHotels(): []
     {
         if (empty($filter->CityId)) {
             throw new Exception('CityId is required');

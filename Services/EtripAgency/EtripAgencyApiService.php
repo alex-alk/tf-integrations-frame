@@ -104,7 +104,7 @@ class EtripAgencyApiService extends AbstractApiService
         return new Hotel();
     }
 
-    public function apiGetHotels(?HotelsFilter $filter = null): []
+    public function apiGetHotels(): []
     {
         return [];
     }

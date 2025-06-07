@@ -289,7 +289,7 @@ class AmaraApiService extends AbstractApiService
         return $cities;
     }
 
-    public function apiGetHotels(?HotelsFilter $filter = null): []
+    public function apiGetHotels(): []
     {
         $response = $this->getRoutesInfoXml();
 

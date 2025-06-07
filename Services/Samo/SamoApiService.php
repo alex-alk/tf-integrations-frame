@@ -604,7 +604,7 @@ class SamoApiService extends AbstractApiService
         return $cities;
     }*/
 
-	public function apiGetHotels(?HotelsFilter $filter = null): []
+	public function apiGetHotels(): []
 	{
 		$file = 'hotels';
 		$json = Utils::getFromCache($this, $file);

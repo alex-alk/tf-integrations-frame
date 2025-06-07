@@ -18,4 +18,9 @@ class Region implements JsonSerializable
             'Country' => $this->country->jsonSerialize()
        ]; 
     }
+
+    public function getId(): string
+    {
+        return $this->id;
+    }
 }

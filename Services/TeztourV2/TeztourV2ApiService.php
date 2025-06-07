@@ -288,7 +288,7 @@ class TeztourV2ApiService extends AbstractApiService
 		return $cities;
 	}
 	
-	public function apiGetHotels(?HotelsFilter $filter = null): []
+	public function apiGetHotels(): []
 	{
 		$cities = $this->apiGetCities();
 		$hotelsXml = $this->getXml('hotels');

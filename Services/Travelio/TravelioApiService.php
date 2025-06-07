@@ -1718,7 +1718,7 @@ $aa = [];
         return $regions;
     }
 
-    public function apiGetHotels(?HotelsFilter $filter = null): []
+    public function apiGetHotels(): []
     {
         Validator::make()
             ->validateUsernameAndPassword($this->post);
@@ -1837,7 +1837,7 @@ $aa = [];
 
     /*
     // this can be used to get hotel details with the hotel list
-    public function getHotels(?HotelsFilter $filter = null): []
+    public function getHotels(): []
     {
         set_time_limit(6000);
         Validator::make()->validateUsernameAndPassword($this->post);

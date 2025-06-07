@@ -10,16 +10,47 @@ use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
 use RequestHandler\ServerRequest;
 use Services\Odeon\OdeonApiService;
+use Utils\Utils;
+
+use function PHPUnit\Framework\exactly;
 
 class OdeonApiServiceTest extends TestCase
 {
+    private ServerRequest $serverRequest;
+
+    public function setUp(): void
+    {
+        $body = json_encode([
+            'to' => [
+                'Handle' => 'test',
+                'ApiUsername' => 'test',
+                'ApiPassword' => 'test',
+                'ApiUrl' => 'test'
+            ]
+        ]);
+        $this->serverRequest = new ServerRequest(Request::METHOD_POST, new Uri('test'), new Stream($body));
+    
+        Utils::deleteDirectory(Utils::getCachePath() . '/test');
+    }
+    
     public function test_getCountries(): void
     {
         $mockHttpClient = $this->createMock(HttpClient::class);
         $mockTokenResponse = $this->createMock(ResponseInterface::class);
         $mockGeographyResponse = $this->createMock(ResponseInterface::class);
 
-        $mockResponse
+        $mockTokenResponse
+            ->method('getBody')
+            ->willReturn(new Stream('{
+                "Details": "{\"UserID\":19491,\"Username\":\"Integration\",\"Name\":\"Integration\",\"Email\":\"Integration\",\"UserTypes\":[{\"ID\":21,\"Name\":\"B2B\",\"AppID\":4},{\"ID\":20,\"Name\":\"INTEGRATION\",\"AppID\":4}],\"Language\":2,\"UserToken\":\"fcb34454-c935-4241-acf3-6214b1d3704d\",\"IP\":\"82.78.175.39\",\"AppUserID\":3220,\"UserHotel\":[],\"PasswordUpdatedOn\":null}",
+                "Error": false,
+                "Response": "SUCCESS",
+                "Token": "fcb34454-c935-4241-acf3-6214b1d3704d",
+                "ValidationError": false
+                }'))
+            ;
+
+        $mockGeographyResponse
             ->method('getBody')
             ->willReturn(new Stream('{
                 "Details": "[{\"CountryID\":1,\"CountryName\":\"Turkey\",\"CountryLName\":\"Turcia\",\"RegionID\":15014,\"RegionName\":\"Afyon\",\"RegionLName\":\"Afyon\",\"AreaID\":2,\"AreaName\":\"Afyon\",\"AreaLName\":\"Afyon\",\"PlaceID\":1,\"PlaceName\":\"Afyon\",\"PlaceLName\":\"Afyon\"}, {\"CountryID\":10,\"CountryName\":\"Romania\",\"CountryLName\":\"Romania\",\"RegionID\":5,\"RegionName\":\"Buc\",\"RegionLName\":\"Buc\",\"AreaID\":9254,\"AreaName\":\"buc\",\"AreaLName\":\"Buc\",\"PlaceID\":100,\"PlaceName\":\"Bucuresti\",\"PlaceLName\":\"Bucuresti\"}, {\"CountryID\":1,\"CountryName\":\"Turkey\",\"CountryLName\":\"Turcia\",\"RegionID\":15014,\"RegionName\":\"Antalya\",\"RegionLName\":\"Antalya\",\"AreaID\":5,\"AreaName\":\"Antalya\",\"AreaLName\":\"Antalya\",\"PlaceID\":79,\"PlaceName\":\"Antalya\",\"PlaceLName\":\"Antalya\"}]",
@@ -30,139 +61,128 @@ class OdeonApiServiceTest extends TestCase
                 }'))
             ;
 
+        $mockResponses = [$mockTokenResponse, $mockGeographyResponse];
+
+        $invokedCount = exactly(2);
+        
         $mockHttpClient
+            ->expects($invokedCount)
             ->method('request')
-            ->willReturn($mockResponse);
+            ->willReturnCallback(function ($method, $uri) use ($invokedCount, $mockResponses) {
+                if ($invokedCount->numberOfInvocations() === 1) {
+                    return $mockResponses[0];
+                }
+                if ($invokedCount->numberOfInvocations() === 2) {
+                    return $mockResponses[1];
+                }
+            });
 
-        $body = json_encode([
-            'to' => [
-                'Handle' => 'test',
-                'ApiUsername' => 'test',
-                'ApiPassword' => 'test',
-                'ApiUrl' => 'test'
-            ]
-        ]);
+        $service = new OdeonApiService($this->serverRequest, $mockHttpClient);
+        $data = $service->apiGetCountries();
 
-        $serverRequest = new ServerRequest(Request::METHOD_POST, new Uri('test'), new Stream($body));
-
-        $service = new OdeonApiService($serverRequest, $mockHttpClient);
-        $countries = $service->apiGetCountries();
-
-        $this->assertTrue(count($countries) > 0);
-        $this->assertTrue(true);
+        $this->assertTrue(count($data) > 0);
     }
 
+    public function test_getCities(): void
+    {
+        $mockHttpClient = $this->createMock(HttpClient::class);
+        $mockTokenResponse = $this->createMock(ResponseInterface::class);
+        $mockGeographyResponse = $this->createMock(ResponseInterface::class);
+
+        $mockTokenResponse
+            ->method('getBody')
+            ->willReturn(new Stream('{
+                "Details": "{\"UserID\":19491,\"Username\":\"Integration\",\"Name\":\"Integration\",\"Email\":\"Integration\",\"UserTypes\":[{\"ID\":21,\"Name\":\"B2B\",\"AppID\":4},{\"ID\":20,\"Name\":\"INTEGRATION\",\"AppID\":4}],\"Language\":2,\"UserToken\":\"fcb34454-c935-4241-acf3-6214b1d3704d\",\"IP\":\"82.78.175.39\",\"AppUserID\":3220,\"UserHotel\":[],\"PasswordUpdatedOn\":null}",
+                "Error": false,
+                "Response": "SUCCESS",
+                "Token": "fcb34454-c935-4241-acf3-6214b1d3704d",
+                "ValidationError": false
+                }'))
+            ;
+
+        $mockGeographyResponse
+            ->method('getBody')
+            ->willReturn(new Stream('{
+                "Details": "[{\"CountryID\":1,\"CountryName\":\"Turkey\",\"CountryLName\":\"Turcia\",\"RegionID\":15014,\"RegionName\":\"Afyon\",\"RegionLName\":\"Afyon\",\"AreaID\":2,\"AreaName\":\"Afyon\",\"AreaLName\":\"Afyon\",\"PlaceID\":1,\"PlaceName\":\"Afyon\",\"PlaceLName\":\"Afyon\"}, {\"CountryID\":10,\"CountryName\":\"Romania\",\"CountryLName\":\"Romania\",\"RegionID\":5,\"RegionName\":\"Buc\",\"RegionLName\":\"Buc\",\"AreaID\":9254,\"AreaName\":\"buc\",\"AreaLName\":\"Buc\",\"PlaceID\":100,\"PlaceName\":\"Bucuresti\",\"PlaceLName\":\"Bucuresti\"}, {\"CountryID\":1,\"CountryName\":\"Turkey\",\"CountryLName\":\"Turcia\",\"RegionID\":15014,\"RegionName\":\"Antalya\",\"RegionLName\":\"Antalya\",\"AreaID\":5,\"AreaName\":\"Antalya\",\"AreaLName\":\"Antalya\",\"PlaceID\":79,\"PlaceName\":\"Antalya\",\"PlaceLName\":\"Antalya\"}]",
+                "Error": false,
+                "Response": "SUCCESS",
+                "Token": "fcb34454-c935-4241-acf3-6214b1d3704d",
+                "ValidationError": false
+                }'))
+            ;
+
+        $mockResponses = [$mockTokenResponse, $mockGeographyResponse];
+
+        $invokedCount = exactly(2);
+        
+        $mockHttpClient
+            ->expects($invokedCount)
+            ->method('request')
+            ->willReturnCallback(function ($method, $uri) use ($invokedCount, $mockResponses) {
+                if ($invokedCount->numberOfInvocations() === 1) {
+                    return $mockResponses[0];
+                }
+                if ($invokedCount->numberOfInvocations() === 2) {
+                    return $mockResponses[1];
+                }
+            });
+
+        $service = new OdeonApiService($this->serverRequest, $mockHttpClient);
+        $data = $service->apiGetRegions();
+
+        $this->assertTrue(count($data) > 0);
+    }
+
+    public function test_getRegions(): void
+    {
+        $mockHttpClient = $this->createMock(HttpClient::class);
+        $mockTokenResponse = $this->createMock(ResponseInterface::class);
+        $mockGeographyResponse = $this->createMock(ResponseInterface::class);
+
+        $mockTokenResponse
+            ->method('getBody')
+            ->willReturn(new Stream('{
+                "Details": "{\"UserID\":19491,\"Username\":\"Integration\",\"Name\":\"Integration\",\"Email\":\"Integration\",\"UserTypes\":[{\"ID\":21,\"Name\":\"B2B\",\"AppID\":4},{\"ID\":20,\"Name\":\"INTEGRATION\",\"AppID\":4}],\"Language\":2,\"UserToken\":\"fcb34454-c935-4241-acf3-6214b1d3704d\",\"IP\":\"82.78.175.39\",\"AppUserID\":3220,\"UserHotel\":[],\"PasswordUpdatedOn\":null}",
+                "Error": false,
+                "Response": "SUCCESS",
+                "Token": "fcb34454-c935-4241-acf3-6214b1d3704d",
+                "ValidationError": false
+                }'))
+            ;
+
+        $mockGeographyResponse
+            ->method('getBody')
+            ->willReturn(new Stream('{
+                "Details": "[{\"CountryID\":1,\"CountryName\":\"Turkey\",\"CountryLName\":\"Turcia\",\"RegionID\":15014,\"RegionName\":\"Afyon\",\"RegionLName\":\"Afyon\",\"AreaID\":2,\"AreaName\":\"Afyon\",\"AreaLName\":\"Afyon\",\"PlaceID\":1,\"PlaceName\":\"Afyon\",\"PlaceLName\":\"Afyon\"}, {\"CountryID\":10,\"CountryName\":\"Romania\",\"CountryLName\":\"Romania\",\"RegionID\":5,\"RegionName\":\"Buc\",\"RegionLName\":\"Buc\",\"AreaID\":9254,\"AreaName\":\"buc\",\"AreaLName\":\"Buc\",\"PlaceID\":100,\"PlaceName\":\"Bucuresti\",\"PlaceLName\":\"Bucuresti\"}, {\"CountryID\":1,\"CountryName\":\"Turkey\",\"CountryLName\":\"Turcia\",\"RegionID\":15014,\"RegionName\":\"Antalya\",\"RegionLName\":\"Antalya\",\"AreaID\":5,\"AreaName\":\"Antalya\",\"AreaLName\":\"Antalya\",\"PlaceID\":79,\"PlaceName\":\"Antalya\",\"PlaceLName\":\"Antalya\"}]",
+                "Error": false,
+                "Response": "SUCCESS",
+                "Token": "fcb34454-c935-4241-acf3-6214b1d3704d",
+                "ValidationError": false
+                }'))
+            ;
+
+        $mockResponses = [$mockTokenResponse, $mockGeographyResponse];
+
+        $invokedCount = exactly(2);
+        
+        $mockHttpClient
+            ->expects($invokedCount)
+            ->method('request')
+            ->willReturnCallback(function ($method, $uri) use ($invokedCount, $mockResponses) {
+                if ($invokedCount->numberOfInvocations() === 1) {
+                    return $mockResponses[0];
+                }
+                if ($invokedCount->numberOfInvocations() === 2) {
+                    return $mockResponses[1];
+                }
+            });
+
+        $service = new OdeonApiService($this->serverRequest, $mockHttpClient);
+        $data = $service->apiGetCities();
+
+        $this->assertTrue(count($data) > 0);
+    }
  /*
-    public function test_getRegions_whenInputIsValid_receiveRegions(): void
-    {
-        self::$body['method'] = self::$api_getRegions;
-        self::$options['body'] = json_encode(self::$body);
-
-        $response = self::$httpClient->request(HttpClient::METHOD_POST, self::$proxyUrl, self::$options);
-        $content = $response->getContent();
-        $this->assertJsonStringEqualsJsonString($content, 
-            '{
-                "response": {
-                    "2": {
-                        "Id": "2",
-                        "Name": "Afyon",
-                        "Country": {
-                            "Id": "1",
-                            "Code": "TR",
-                            "Name": "Turcia"
-                        }
-                    },
-                    "9254": {
-                        "Id": "9254",
-                        "Name": "Buc",
-                        "Country": {
-                            "Id": "10",
-                            "Code": "RO",
-                            "Name": "Romania"
-                        }
-                    },
-                    "5": {
-                        "Id": "5",
-                        "Name": "Antalya",
-                        "Country": {
-                            "Id": "1",
-                            "Code": "TR",
-                            "Name": "Turcia"
-                        }
-                    }
-                }
-            }'
-        );
-    }
-
-    public function test_getCities_whenInputIsValid_receiveCities(): void
-    {
-        self::$body['method'] = self::$api_getCities;
-        self::$options['body'] = json_encode(self::$body);
-
-        $response = self::$httpClient->request(HttpClient::METHOD_POST, self::$proxyUrl, self::$options);
-        $content = $response->getContent();
-        $this->assertJsonStringEqualsJsonString($content,
-            '{
-                "response": {
-                    "1": {
-                        "Id": "1",
-                        "Name": "Afyon",
-                        "Country": {
-                            "Id": "1",
-                            "Code": "TR",
-                            "Name": "Turcia"
-                        },
-                        "County": {
-                            "Id": "2",
-                            "Name": "Afyon",
-                            "Country": {
-                                "Id": "1",
-                                "Code": "TR",
-                                "Name": "Turcia"
-                            }
-                        }
-                    },
-                    "100": {
-                        "Id": "100",
-                        "Name": "Bucuresti",
-                        "Country": {
-                            "Id": "10",
-                            "Code": "RO",
-                            "Name": "Romania"
-                        },
-                        "County": {
-                            "Id": "9254",
-                            "Name": "Buc",
-                            "Country": {
-                                "Id": "10",
-                                "Code": "RO",
-                                "Name": "Romania"
-                            }
-                        }
-                    },
-                    "79": {
-                        "Id": "79",
-                        "Name": "Antalya",
-                        "Country": {
-                            "Id": "1",
-                            "Code": "TR",
-                            "Name": "Turcia"
-                        },
-                        "County": {
-                            "Id": "5",
-                            "Name": "Antalya",
-                            "Country": {
-                                "Id": "1",
-                                "Code": "TR",
-                                "Name": "Turcia"
-                            }
-                        }
-                    }
-                }
-            }'
-        );
-    }
  
     public function test_getHotels_whenInputIsValid_receiveHotels(): void
     {

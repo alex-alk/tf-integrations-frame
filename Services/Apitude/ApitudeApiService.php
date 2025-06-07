@@ -147,7 +147,7 @@ class ApitudeApiService extends AbstractApiService
         return $regions;
     }
 
-    public function apiGetHotels(?HotelsFilter $filter = null): []
+    public function apiGetHotels(): []
     {
         $countries = $this->apiGetCountries();
         $regions = $this->apiGetRegions();

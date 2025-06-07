@@ -5,9 +5,11 @@ namespace Services\Odeon;
 use Exception;
 use HttpClient\HttpClient;
 use HttpClient\Message\Request;
+use Models\City;
 use Models\Country;
 use Models\Hotel;
 use Models\Region;
+use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Services\IntegrationSupport\AbstractApiService;
 use Services\IntegrationSupport\CountryCodeMap;
@@ -118,14 +120,14 @@ class OdeonApiService extends AbstractApiService
         $body = json_encode($requestArr);
         $headers = ['Content-Type' => 'application/json'];
 
-        $responseDepObj = $this->client->request(Request::METHOD_POST, $this->apiUrl, $body, $headers);
+        $responseDepObj = $this->client->request(Request::METHOD_POST, $this->apiUrl, $body);
         $responseDep = json_decode($responseDepObj->getBody(), true);
 
         if ($responseDep['Error'] && $responseDep['Response'] === 'ERROR_SESSION_NOT_FOUND') {
             $token = $this->cacheToken();
             $requestArr['Token'] = $token;
             $body = json_encode($requestArr);
-            $responseDepObj = $this->client->request(Request::METHOD_POST, $this->apiUrl, $body, $headers);
+            $responseDepObj = $this->client->request(Request::METHOD_POST, $this->apiUrl, $body);
             $responseDep = json_decode($responseDepObj->getBody(), true);
         }
         if ($responseDep['Error']) {
@@ -163,17 +165,17 @@ class OdeonApiService extends AbstractApiService
             $headers = ['Content-Type' => 'application/json'];
 
             $this->client = HttpClient::create();
-            $responseDepObj = $this->client->request(Request::METHOD_POST, $this->apiUrl, $body, $headers);
+            $responseDepObj = $this->client->request(Request::METHOD_POST, $this->apiUrl, $body);
             $responseDep = json_decode($responseDepObj->getBody(), true);
 
             if ($responseDep['Error'] && $responseDep['Response'] === 'ERROR_SESSION_NOT_FOUND') {
                 $token = $this->cacheToken();
                 $requestArr['Token'] = $token;
                 $body = json_encode($requestArr);
-                $responseDepObj = $this->client->request(Request::METHOD_POST, $this->apiUrl, $body, $headers);
+                $responseDepObj = $this->client->request(Request::METHOD_POST, $this->apiUrl, $body);
                 $responseDep = json_decode($responseDepObj->getBody(), true);
             }
-            // $this->showRequest(Request::METHOD_POST, $this->apiUrl, $body, $headers, $responseDepObj->getBody(), $responseDepObj->getStatusCode());
+            // $this->showRequest(Request::METHOD_POST, $this->apiUrl, $body, $options, $responseDepObj->getBody(), $responseDepObj->getStatusCode());
 
             if ($responseDep['Error']) {
                 throw new Exception($responseDep['Response']);
@@ -218,14 +220,14 @@ class OdeonApiService extends AbstractApiService
                         ];
 
                         $body = json_encode($requestArr);
-                        $responseObj = $this->client->request(Request::METHOD_POST, $this->apiUrl, $body, $headers);
+                        $responseObj = $this->client->request(Request::METHOD_POST, $this->apiUrl, $body);
                         $response = json_decode($responseObj->getBody(), true);
 
                         if ($responseDep['Error'] && $responseDep['Response'] === 'ERROR_SESSION_NOT_FOUND') {
                             $token = $this->cacheToken();
                             $requestArr['Token'] = $token;
                             $body = json_encode($requestArr);
-                            $responseObj = $this->client->request(Request::METHOD_POST, $this->apiUrl, $body, $headers);
+                            $responseObj = $this->client->request(Request::METHOD_POST, $this->apiUrl, $body);
                             $response = json_decode($responseObj->getBody(), true);
                         }
 
@@ -399,17 +401,17 @@ class OdeonApiService extends AbstractApiService
             $headers = ['Content-Type' => 'application/json'];
 
             $this->client = HttpClient::create();
-            $responseDepObj = $this->client->request(Request::METHOD_POST, $this->apiUrl, $body, $headers);
+            $responseDepObj = $this->client->request(Request::METHOD_POST, $this->apiUrl, $body);
             $responseDep = json_decode($responseDepObj->getBody(), true);
 
             if ($responseDep['Error'] && $responseDep['Response'] === 'ERROR_SESSION_NOT_FOUND') {
                 $token = $this->cacheToken();
                 $requestArr['Token'] = $token;
                 $body = json_encode($requestArr);
-                $responseDepObj = $this->client->request(Request::METHOD_POST, $this->apiUrl, $body, $headers);
+                $responseDepObj = $this->client->request(Request::METHOD_POST, $this->apiUrl, $body);
                 $responseDep = json_decode($responseDepObj->getBody(), true);
             }
-            // $this->showRequest(Request::METHOD_POST, $this->apiUrl, $body, $headers, $responseDepObj->getBody(), $responseDepObj->getStatusCode());
+            // $this->showRequest(Request::METHOD_POST, $this->apiUrl, $body, $options, $responseDepObj->getBody(), $responseDepObj->getStatusCode());
 
             if ($responseDep['Error']) {
                 throw new Exception($responseDep['Response']);
@@ -436,49 +438,56 @@ class OdeonApiService extends AbstractApiService
 
     public function apiGetCountries(): array
     {
-        $token = $this->getToken();
-
-        $headers = ['Content-Type' => 'application/json'];
-
-        $requestArr = [
-            'Command' => 'General.Geography.ListGeography',
-            'Token' => $token
-        ];
-        $body = json_encode($requestArr);
-
-        $responseObj = $this->client->request(Request::METHOD_POST, $this->apiUrl, $body, $headers);
-        $responseData = json_decode($responseObj->getBody(), true);
-
-        if ($responseData['Error'] && $responseData['Response'] === 'ERROR_SESSION_NOT_FOUND') {
-            $token = $this->cacheToken();
-            $requestArr['Token'] = $token;
-            $body = json_encode($requestArr);
-            $responseObj = $this->client->request(Request::METHOD_POST, $this->apiUrl, $body, $headers);
-            $responseData = json_decode($responseObj->getBody(), true);
-        }
-        $this->showRequest(Request::METHOD_POST, $this->apiUrl, $body, $headers, $responseObj->getBody(), $responseObj->getStatusCode());
-
-        if ($responseData['Error']) {
-            throw new Exception($responseData['Response']);
-        }
-
-        $countriesResponse = json_decode($responseData['Details'], true);
+        $cities = $this->apiGetCities();
 
         $countries = [];
-        $map = CountryCodeMap::getCountryCodeMap();
-
-        foreach ($countriesResponse as $value) {
-            $code = '';
-            if (!isset($map[trim($value['CountryLName'])])) {
-                 $code = $value['CountryLName'];
-            } else {
-                 $code = $map[trim($value['CountryLName'])];
-            }
-
-            $country = new Country($value['CountryID'], $code, $value['CountryLName']);
-            $countries[$value['CountryID']] = $country;
+        foreach ($cities as $city) {
+            $countries[$city->getCountry()->getId()] = $city->getCountry();
         }
         return $countries;
+        // $token = $this->cacheToken();
+
+        // $headers = ['Content-Type' => 'application/json'];
+
+        // $requestArr = [
+        //     'Command' => 'General.Geography.ListGeography',
+        //     'Token' => $token
+        // ];
+        // $body = json_encode($requestArr);
+
+        // $responseObj = $this->client->request(Request::METHOD_POST, $this->apiUrl, $body);
+        // $responseData = json_decode($responseObj->getBody(), true);
+
+        // if ($responseData['Error'] && $responseData['Response'] === 'ERROR_SESSION_NOT_FOUND') {
+        //     $token = $this->cacheToken();
+        //     $requestArr['Token'] = $token;
+        //     $body = json_encode($requestArr);
+        //     $responseObj = $this->client->request(Request::METHOD_POST, $this->apiUrl, $body);
+        //     $responseData = json_decode($responseObj->getBody(), true);
+        // }
+        // $this->showRequest(Request::METHOD_POST, $this->apiUrl, $body, $options, $responseObj->getBody(), $responseObj->getStatusCode());
+
+        // if ($responseData['Error']) {
+        //     throw new Exception($responseData['Response']);
+        // }
+
+        // $countriesResponse = json_decode($responseData['Details'], true);
+
+        // $countries = [];
+        // $map = CountryCodeMap::getCountryCodeMap();
+
+        // foreach ($countriesResponse as $value) {
+        //     $code = '';
+        //     if (!isset($map[trim($value['CountryLName'])])) {
+        //          $code = $value['CountryLName'];
+        //     } else {
+        //          $code = $map[trim($value['CountryLName'])];
+        //     }
+
+        //     $country = new Country($value['CountryID'], $code, $value['CountryLName']);
+        //     $countries[$value['CountryID']] = $country;
+        // }
+        // return $countries;
     }
 
     private function cacheToken(): string
@@ -572,20 +581,18 @@ class OdeonApiService extends AbstractApiService
                 'Token' => $token
             ];
             $body = json_encode($requestArr);
-            $headers = ['Content-Type' => 'application/json'];
-            $this->client = HttpClient::create();
-            $responseObj = $this->client->request(Request::METHOD_POST, $this->apiUrl, $body, $headers);
+
+            $responseObj = $this->client->request(Request::METHOD_POST, $this->apiUrl, $body);
             $responseData = json_decode($responseObj->getBody(), true);
 
             if ($responseData['Error'] && $responseData['Response'] === 'ERROR_SESSION_NOT_FOUND') {
                 $token = $this->cacheToken();
                 $requestArr['Token'] = $token;
                 $body = json_encode($requestArr);
-                $responseObj = $this->client->request(Request::METHOD_POST, $this->apiUrl, $body, $headers);
+                $responseObj = $this->client->request(Request::METHOD_POST, $this->apiUrl, $body);
                 $responseData = json_decode($responseObj->getBody(), true);
             }
-            $this->showRequest(Request::METHOD_POST, $this->apiUrl, $body, $headers, $responseObj->getBody(), $responseObj->getStatusCode());
-
+            $this->showRequest(Request::METHOD_POST, $this->apiUrl, $body, [], $responseObj->getBody(), $responseObj->getStatusCode());
 
             if ($responseData['Error']) {
                 throw new Exception($responseData['Response']);
@@ -598,89 +605,91 @@ class OdeonApiService extends AbstractApiService
 
             foreach ($response as $value) {
 
-                $city = new City();
-
-                // county
-                $region = new Region();
-                $region->Id = $value['AreaID'];
-                $region->Name = $value['AreaLName'] ?? $value['AreaName'];
-
-                $country = new Country();
-                $country->Id = $value['CountryID'];
+                $code = '';
                 if (!isset($map[trim($value['CountryLName'])])) {
-                    $country->Code = '?';
+                    $code = '?';
                 } else {
-                    $country->Code = $map[trim($value['CountryLName'])];
+                    $code = $map[trim($value['CountryLName'])];
                 }
 
-                $country->Name = $value['CountryLName'];
+                $country = new Country($value['CountryID'], $code, $value['CountryLName']);
 
-                $region->Country = $country;
+                $regionName = $value['AreaLName'] ?? $value['AreaName'];
+                $region = new Region($value['AreaID'], $regionName, $country);
 
-                $city->Country = $country;
-                $city->County = $region;
+                $cityName = $value['PlaceLName'] ?? $value['PlaceName'];
 
-                $city->Id = $value['PlaceID'];
-                $city->Name = $value['PlaceLName'] ?? $value['PlaceName'];
-                $cities->put($city->Id, $city);
+                $city = new City($value['PlaceID'], $cityName, $country, $region);
+
+                $cities[$value['PlaceID']] = $city;
             }
 
-            $data = json_encode_pretty($cities);
+            $data = json_encode($cities);
             Utils::writeToCache($this, $file, $data);
         } else {
-            $citiesArray = json_decode($citiesJson, true);
+            $cities = json_decode($citiesJson, true);
         }
         return $cities;
     }
 
     public function apiGetRegions(): array
     {
-        $requestArr = [
-            'Command' => 'General.Geography.ListGeography',
-            'Token' => $this->getToken()
-        ];
-        $body = json_encode($requestArr);
-        $headers = ['Content-Type' => 'application/json'];
+        $cities = $this->apiGetCities();
 
-        $responseObj = $this->client->request(Request::METHOD_POST, $this->apiUrl, $body, $headers);
-        $responseData = json_decode($responseObj->getBody(), true);
-
-        if ($responseData['Error'] && $responseData['Response'] === 'ERROR_SESSION_NOT_FOUND') {
-            $token = $this->cacheToken();
-            $requestArr['Token'] = $token;
-            $body = json_encode($requestArr);
-            $responseObj = $this->client->request(Request::METHOD_POST, $this->apiUrl, $body, $headers);
-            $responseData = json_decode($responseObj->getBody(), true);
-        }
-        $this->showRequest(Request::METHOD_POST, $this->apiUrl, $body, $headers, $responseObj->getBody(), $responseObj->getStatusCode());
-
-        if ($responseData['Error']) {
-            throw new Exception($responseData['Response']);
-        }
-
-        $response = json_decode($responseData['Details'], true);
-
-        $map = CountryCodeMap::getCountryCodeMap();
         $regions = [];
-        foreach ($response as $value) {
-            $region = new Region();
-            $region->Id = $value['AreaID'];
-            $region->Name = $value['AreaLName'] ?? $value['AreaName'];
-
-            $country = new Country();
-            $country->Id = $value['CountryID'];
-            if (!isset($map[trim($value['CountryLName'])])) {
-                $country->Code = '?';
-            } else {
-                $country->Code = $map[trim($value['CountryLName'])];
-            }
-
-            $country->Name = $value['CountryLName'];
-
-            $region->Country = $country;
-            $regions->put($region->Id, $region);
+        foreach ($cities as $city) {
+            $regions[$city->getRegion()->getId()] = $city->getRegion();
         }
         return $regions;
+
+        // $requestArr = [
+        //     'Command' => 'General.Geography.ListGeography',
+        //     'Token' => $this->getToken()
+        // ];
+        // $body = json_encode($requestArr);
+        // $headers = ['Content-Type' => 'application/json'];
+
+        // $responseObj = $this->client->request(Request::METHOD_POST, $this->apiUrl, $body);
+        // $responseData = json_decode($responseObj->getBody(), true);
+
+        // if ($responseData['Error'] && $responseData['Response'] === 'ERROR_SESSION_NOT_FOUND') {
+        //     $token = $this->cacheToken();
+        //     $requestArr['Token'] = $token;
+        //     $body = json_encode($requestArr);
+        //     $responseObj = $this->client->request(Request::METHOD_POST, $this->apiUrl, $body);
+        //     $responseData = json_decode($responseObj->getBody(), true);
+        // }
+        // $this->showRequest(Request::METHOD_POST, $this->apiUrl, $body, $options, $responseObj->getBody(), $responseObj->getStatusCode());
+
+        // if ($responseData['Error']) {
+        //     throw new Exception($responseData['Response']);
+        // }
+
+        // $response = json_decode($responseData['Details'], true);
+
+        // $map = CountryCodeMap::getCountryCodeMap();
+        // $regions = [];
+        // foreach ($response as $value) {
+            
+        //     $regionName = $value['AreaLName'] ?? $value['AreaName'];
+
+        //     $country = new Country();
+        //     $country->Id = $value['CountryID'];
+        //     if (!isset($map[trim($value['CountryLName'])])) {
+        //         $country->Code = '?';
+        //     } else {
+        //         $country->Code = $map[trim($value['CountryLName'])];
+        //     }
+
+        //     $country->Name = $value['CountryLName'];
+
+        //     $region->Country = $country;
+
+        //     $region = new Region($value['AreaID'], $regionName, );
+
+        //     $regions->put($region->Id, $region);
+        // }
+        // return $regions;
     }
 
     public function getHotelRatingMap(): array
@@ -698,7 +707,7 @@ class OdeonApiService extends AbstractApiService
         ]);
         $headers = ['Content-Type' => 'application/json'];
 
-        $responseObj = $this->client->request(Request::METHOD_POST, $this->apiUrl, $body, $headers);
+        $responseObj = $this->client->request(Request::METHOD_POST, $this->apiUrl, $body);
         $responseData = json_decode($responseObj->getBody(), true);
 
         if ($responseData['Error'] && $responseData['Response'] === 'ERROR_SESSION_NOT_FOUND') {
@@ -707,10 +716,10 @@ class OdeonApiService extends AbstractApiService
                 'Command' => 'Accommodation.Hotel.ListHotelCategory',
                 'Token' => $token
             ]);
-            $responseObj = $this->client->request(Request::METHOD_POST, $this->apiUrl, $body, $headers);
+            $responseObj = $this->client->request(Request::METHOD_POST, $this->apiUrl, $body);
             $responseData = json_decode($responseObj->getBody(), true);
         }
-        $this->showRequest(Request::METHOD_POST, $this->apiUrl, $body, $headers, $responseObj->getBody(), $responseObj->getStatusCode());
+        $this->showRequest(Request::METHOD_POST, $this->apiUrl, $body, $options, $responseObj->getBody(), $responseObj->getStatusCode());
 
         if ($responseData['Error']) {
             throw new Exception($responseData['Response']);
@@ -740,10 +749,8 @@ class OdeonApiService extends AbstractApiService
     }
 
 
-    public function apiGetHotels(?HotelsFilter $filter = null): array
+    public function apiGetHotels(): array
     {
-        Validator::make()->validateUsernameAndPassword($this->post);
-
         $file = 'hotels';
         $hotelsJson = Utils::getFromCache($this, $file);
 
@@ -770,7 +777,7 @@ class OdeonApiService extends AbstractApiService
                 $requestArr['Token'] = $token;
                 $body = json_encode($requestArr);
                 $headers = ['Content-Type' => 'application/json'];
-                $responseObj = $this->client->request(Request::METHOD_POST, $this->apiUrl, $body, $headers);
+                $responseObj = $this->client->request(Request::METHOD_POST, $this->apiUrl, $body);
                 $responseData = json_decode($responseObj->getBody(), true);
             }
             $this->showRequest(Request::METHOD_POST, $this->apiUrl, $body, $headers, $responseObj->getBody(), $responseObj->getStatusCode());
@@ -784,6 +791,7 @@ class OdeonApiService extends AbstractApiService
             $cities = $this->apiGetCities();
             $ratingsMap = $this->getHotelRatingMap();
             $filter = new AvailabilityDatesFilter(['type' => 'charter']);
+
             $countriesFromAvailabilityDates = $this->getCountriesFromAvailabilityDates();
 
             foreach ($response as $hotelResponse) {
@@ -800,24 +808,6 @@ class OdeonApiService extends AbstractApiService
                 $address->Details = $hotelResponse['Address'];
                 $address->City = $city;
 
-                //$images = new HotelImageGalleryItemCollection();
-
-                // from hotel details
-                // foreach ($hotelResponse['images'] as $imageResponse) {
-                //     $image = new HotelImageGalleryItem();
-                //     $image->RemoteUrl = $imageResponse['path'];
-                //     $image->Alt = 'Hotel image';
-                //     $images->add($image);
-                // }
-
-                // $hotel->Content->ImageGallery
-                //$imageGallery = new HotelImageGallery();
-                //$imageGallery->Items = $images;
-
-                // $hotel->Content
-                //$content = new HotelContent();
-                //$content->ImageGallery = $imageGallery;
-                //$content->Content = null;
 
                 $hotel = new Hotel();
                 $hotel->Id = $hotelResponse['ID'];
@@ -857,17 +847,17 @@ class OdeonApiService extends AbstractApiService
             $body = json_encode($requestArr);
             $headers = ['Content-Type' => 'application/json'];
 
-            $responseObj = $this->client->request(Request::METHOD_POST, $this->apiUrl, $body, $headers);
+            $responseObj = $this->client->request(Request::METHOD_POST, $this->apiUrl, $body);
             $response = json_decode($responseObj->getBody(), true);
 
             if ($response['Error'] && $response['Response'] === 'ERROR_SESSION_NOT_FOUND') {
                 $token = $this->cacheToken();
                 $requestArr['Token'] = $token;
                 $body = json_encode($requestArr);
-                $responseObj = $this->client->request(Request::METHOD_POST, $this->apiUrl, $body, $headers);
+                $responseObj = $this->client->request(Request::METHOD_POST, $this->apiUrl, $body);
                 $response = json_decode($responseObj->getBody(), true);
             }
-            $this->showRequest(Request::METHOD_POST, $this->apiUrl, $body, $headers, $responseObj->getBody(), $responseObj->getStatusCode());
+            $this->showRequest(Request::METHOD_POST, $this->apiUrl, $body, $options, $responseObj->getBody(), $responseObj->getStatusCode());
 
             if ($response['Error']) {
                 throw new Exception($response['Response']);
@@ -911,7 +901,7 @@ class OdeonApiService extends AbstractApiService
         $this->client = HttpClient::create();
 
         $responseObj = $this->client->request(HttpClient::METHOD_GET, $url);
-        $this->showRequest(HttpClient::METHOD_GET, $url, [], $responseObj->getBody(), $responseObj->getStatusCode());
+        $this->showRequest(HttpClient::METHOD_GET, $url, $options, $responseObj->getBody(), $responseObj->getStatusCode());
         $responseUrl = json_decode($responseObj->getBody(), true);
 
         $urlInfos = [];
@@ -941,7 +931,7 @@ class OdeonApiService extends AbstractApiService
         $hotelUrl = $contentUrl . $urlInfo['InfoSheetURL'];
 
         $responseInfo = $this->client->request(HttpClient::METHOD_GET, $hotelUrl);
-        $this->showRequest(Request::METHOD_POST, $this->apiUrl, [], $responseInfo->getBody(), $responseInfo->getStatusCode());
+        $this->showRequest(Request::METHOD_POST, $this->apiUrl, $options, $responseInfo->getBody(), $responseInfo->getStatusCode());
         if ($responseInfo->getStatusCode() == 404) {
             return $details;
         }
@@ -1155,7 +1145,7 @@ class OdeonApiService extends AbstractApiService
             ];
 
             $body = json_encode($requestArr);
-            $responseObject = $this->client->request(Request::METHOD_POST, $this->apiUrl, $body, $headers);
+            $responseObject = $this->client->request(Request::METHOD_POST, $this->apiUrl, $body);
             $batch[] = [$responseObject, $options];
 
             $startIndex += 100;
@@ -1175,7 +1165,7 @@ class OdeonApiService extends AbstractApiService
                     $responseObj = $request[0];
                     $optionsResp = $request[1];
 
-                    $this->showRequest(Request::METHOD_POST, $this->apiUrl, $body, $headersResp, $responseObj->getBody(), $responseObj->getStatusCode());
+                    $this->showRequest(Request::METHOD_POST, $this->apiUrl, $body, $headers, $responseObj->getBody(), $responseObj->getStatusCode());
                     $responseData = json_decode($responseObj->getBody(), true);
 
                     if ($responseData === null) {
@@ -1198,9 +1188,9 @@ class OdeonApiService extends AbstractApiService
                                 $doNotAddResponse = true;
                                 break;
                             }
-                            $responseObj = $this->client->request(Request::METHOD_POST, $this->apiUrl, $body, $headersResp);
+                            $responseObj = $this->client->request(Request::METHOD_POST, $this->apiUrl, $body, $headers);
 
-                            $this->showRequest(Request::METHOD_POST, $this->apiUrl, $body, $headersResp, $responseObj->getBody(), $responseObj->getStatusCode());
+                            $this->showRequest(Request::METHOD_POST, $this->apiUrl, $body, $headers, $responseObj->getBody(), $responseObj->getStatusCode());
                             $responseData = json_decode($responseObj->getBody(), true);
 
                             if (!$responseData['Error']) {
@@ -1244,17 +1234,17 @@ class OdeonApiService extends AbstractApiService
         $optionsFlight['body'] = json_encode($requestArr);
         $optionsFlight['headers'] = ['Content-Type' => 'application/json'];
 
-        $responseObj = $this->client->request(Request::METHOD_POST, $this->apiUrl, $body, $headersFlight);
+        $responseObj = $this->client->request(Request::METHOD_POST, $this->apiUrl, $body, $optionsFlight);
         $response = json_decode($responseObj->getBody(), true);
 
         if ($response['Error'] && $response['Response'] === 'ERROR_SESSION_NOT_FOUND') {
             $token = $this->cacheToken();
             $requestArr['Token'] = $token;
             $optionsFlight['body'] = json_encode($requestArr);
-            $responseObj = $this->client->request(Request::METHOD_POST, $this->apiUrl, $body, $headersFlight);
+            $responseObj = $this->client->request(Request::METHOD_POST, $this->apiUrl, $body, $optionsFlight);
             $response = json_decode($responseObj->getBody(), true);
         }
-        $this->showRequest(Request::METHOD_POST, $this->apiUrl, $body, $headersFlight, $responseObj->getBody(), $responseObj->getStatusCode());
+        $this->showRequest(Request::METHOD_POST, $this->apiUrl, $body, $optionsFlight, $responseObj->getBody(), $responseObj->getStatusCode());
 
         if ($response['Error']) {
             throw new Exception($response['Response']);
@@ -1732,8 +1722,8 @@ class OdeonApiService extends AbstractApiService
         ]);
         $optionsLogin['headers'] = ['Content-Type' => 'application/json'];
 
-        $responseObj = $this->client->request(Request::METHOD_POST, $this->apiUrl, $body, $headersLogin);
-        $this->showRequest(Request::METHOD_POST, $this->apiUrl, $body, $headersLogin, $responseObj->getBody(), $responseObj->getStatusCode());
+        $responseObj = $this->client->request(Request::METHOD_POST, $this->apiUrl, $body, $optionsLogin);
+        $this->showRequest(Request::METHOD_POST, $this->apiUrl, $body, $optionsLogin, $responseObj->getBody(), $responseObj->getStatusCode());
         $response = json_decode($responseObj->getBody(), true);
 
         $requestArr = [
@@ -1743,8 +1733,8 @@ class OdeonApiService extends AbstractApiService
         $body = json_encode($requestArr);
         $headers = ['Content-Type' => 'application/json'];
 
-        $responseObj = $this->client->request(Request::METHOD_POST, $this->apiUrl, $body, $headers);
-        $this->showRequest(Request::METHOD_POST, $this->apiUrl, $body, $headers, $responseObj->getBody(), $responseObj->getStatusCode());
+        $responseObj = $this->client->request(Request::METHOD_POST, $this->apiUrl, $body);
+        $this->showRequest(Request::METHOD_POST, $this->apiUrl, $body, $options, $responseObj->getBody(), $responseObj->getStatusCode());
         $responseGeo = json_decode($responseObj->getBody(), true);
         $geo = true;
         if ($responseGeo['Error'] && $responseGeo['Response'] === 'ERROR_SESSION_NOT_FOUND') {
@@ -1756,8 +1746,8 @@ class OdeonApiService extends AbstractApiService
             }
             $requestArr['Token'] = $token;
             $body = json_encode($requestArr);
-            $responseObj = $this->client->request(Request::METHOD_POST, $this->apiUrl, $body, $headers);
-            $this->showRequest(Request::METHOD_POST, $this->apiUrl, $body, $headers, $responseObj->getBody(), $responseObj->getStatusCode());
+            $responseObj = $this->client->request(Request::METHOD_POST, $this->apiUrl, $body);
+            $this->showRequest(Request::METHOD_POST, $this->apiUrl, $body, $options, $responseObj->getBody(), $responseObj->getStatusCode());
             $responseGeo = json_decode($responseObj->getBody(), true);
         }
 

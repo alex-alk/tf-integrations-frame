@@ -19,4 +19,14 @@ class City implements JsonSerializable
             'County' => $this->region->jsonSerialize()
        ]; 
     }
+
+    public function getCountry(): Country
+    {
+        return $this->country;
+    }
+
+    public function getRegion(): ?Region
+    {
+        return $this->region;
+    }
 }
