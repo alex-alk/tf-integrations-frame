@@ -9,7 +9,7 @@ use App\Entities\Availability\OfferCancelFee;
 use App\Entities\Availability\OfferCollection;
 use App\Entities\Availability\OfferPaymentPolicy;
 use App\Entities\AvailabilityDates\AvailabilityDates;
-use App\Entities\AvailabilityDates\AvailabilityDatesCollection;
+use App\Entities\AvailabilityDates\array;
 use App\Entities\AvailabilityDates\DateNight;
 use App\Entities\AvailabilityDates\DateNightCollection;
 use App\Entities\AvailabilityDates\TransportCity;
@@ -43,13 +43,13 @@ use App\Filters\CitiesFilter;
 use App\Filters\HotelsFilter;
 use App\Filters\Passenger;
 use App\Filters\PaymentPlansFilter;
-use App\Support\Collections\Custom\AvailabilityCollection;
-use App\Support\Collections\Custom\CityCollection;
-use App\Support\Collections\Custom\CountryCollection;
-use App\Support\Collections\Custom\HotelCollection;
+use App\Support\Collections\Custom\array;
+use App\Support\Collections\Custom\array;
+use App\Support\Collections\Custom\array;
+use App\Support\Collections\Custom\[];
 use App\Support\Collections\Custom\OfferCancelFeeCollection;
 use App\Support\Collections\Custom\OfferPaymentPolicyCollection;
-use App\Support\Collections\Custom\RegionCollection;
+use App\Support\Collections\Custom\[];
 use App\Support\Collections\StringCollection;
 use App\Support\Http\SimpleAsync\HttpClient;
 use App\Support\Log;
@@ -62,9 +62,9 @@ use Utils\Utils;
 
 class SphinxApiService extends AbstractApiService
 {
-    public function apiGetCountries(): CountryCollection
+    public function apiGetCountries(): array
     {
-        $countries = new CountryCollection();
+        $countries = [];
 
         $cities = $this->apiGetCities();
         foreach ($cities as $city) {
@@ -74,11 +74,11 @@ class SphinxApiService extends AbstractApiService
         return $countries;
     }
 
-    public function apiGetRegions(): RegionCollection
+    public function apiGetRegions(): []
     {
         $cities = $this->apiGetCities();
 
-        $regions = new RegionCollection();
+        $regions = [];
         foreach ($cities as $city) {
             $region = $city->County;
             if ($region !== null) {
@@ -101,7 +101,7 @@ class SphinxApiService extends AbstractApiService
         $url = $this->apiUrl . '/api/v1/static/circuits';
 
         $resp = $client->request(HttpClient::METHOD_GET, $url, $options);
-        $content = $resp->getContent(false);
+        $content = $resp->getBody();
         $this->showRequest(HttpClient::METHOD_GET, $url, $options, $content, $resp->getStatusCode());
 
         $requests[] = [$resp, $options];
@@ -137,7 +137,7 @@ class SphinxApiService extends AbstractApiService
         $url = $this->apiUrl . '/api/v1/static/hotels?page=1&for_travelfuse';
 
         $resp = $client->request(HttpClient::METHOD_GET, $url, $options);
-        $content = $resp->getContent(false);
+        $content = $resp->getBody();
         $this->showRequest(HttpClient::METHOD_GET, $url, $options, $content, $resp->getStatusCode());
 
         $requests[] = [$resp, $options];
@@ -153,7 +153,7 @@ class SphinxApiService extends AbstractApiService
 
         $list = [];
         foreach ($requests as $response) {
-            $content = $response[0]->getContent(false);
+            $content = $response[0]->getBody();
             $respArr = json_decode($content, true);
 
             $hotelsResp = $respArr['data'];
@@ -166,7 +166,7 @@ class SphinxApiService extends AbstractApiService
         return $list;
     }
 
-    public function apiGetCities(CitiesFilter $params = null): CityCollection
+    public function apiGetCities(CitiesFilter $params = null): array
     {
 
         $file = 'cities';
@@ -174,7 +174,7 @@ class SphinxApiService extends AbstractApiService
 
         if ($json === null) {
 
-            $allCities = new CityCollection();
+            $allCities = [];
 
             $client = HttpClient::create();
 
@@ -190,8 +190,8 @@ class SphinxApiService extends AbstractApiService
             $resp = $client->request(HttpClient::METHOD_GET, $this->apiUrl . '/api/v1/static/destinations?page=1', $options);
             $requests[] = [$resp, 1];
 
-            $this->showRequest(HttpClient::METHOD_GET, $this->apiUrl . '/api/v1/static/destinations?page=1', $options, $resp->getContent(false), $resp->getStatusCode());
-            $respArr = json_decode($resp->getContent(false), true);
+            $this->showRequest(HttpClient::METHOD_GET, $this->apiUrl . '/api/v1/static/destinations?page=1', $options, $resp->getBody(), $resp->getStatusCode());
+            $respArr = json_decode($resp->getBody(), true);
 
             $pages = $respArr['meta']['last_page'];
 
@@ -203,7 +203,7 @@ class SphinxApiService extends AbstractApiService
             $locationsArr = [];
 
             foreach ($requests as $response) {
-                $content = $response[0]->getContent(false);
+                $content = $response[0]->getBody();
                 $respArr = json_decode($content, true);
 
                 $locations = $respArr['data'];
@@ -348,7 +348,7 @@ class SphinxApiService extends AbstractApiService
                 }
             }
 
-            $cities = new CityCollection();
+            $cities = [];
             foreach ($allCities as $cityInLoop) {
                 // dump($cities);
                 // dump($cityInLoop);
@@ -361,14 +361,14 @@ class SphinxApiService extends AbstractApiService
             
             Utils::writeToCache($this->handle, $file, json_encode($cities));
         } else {
-            $cities = ResponseConverter::convertToCollection(json_decode($json, true), CityCollection::class);
+            $cities = ResponseConverter::convertToCollection(json_decode($json, true), array::class);
         }
         return $cities;
     }
 
     public function apiGetOfferCancelFees(CancellationFeeFilter $filter): OfferCancelFeeCollection
     {
-        $bookingData = json_decode($filter->OriginalOffer->bookingDataJson, true);
+        $bookingData = json_decode($post['args'][0]['OriginalOffer']['bookingDataJson'], true);
         $offerId = $bookingData['offer_id'];
 
         $client = HttpClient::create();
@@ -381,7 +381,7 @@ class SphinxApiService extends AbstractApiService
         ];
 
         $resp = $client->request(HttpClient::METHOD_GET, $url, $options);
-        $content = $resp->getContent(false);
+        $content = $resp->getBody();
         $this->showRequest(HttpClient::METHOD_GET, $url, $options, $content, $resp->getStatusCode());
 
         $data = json_decode($content, true)['data'];
@@ -413,7 +413,7 @@ class SphinxApiService extends AbstractApiService
 
     public function getOfferPaymentPlans(PaymentPlansFilter $filter): OfferPaymentPolicyCollection
     {
-        $bookingData = json_decode($filter->OriginalOffer->bookingDataJson, true);
+        $bookingData = json_decode($post['args'][0]['OriginalOffer']['bookingDataJson'], true);
         $offerId = $bookingData['offer_id'];
 
         $client = HttpClient::create();
@@ -426,7 +426,7 @@ class SphinxApiService extends AbstractApiService
         ];
 
         $resp = $client->request(HttpClient::METHOD_GET, $url, $options);
-        $content = $resp->getContent(false);
+        $content = $resp->getBody();
         $this->showRequest(HttpClient::METHOD_GET, $url, $options, $content, $resp->getStatusCode());
 
         $data = json_decode($content, true)['data'];
@@ -455,9 +455,9 @@ class SphinxApiService extends AbstractApiService
         return $payments;
     }
 
-    public function apiGetHotels(?HotelsFilter $filter = null): HotelCollection
+    public function apiGetHotels(?HotelsFilter $filter = null): []
     {
-        $hotels = new HotelCollection();
+        $hotels = [];
         $cities = $this->apiGetCities();
 
         $client = HttpClient::create();
@@ -476,7 +476,7 @@ class SphinxApiService extends AbstractApiService
         $url = $this->apiUrl . '/api/v1/static/hotels?page=1&for_travelfuse' . $destination;
 
         $resp = $client->request(HttpClient::METHOD_GET, $url, $options);
-        $content = $resp->getContent(false);
+        $content = $resp->getBody();
         $this->showRequest(HttpClient::METHOD_GET, $url, $options, $content, $resp->getStatusCode());
 
         $requests[] = [$resp, $options];
@@ -491,7 +491,7 @@ class SphinxApiService extends AbstractApiService
         }
 
         foreach ($requests as $response) {
-            $content = $response[0]->getContent(false);
+            $content = $response[0]->getBody();
             $respArr = json_decode($content, true);
 
             $hotelsResp = $respArr['data'];
@@ -528,12 +528,12 @@ class SphinxApiService extends AbstractApiService
         return $hotels;
     }
 
-    public function apiGetAvailabilityDates(AvailabilityDatesFilter $filter): AvailabilityDatesCollection
+    public function apiGetAvailabilityDates(AvailabilityDatesFilter $filter): array
     {
         SphinxValidator::make()
             ->validateApiCode($this->post);
 
-        $availabilityCollection = new AvailabilityDatesCollection();
+        $availabilityCollection = [];
 
         if ($filter->type === AvailabilityDatesFilter::CHARTER) {
             $availabilityCollection = $this->getCharterAvailabilityDates($filter);
@@ -544,9 +544,9 @@ class SphinxApiService extends AbstractApiService
         return $availabilityCollection;
     }
 
-    private function getTourAvailabilityDates(): AvailabilityDatesCollection
+    private function getTourAvailabilityDates(): array
     {
-        $availabilityDatesCollection = new AvailabilityDatesCollection();
+        $availabilityDatesCollection = [];
 
         $client = HttpClient::create();
 
@@ -555,7 +555,7 @@ class SphinxApiService extends AbstractApiService
         ];
 
         $resp = $client->request(HttpClient::METHOD_GET, $this->apiUrl . '/api/v1/static/circuits', $options);
-        $content = $resp->getContent();
+        $content = $resp->getBody();
 
         $this->showRequest(HttpClient::METHOD_GET, $this->apiUrl . '/api/v1/static/circuits', $options, $content, $resp->getStatusCode());
 
@@ -627,9 +627,9 @@ class SphinxApiService extends AbstractApiService
         return $availabilityDatesCollection;
     }
 
-    private function getCharterAvailabilityDates(): AvailabilityDatesCollection
+    private function getCharterAvailabilityDates(): array
     {
-        return new AvailabilityDatesCollection();
+        return [];
     }
 
     public function apiGetTours(): TourCollection
@@ -643,7 +643,7 @@ class SphinxApiService extends AbstractApiService
         ];
 
         $resp = $client->request(HttpClient::METHOD_GET, $this->apiUrl . '/api/v1/static/circuits', $options);
-        $content = $resp->getContent();
+        $content = $resp->getBody();
 
         $this->showRequest(HttpClient::METHOD_GET, $this->apiUrl . '/api/v1/static/circuits', $options, $content, $resp->getStatusCode());
 
@@ -723,8 +723,8 @@ class SphinxApiService extends AbstractApiService
             $content->Content = nl2br($description);
             $tour->Content = $content;
 
-            $destCountries = new CountryCollection();
-            $destinations = new CityCollection();
+            $destCountries = [];
+            $destinations = [];
             foreach ($package['destinations'] as $destinationId) {
                 $destinationCity = $cities->get($destinationId);
                 if ($destinationCity === null) {
@@ -756,12 +756,12 @@ class SphinxApiService extends AbstractApiService
         return $tours;
     }
 
-    private function getHotelOffers(AvailabilityFilter $filter): AvailabilityCollection
+    private function getHotelOffers(AvailabilityFilter $filter): array
     {
         SphinxValidator::make()
             ->validateIndividualOffersFilter($filter);
         
-        $availabilities = new AvailabilityCollection();
+        $availabilities = [];
 
         $client = HttpClient::create();
 
@@ -780,7 +780,7 @@ class SphinxApiService extends AbstractApiService
             'occupancy' => [
                 [
                     'adults' => $filter->rooms->first()->adults,
-                    'children_ages' => $filter->rooms->first()->childrenAges ? $filter->rooms->first()->childrenAges->toArray() : []
+                    'children_ages' => $post['args'][0]['rooms'][0]['childrenAges'] ? $post['args'][0]['rooms'][0]['childrenAges']->toArray() : []
                 ]
             ],
             'currency' => $filter->RequestCurrency
@@ -793,7 +793,7 @@ class SphinxApiService extends AbstractApiService
         $options['body'] = json_encode($body);
 
         $resp = $client->request(HttpClient::METHOD_POST, $url, $options);
-        $content = $resp->getContent(false);
+        $content = $resp->getBody();
         $this->showRequest(HttpClient::METHOD_POST, $url, $options, $content, $resp->getStatusCode());
 
         $respArr = json_decode($content, true);
@@ -816,7 +816,7 @@ class SphinxApiService extends AbstractApiService
             $url = $this->apiUrl . '/api/v1/hotels/results?cursor='.$cursor;
 
             $respCursor = $client->request(HttpClient::METHOD_GET, $url, $optionsCursor);
-            $contentCursor = $respCursor->getContent(false);
+            $contentCursor = $respCursor->getBody();
 
             $this->showRequest(HttpClient::METHOD_GET, $url, $optionsCursor, $contentCursor, $resp->getStatusCode());
             $respArr = json_decode($contentCursor, true);
@@ -927,9 +927,9 @@ class SphinxApiService extends AbstractApiService
         
     }
 
-    private function getTourOffers(AvailabilityFilter $filter): AvailabilityCollection
+    private function getTourOffers(AvailabilityFilter $filter): array
     {
-        $availabilityCollection = new AvailabilityCollection();
+        $availabilityCollection = [];
         return $availabilityCollection;
         $client = HttpClient::create();
 
@@ -953,7 +953,7 @@ class SphinxApiService extends AbstractApiService
             // 'occupancy' => [
             //     [
             //         'adults' => $filter->rooms->first()->adults,
-            //         'children_ages' => $filter->rooms->first()->childrenAges ? $filter->rooms->first()->childrenAges->toArray() : []
+            //         'children_ages' => $post['args'][0]['rooms'][0]['childrenAges'] ? $post['args'][0]['rooms'][0]['childrenAges']->toArray() : []
             //     ]
             // ],
         ];
@@ -965,7 +965,7 @@ class SphinxApiService extends AbstractApiService
         $options['body'] = json_encode($body);
 
         $resp = $client->request(HttpClient::METHOD_POST, $url, $options);
-        $content = $resp->getContent(false);
+        $content = $resp->getBody();
         $this->showRequest(HttpClient::METHOD_POST, $url, $options, $content, $resp->getStatusCode());
 
         $respArr = json_decode($content, true)['data'];
@@ -985,13 +985,13 @@ class SphinxApiService extends AbstractApiService
                 'occupancy' => [
                     [
                         'adults' => $filter->rooms->first()->adults,
-                        'children_ages' => $filter->rooms->first()->childrenAges->toArray()
+                        'children_ages' => $post['args'][0]['rooms'][0]['childrenAges']->toArray()
                     ]
                 ],
             ];
             $options['body'] = json_encode($body);
             $resp = $client->request(HttpClient::METHOD_POST, $url, $options);
-            $content = $resp->getContent(false);
+            $content = $resp->getBody();
             $this->showRequest(HttpClient::METHOD_POST, $url, $options, $content, $resp->getStatusCode());
 
             $respArr = json_decode($content, true)['data'];
@@ -1034,13 +1034,13 @@ class SphinxApiService extends AbstractApiService
         return $availabilityCollection;
     }
 
-    public function apiGetOffers(AvailabilityFilter $filter): AvailabilityCollection
+    public function apiGetOffers(AvailabilityFilter $filter): array
     {
 
         SphinxValidator::make()
             ->validateApiCode($this->post);
 
-        $availabilityCollection = new AvailabilityCollection();
+        $availabilityCollection = [];
 
         if ($filter->serviceTypes->first() === AvailabilityFilter::SERVICE_TYPE_HOTEL) {
             $availabilityCollection = $this->getHotelOffers($filter);
@@ -1064,7 +1064,7 @@ class SphinxApiService extends AbstractApiService
             'Content-Type' => 'application/json'
         ];
 
-        $bookingDataJson = $filter->Items->first()->Offer_bookingDataJson;
+        $bookingDataJson = $post['args'][0]['Items'][0]['Offer_bookingDataJson'];
         $bookingData = json_decode($bookingDataJson, true);
 
         $booking = new Booking();
@@ -1076,7 +1076,7 @@ class SphinxApiService extends AbstractApiService
             $url = $this->apiUrl . '/api/v1/hotels/verify?offer_id=' . $offerId;
             
             $resp = $client->request(HttpClient::METHOD_GET, $url, $options);
-            $content = $resp->getContent(false);
+            $content = $resp->getBody();
             $this->showRequest(HttpClient::METHOD_GET, $url, $options, $content, $resp->getStatusCode());
 
             $respArr = json_decode($content, true)['data'];
@@ -1101,12 +1101,12 @@ class SphinxApiService extends AbstractApiService
         $guests = [];
 
         /** @var Passenger $passenger */
-        foreach ($filter->Items->first()->Passengers as $passenger) {
+        foreach ($post['args'][0]['Items'][0]['Passengers'] as $passenger) {
             $guests[] = [
-                'first_name' => $passenger->Firstname,
-                'last_name' => $passenger->Lastname,
-                'birth_date' => $passenger->BirthDate,
-                'gender' => strtolower(substr($passenger->Gender ?? 'm', 0, 1))
+                'first_name' => $passenger['Firstname'],
+                'last_name' => $passenger['Lastname'],
+                'birth_date' => $passenger['BirthDate'],
+                'gender' => strtolower(substr($passenger['Gender'] ?? 'm', 0, 1))
             ];
         }
 
@@ -1124,7 +1124,7 @@ class SphinxApiService extends AbstractApiService
         $options['body'] = json_encode($body);
 
         $resp = $client->request(HttpClient::METHOD_POST, $url, $options);
-        $content = $resp->getContent(false);
+        $content = $resp->getBody();
         $this->showRequest(HttpClient::METHOD_POST, $url, $options, $content, $resp->getStatusCode());
 
         $respArr = json_decode($content, true);
@@ -1152,11 +1152,11 @@ class SphinxApiService extends AbstractApiService
         $requests = [];
         $resp = $client->request(HttpClient::METHOD_GET, $this->apiUrl . '/api/v1/static/destinations?page=1', $options);
 
-        $this->showRequest(HttpClient::METHOD_GET, $this->apiUrl . '/api/v1/static/destinations?page=1', $options, $resp->getContent(false), $resp->getStatusCode());
+        $this->showRequest(HttpClient::METHOD_GET, $this->apiUrl . '/api/v1/static/destinations?page=1', $options, $resp->getBody(), $resp->getStatusCode());
 
         $requests[] = [$resp, $options];
 
-        $respArr = json_decode($resp->getContent(false), true);
+        $respArr = json_decode($resp->getBody(), true);
         if (empty($respArr['data'])) {
             return false;
         }

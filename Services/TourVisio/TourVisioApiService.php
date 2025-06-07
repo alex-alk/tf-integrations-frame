@@ -21,7 +21,7 @@ use App\Entities\Availability\TransportMerch;
 use App\Entities\Availability\TransportMerchCategory;
 use App\Entities\Availability\TransportMerchLocation;
 use App\Entities\AvailabilityDates\AvailabilityDates;
-use App\Entities\AvailabilityDates\AvailabilityDatesCollection;
+use App\Entities\AvailabilityDates\array;
 use App\Entities\AvailabilityDates\DateNight;
 use App\Entities\AvailabilityDates\DateNightCollection;
 use App\Entities\AvailabilityDates\TransportCity;
@@ -48,12 +48,12 @@ use App\Filters\CitiesFilter;
 use App\Filters\HotelDetailsFilter;
 use App\Filters\Passenger;
 use App\Handles;
-use App\Support\Collections\Custom\AvailabilityCollection;
-use App\Support\Collections\Custom\CityCollection;
-use App\Support\Collections\Custom\CountryCollection;
-use App\Support\Collections\Custom\HotelCollection;
+use App\Support\Collections\Custom\array;
+use App\Support\Collections\Custom\array;
+use App\Support\Collections\Custom\array;
+use App\Support\Collections\Custom\[];
 use App\Support\Collections\Custom\OfferCancelFeeCollection;
-use App\Support\Collections\Custom\RegionCollection;
+use App\Support\Collections\Custom\[];
 use App\Support\Http\SimpleAsync\HttpClient;
 use App\Support\Http\SimpleAsync\HttpClient2;
 use App\Support\Log;
@@ -85,14 +85,14 @@ class TourVisioApiService extends AbstractApiService
         parent::__construct();
     }
 
-    public function apiGetAvailabilityDates(AvailabilityDatesFilter $filter): AvailabilityDatesCollection
+    public function apiGetAvailabilityDates(AvailabilityDatesFilter $filter): array
     {
         $file = 'availability-dates-charter';
         $availabilityDatesJson = Utils::getFromCache($this, $file);
 
         if ($availabilityDatesJson === null) {
 
-            $availabilityDatesCollection = new AvailabilityDatesCollection();
+            $availabilityDatesCollection = [];
 
             $transportType = AvailabilityDates::TRANSPORT_TYPE_PLANE;
             $token = $this->getToken();
@@ -112,8 +112,8 @@ class TourVisioApiService extends AbstractApiService
             $url = $this->apiUrl . '/api/productservice/getdepartures';
 
             $responseObj = $httpClient->request(HttpClient::METHOD_POST, $url, $options);
-            $responseData = json_decode($responseObj->getContent(), true);
-            //$this->showRequest(HttpClient::METHOD_POST, $url, $options, $responseObj->getContent(), $responseObj->getStatusCode());
+            $responseData = json_decode($responseObj->getBody(), true);
+            //$this->showRequest(HttpClient::METHOD_POST, $url, $options, $responseObj->getBody(), $responseObj->getStatusCode());
 
             $depLocations = $responseData['body']['locations'];
             $departureLocations = [];
@@ -165,9 +165,9 @@ class TourVisioApiService extends AbstractApiService
                 $departureCity = $request[2];
                 $departureLocations = $request[3];
 
-                $responseData = json_decode($responseObj->getContent(), true);
+                $responseData = json_decode($responseObj->getBody(), true);
 
-                //$this->showRequest(HttpClient::METHOD_POST, $url, $options, $responseObj->getContent(), $responseObj->getStatusCode());
+                //$this->showRequest(HttpClient::METHOD_POST, $url, $options, $responseObj->getBody(), $responseObj->getStatusCode());
 
                 if (!isset($responseData['body'])) {
                     continue;
@@ -205,7 +205,7 @@ class TourVisioApiService extends AbstractApiService
                     $url = $this->apiUrl . '/api/productservice/getcheckindates';
 
                     $responseObj = $httpClient->request(HttpClient::METHOD_POST, $url, $options);
-                    $responseObj->getContent();
+                    $responseObj->getBody();
                     $datesRequests[] = [$responseObj, $options, $arrLocation, $departureCity, $departureLocations, $arrivalLocations];
                 }
             }
@@ -238,7 +238,7 @@ class TourVisioApiService extends AbstractApiService
                 $availabilityDates->TransportType = $transportType;
                 $availabilityDates->Content = new TransportContent();
 
-                $responseData = json_decode($responseObj->getContent(), true);
+                $responseData = json_decode($responseObj->getBody(), true);
 
                 $checkInDates = $responseData['body']['dates'];
                 $checkInDatesSet[] = [$checkInDates, $availabilityDates, $departureLocations, $arrivalLocations];
@@ -288,7 +288,7 @@ class TourVisioApiService extends AbstractApiService
                     $i++;
                     Log::debug($i);
                     $responseObj = $httpClient->request(HttpClient::METHOD_POST, $url, $options);
-                    $responseObj->getContent();
+                    $responseObj->getBody();
                     $checkInDatesWithNights[] = [$responseObj, $transportDate];
 
                 }
@@ -312,8 +312,8 @@ class TourVisioApiService extends AbstractApiService
                     $responseObj = $checkInDateWithNights[0];
                     $transportDate = $checkInDateWithNights[1];
 
-                    $responseData = json_decode($responseObj->getContent(), true);
-                    //$this->showRequest(HttpClient::METHOD_POST, $url, $options, $responseObj->getContent(), $responseObj->getStatusCode());
+                    $responseData = json_decode($responseObj->getBody(), true);
+                    //$this->showRequest(HttpClient::METHOD_POST, $url, $options, $responseObj->getBody(), $responseObj->getStatusCode());
 
                     $nightsArr = $responseData['body']['nights'];
 
@@ -344,17 +344,17 @@ class TourVisioApiService extends AbstractApiService
             Utils::writeToCache($this, $file, $data);
         } else {
             $ad = json_decode($availabilityDatesJson, true);
-            $availabilityDatesCollection = ResponseConverter::convertToCollection($ad, AvailabilityDatesCollection::class);
+            $availabilityDatesCollection = ResponseConverter::convertToCollection($ad, array::class);
         }
 
         return $availabilityDatesCollection;
     }
 
 
-    public function apiGetCountries(): CountryCollection
+    public function apiGetCountries(): array
     {
         $cities = $this->apiGetCities();
-        $countries = new CountryCollection();
+        $countries = [];
         /** @var City $city */
         foreach ($cities as $city) {
             $countries->put($city->Country->Id, $city->Country);
@@ -376,8 +376,8 @@ class TourVisioApiService extends AbstractApiService
 
         $responseObj = $httpClient->request(HttpClient::METHOD_POST, $url, $optionsLogin);
 
-        $this->showRequest(HttpClient::METHOD_POST, $url, $optionsLogin, $responseObj->getContent(), $responseObj->getStatusCode());
-        $response = json_decode($responseObj->getContent(), true);
+        $this->showRequest(HttpClient::METHOD_POST, $url, $optionsLogin, $responseObj->getBody(), $responseObj->getStatusCode());
+        $response = json_decode($responseObj->getBody(), true);
 
         if (!empty($response['header']['success'])) {
             return $response['body']['token'];
@@ -396,7 +396,7 @@ class TourVisioApiService extends AbstractApiService
         return true;
     }
 
-    public function apiGetCities(?CitiesFilter $params = null): CityCollection
+    public function apiGetCities(?CitiesFilter $params = null): array
     {
         Validator::make()->validateAllCredentials($this->post);
 
@@ -404,7 +404,7 @@ class TourVisioApiService extends AbstractApiService
         $citiesJson = Utils::getFromCache($this, $file);
 
         if ($citiesJson === null || ($params && $params->clearCache)) {
-            $cities = new CityCollection();
+            $cities = [];
             $token = $this->getToken();
 
             $httpClient = HttpClient::create();
@@ -420,14 +420,14 @@ class TourVisioApiService extends AbstractApiService
             $url = $this->apiUrl . '/api/productservice/getdepartures';
 
             $responseObj = $httpClient->request(HttpClient::METHOD_POST, $url, $options);
-            $responseData = json_decode($responseObj->getContent(), true);
-            $this->showRequest(HttpClient::METHOD_POST, $url, $options, $responseObj->getContent(), $responseObj->getStatusCode());
+            $responseData = json_decode($responseObj->getBody(), true);
+            $this->showRequest(HttpClient::METHOD_POST, $url, $options, $responseObj->getBody(), $responseObj->getStatusCode());
 
             $depLocations = $responseData['body']['locations'];
 
             $countryMap = CountryCodeMap::getCountryCodeMap();
 
-            $countries = new CountryCollection();
+            $countries = [];
             $romania = null;
             foreach ($depLocations as $location) {
                 if ($location['type'] === self::LOCATION_TYPE_COUNTRY && $location['name'] === 'ROMANIA') { // country
@@ -439,7 +439,7 @@ class TourVisioApiService extends AbstractApiService
                 }
             }
 
-            $regions = new RegionCollection();
+            $regions = [];
             foreach ($depLocations as $location) {
                 if ($location['countryId'] !== $romania->Id || $location['type'] === self::LOCATION_TYPE_COUNTRY) {
                     continue;
@@ -474,9 +474,9 @@ class TourVisioApiService extends AbstractApiService
                 $url = $this->apiUrl . '/api/productservice/getarrivals';
 
                 $responseObj = $httpClient->request(HttpClient::METHOD_POST, $url, $options);
-                $responseData = json_decode($responseObj->getContent(), true);
+                $responseData = json_decode($responseObj->getBody(), true);
                 
-                $this->showRequest(HttpClient::METHOD_POST, $url, $options, $responseObj->getContent(), $responseObj->getStatusCode());
+                $this->showRequest(HttpClient::METHOD_POST, $url, $options, $responseObj->getBody(), $responseObj->getStatusCode());
 
                 if (!$responseData['header']['success']) {
                     continue;
@@ -573,8 +573,8 @@ class TourVisioApiService extends AbstractApiService
                 ]);
         
                 $responseObj = $httpClient->request(HttpClient::METHOD_POST, $url, $options);
-                $this->showRequest(HttpClient::METHOD_POST, $url, $options, $responseObj->getContent(), $responseObj->getStatusCode());
-                $responseData = json_decode($responseObj->getContent(), true)['body']['items'];
+                $this->showRequest(HttpClient::METHOD_POST, $url, $options, $responseObj->getBody(), $responseObj->getStatusCode());
+                $responseData = json_decode($responseObj->getBody(), true)['body']['items'];
 
                 foreach ($responseData as $data) {
                     if ($data['type'] === self::AUTOCOMPLETE_TYPE_CITY && $data['country']['id'] !== 'RO' && isset($data['state'])) {
@@ -609,9 +609,9 @@ class TourVisioApiService extends AbstractApiService
             $bulgaria->Name = 'Bulgaria';
     
             $responseObj = $httpClient->request(HttpClient::METHOD_POST, $url, $options);
-            $responseData = json_decode($responseObj->getContent(), true)['body']['items'];
+            $responseData = json_decode($responseObj->getBody(), true)['body']['items'];
 
-            $regions = new RegionCollection();
+            $regions = [];
             foreach ($responseData as $data) {
                 if ($data['type'] === self::AUTOCOMPLETE_TYPE_CITY && $data['country']['id'] === $bulgaria->Id
                     && !isset($data['state']) && !isset($data['hotel'])
@@ -630,7 +630,7 @@ class TourVisioApiService extends AbstractApiService
                     'Query' => $regionToSearch->Name
                 ]);
                 $responseObj = $httpClient->request(HttpClient::METHOD_POST, $url, $options);
-                $arrData = json_decode($responseObj->getContent(), true);
+                $arrData = json_decode($responseObj->getBody(), true);
                 $responseData = $arrData['body']['items'];
 
                 // get cities from this region
@@ -656,8 +656,8 @@ class TourVisioApiService extends AbstractApiService
                 if ($fileExtra) {
                     $hotelsArr = json_decode($fileExtra, true);
 
-                    /** @var HotelCollection $hotels */
-                    $hotels = ResponseConverter::convertToCollection($hotelsArr, HotelCollection::class);
+                    /** @var [] $hotels */
+                    $hotels = ResponseConverter::convertToCollection($hotelsArr, []::class);
 
                     foreach ($hotels as $hotel) {
                         $city = $this->getCityForHotel($hotel, $countries);
@@ -673,17 +673,17 @@ class TourVisioApiService extends AbstractApiService
             Utils::writeToCache($this, $file, $data);
         } else {
             $citiesArray = json_decode($citiesJson, true);
-            /** @var CityCollection $cities */
-            $cities = ResponseConverter::convertToCollection($citiesArray, CityCollection::class);
+            /** @var array $cities */
+            $cities = ResponseConverter::convertToCollection($citiesArray, array::class);
         }
 
         return $cities;
     }
 
-    public function apiGetRegions(): RegionCollection
+    public function apiGetRegions(): []
     {
         $cities = $this->apiGetCities();
-        $regions = new RegionCollection();
+        $regions = [];
         /** @var City $city */
         foreach ($cities as $city) {
             $regions->put($city->County->Id, $city->County);
@@ -692,7 +692,7 @@ class TourVisioApiService extends AbstractApiService
         return $regions;
     }
 
-    private function getCityForHotel(Hotel $hotelToFind, CountryCollection $countryList): ?City
+    private function getCityForHotel(Hotel $hotelToFind, array $countryList): ?City
     {
         $httpClient = HttpClient::create();
         $url = $this->apiUrl . '/api/productservice/getarrivalautocomplete';
@@ -708,8 +708,8 @@ class TourVisioApiService extends AbstractApiService
         ];
 
         $responseObj = $httpClient->request(HttpClient::METHOD_POST, $url, $options);
-        $this->showRequest(HttpClient::METHOD_POST, $url, $options, $responseObj->getContent(), $responseObj->getStatusCode());
-        $responseData = json_decode($responseObj->getContent(), true)['body']['items'];
+        $this->showRequest(HttpClient::METHOD_POST, $url, $options, $responseObj->getBody(), $responseObj->getStatusCode());
+        $responseData = json_decode($responseObj->getBody(), true)['body']['items'];
 
         $city = null;
         $hotelParam = explode('-', $hotelToFind->Id);
@@ -751,8 +751,8 @@ class TourVisioApiService extends AbstractApiService
             ]);
 
             $responseObj = $httpClient->request(HttpClient::METHOD_POST, $url, $options);
-            $responseData = json_decode($responseObj->getContent(), true);
-            $this->showRequest(HttpClient::METHOD_POST, $url, $options, $responseObj->getContent(), $responseObj->getStatusCode());
+            $responseData = json_decode($responseObj->getBody(), true);
+            $this->showRequest(HttpClient::METHOD_POST, $url, $options, $responseObj->getBody(), $responseObj->getStatusCode());
 
             if (empty($responseData['body'])) {
                 return null;
@@ -822,8 +822,8 @@ class TourVisioApiService extends AbstractApiService
         $url = $this->apiUrl . '/api/productservice/getproductinfo';
 
         $responseObj = $httpClient->request(HttpClient::METHOD_POST, $url, $options);
-        $responseData = json_decode($responseObj->getContent(), true);
-        $this->showRequest(HttpClient::METHOD_POST, $url, $options, $responseObj->getContent(), $responseObj->getStatusCode());
+        $responseData = json_decode($responseObj->getBody(), true);
+        $this->showRequest(HttpClient::METHOD_POST, $url, $options, $responseObj->getBody(), $responseObj->getStatusCode());
 
         $details = new Hotel();
         if (!isset($responseData['body'])) {
@@ -935,18 +935,18 @@ class TourVisioApiService extends AbstractApiService
         return $details;
     }
 
-    private function getHotelOffers(AvailabilityFilter $filter): AvailabilityCollection
+    private function getHotelOffers(AvailabilityFilter $filter): array
     {
         TourVisioValidator::make()
             ->validateAllCredentials($this->post)
             ->validateAvailabilityFilter($filter);
 
-        $hotels = new AvailabilityCollection();
+        $hotels = [];
         $token = $this->getToken();
 
         $httpClient = HttpClient::create();
 
-        $ages = $filter->rooms->first()->childrenAges;
+        $ages = $post['args'][0]['rooms'][0]['childrenAges'];
 
         $cityFilter = [];
         if (!empty($filter->regionId)) {
@@ -993,9 +993,9 @@ class TourVisioApiService extends AbstractApiService
         $url = $this->apiUrl . '/api/productservice/pricesearch';
 
         $responseObj = $httpClient->request(HttpClient::METHOD_POST, $url, $options);
-        $this->showRequest(HttpClient::METHOD_POST, $url, $options, $responseObj->getContent(), $responseObj->getStatusCode());
+        $this->showRequest(HttpClient::METHOD_POST, $url, $options, $responseObj->getBody(), $responseObj->getStatusCode());
         
-        $responseData = json_decode($responseObj->getContent(), true);
+        $responseData = json_decode($responseObj->getBody(), true);
 
         if (!isset($responseData['body'])) {
             return $hotels;
@@ -1196,16 +1196,16 @@ class TourVisioApiService extends AbstractApiService
             mkdir(__DIR__ . '/extra-hotels', 0755);
         }
         if (!file_exists($filePath)) {
-            $hotels = new HotelCollection();
+            $hotels = [];
             $hotels->put($locationId, $hotelToSave);
         } else {
             // get cities from file, add, save
             $content = file_get_contents($filePath);
             $hotelsArr = json_decode($content, true);
-            $hotels = new HotelCollection();
+            $hotels = [];
             if ($hotelsArr !== null) {
-                /** @var HotelCollection $hotels */
-                $hotels = ResponseConverter::convertToCollection($hotelsArr, HotelCollection::class);
+                /** @var [] $hotels */
+                $hotels = ResponseConverter::convertToCollection($hotelsArr, []::class);
             }
             $hotelExists = $hotels->get($locationId);
             if ($hotelExists === null) {
@@ -1215,19 +1215,19 @@ class TourVisioApiService extends AbstractApiService
         file_put_contents($filePath, json_encode_pretty($hotels));
     }
 
-    private function getCharterOffers(AvailabilityFilter $filter): AvailabilityCollection
+    private function getCharterOffers(AvailabilityFilter $filter): array
     {
         TourVisioValidator::make()
             ->validateAllCredentials($this->post)
             ->validateCharterOffersFilter($filter);
 
-        $availabilities = new AvailabilityCollection();
+        $availabilities = [];
         $token = $this->getToken();
         $cities = $this->apiGetCities();
 
         $httpClient = HttpClient::create();
 
-        $ages = $filter->rooms->first()->childrenAges;
+        $ages = $post['args'][0]['rooms'][0]['childrenAges'];
         $cityFilter = [];
         if (!empty($filter->regionId)) {
             $cityFilter = explode('-', $filter->regionId);
@@ -1283,16 +1283,16 @@ class TourVisioApiService extends AbstractApiService
 
         $responseObj = $httpClient->request(HttpClient::METHOD_POST, $url, $options);
         
-        $responseData = json_decode($responseObj->getContent(), true);
+        $responseData = json_decode($responseObj->getBody(), true);
 
-        //$this->showRequest(HttpClient::METHOD_POST, $url, $options, $responseObj->getContent(), $responseObj->getStatusCode());
+        //$this->showRequest(HttpClient::METHOD_POST, $url, $options, $responseObj->getBody(), $responseObj->getStatusCode());
         
         if (!isset($responseData['body'])) {
             return $availabilities;
         }
 
         $responseHotels = $responseData['body']['hotels'];
-        $passengers = (int) $filter->rooms->first()->adults + (int)$filter->rooms->first()->children;
+        $passengers = (int) $filter->rooms->first()->adults + (int)$post['args'][0]['rooms'][0]['children'];
         //$countries = $this->apiGetCountries();
 
         $responseHotelsMap = [];
@@ -1476,10 +1476,10 @@ class TourVisioApiService extends AbstractApiService
                     $url = $this->apiUrl . '/api/productservice/getofferdetails';
             
                     $responseObj = $httpClient->request(HttpClient::METHOD_POST, $url, $options);
-                    $offerDetails = json_decode($responseObj->getContent(), true);
+                    $offerDetails = json_decode($responseObj->getBody(), true);
 
                     $responseHotelsMap[$index] = $offerDetails;
-                    $this->showRequest(HttpClient::METHOD_POST, $url, $options, $responseObj->getContent(), $responseObj->getStatusCode());
+                    $this->showRequest(HttpClient::METHOD_POST, $url, $options, $responseObj->getBody(), $responseObj->getStatusCode());
                     
                 } else {
                     $offerDetails = $responseHotelsMap[$index];
@@ -1625,9 +1625,9 @@ class TourVisioApiService extends AbstractApiService
         return $availabilities;
     }
 
-    public function apiGetOffers(AvailabilityFilter $filter): AvailabilityCollection
+    public function apiGetOffers(AvailabilityFilter $filter): array
     {
-        $availabilities = new AvailabilityCollection();
+        $availabilities = [];
         if ($filter->serviceTypes->first() === AvailabilityFilter::SERVICE_TYPE_HOTEL) {
             $availabilities = $this->getHotelOffers($filter);
         } else if ($filter->serviceTypes->first() === AvailabilityFilter::SERVICE_TYPE_CHARTER) {
@@ -1656,15 +1656,15 @@ class TourVisioApiService extends AbstractApiService
 
         $httpClient = HttpClient::create();
         $responseObj = $httpClient->request(HttpClient::METHOD_POST, $url, $options);
-        $this->showRequest(HttpClient::METHOD_POST, $url, $options, $responseObj->getContent(), $responseObj->getStatusCode());
-        $responseData = json_decode($responseObj->getContent(), true);
+        $this->showRequest(HttpClient::METHOD_POST, $url, $options, $responseObj->getBody(), $responseObj->getStatusCode());
+        $responseData = json_decode($responseObj->getBody(), true);
 
-        $passengers = $filter->Items->first()->Passengers;
+        $passengers = $post['args'][0]['Items'][0]['Passengers'];
 
         $travellers = [];
         $infantMaxAge = 2;
 
-        $checkInDT = new DateTimeImmutable($filter->Items->first()->Room_CheckinAfter);
+        $checkInDT = new DateTimeImmutable($post['args'][0]['Items'][0]['Room_CheckinAfter']);
         $i = 0;
         /** @var Passenger $passenger */
         foreach ($passengers as $passenger) {
@@ -1674,19 +1674,19 @@ class TourVisioApiService extends AbstractApiService
                 $isLeader = true;
             }
             
-            $birthDT = new DateTimeImmutable($passenger->BirthDate);
+            $birthDT = new DateTimeImmutable($passenger['BirthDate']);
             $age = $checkInDT->diff($birthDT)->y;
 
             // constants are taken from docs
             // ex: http://docs.santsg.com/tourvisio/enumarations/#traveller-types
-            $passengerType = $passenger->IsAdult ? 1 : ($age >= $infantMaxAge ? 2 : 3);
+            $passengerType = $passenger['IsAdult'] ? 1 : ($age >= $infantMaxAge ? 2 : 3);
             $travellers[] = [
                 'travellerId' => $i,
                 'type' => $passengerType,
-                'title' => $passenger->IsAdult ? ($passenger->Gender === 'male' ? 1 : 3) : 5,
-                'name' => $passenger->Firstname,
-                'surname' => $passenger->Lastname,
-                'birthDate' => $passenger->BirthDate,
+                'title' => $passenger['IsAdult'] ? ($passenger['Gender'] === 'male' ? 1 : 3) : 5,
+                'name' => $passenger['Firstname'],
+                'surname' => $passenger['Lastname'],
+                'birthDate' => $passenger['BirthDate'],
                 'nationality' => [
                     'twoLetterCode' => 'RO'
                 ],
@@ -1710,8 +1710,8 @@ class TourVisioApiService extends AbstractApiService
         $url = $this->apiUrl . '/api/bookingservice/setreservationinfo';
 
         $responseObj = $httpClient->request(HttpClient::METHOD_POST, $url, $options);
-        $this->showRequest(HttpClient::METHOD_POST, $url, $options, $responseObj->getContent(), $responseObj->getStatusCode());
-        $responseData = json_decode($responseObj->getContent(), true);
+        $this->showRequest(HttpClient::METHOD_POST, $url, $options, $responseObj->getBody(), $responseObj->getStatusCode());
+        $responseData = json_decode($responseObj->getBody(), true);
 
         $options['body'] = json_encode([
             'transactionId' => $transactionId
@@ -1720,12 +1720,12 @@ class TourVisioApiService extends AbstractApiService
         $url = $this->apiUrl . '/api/bookingservice/committransaction';
 
         $responseObj = $httpClient->request(HttpClient::METHOD_POST, $url, $options);
-        $this->showRequest(HttpClient::METHOD_POST, $url, $options, $responseObj->getContent(), $responseObj->getStatusCode());
-        $responseData = json_decode($responseObj->getContent(), true);
+        $this->showRequest(HttpClient::METHOD_POST, $url, $options, $responseObj->getBody(), $responseObj->getStatusCode());
+        $responseData = json_decode($responseObj->getBody(), true);
 
         $booking = new Booking();
         $booking->Id = $responseData['body']['reservationNumber'];
 
-        return [$booking, $responseObj->getContent()];
+        return [$booking, $responseObj->getBody()];
     }
 }

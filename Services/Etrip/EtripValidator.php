@@ -59,7 +59,7 @@ class EtripValidator extends Validator
         if (empty($filter->Items->first()->Offer_InitialData)) {
             throw new Exception('args[0][Items][0][Offer_InitialData] is missing');
         }
-        if (empty($filter->Items->first()->Room_CheckinAfter)) {
+        if (empty($post['args'][0]['Items'][0]['Room_CheckinAfter'])) {
             throw new Exception('args[0][Items][0][Room_CheckinAfter] is missing');
         }
         
@@ -75,7 +75,7 @@ class EtripValidator extends Validator
         if (empty($filter->OriginalOffer->InitialData)) {
             throw new Exception('args[0][OriginalOffer][InitialData] is missing');
         }
-        if (empty($filter->Rooms->first()->adults)) {
+        if (empty($post['args'][0]['rooms'][0]['adults'])) {
             throw new Exception('args[0][Rooms][0][adults] is missing');
         }
         
@@ -91,7 +91,7 @@ class EtripValidator extends Validator
         if (empty($filter->OriginalOffer->InitialData)) {
             throw new Exception('args[0][OriginalOffer][InitialData] is missing');
         }
-        if (empty($filter->Rooms->first()->adults)) {
+        if (empty($post['args'][0]['rooms'][0]['adults'])) {
             throw new Exception('args[0][Rooms][0][adults] is missing');
         }
         

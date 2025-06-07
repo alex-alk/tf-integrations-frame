@@ -17,7 +17,7 @@ trait EuroSiteIndividual
 	{
 		$t1 = microtime(true);
 		if (!$params)
-			$params = array();
+			$params = [];
 
 		if ($this->TourOperatorRecord->ApiContext)
 			$params["TourOpCode"] = $this->TourOperatorRecord->ApiContext;
@@ -115,7 +115,7 @@ trait EuroSiteIndividual
 	private function getHotelInfo($params = null, &$objs = null, &$hotels_data = [])
 	{
 		if (!$params)
-			$params = array();
+			$params = [];
 
 		$params["ProductType"] = "hotel";
 
@@ -124,7 +124,7 @@ trait EuroSiteIndividual
 		unset($reqParams["SkiqQ"]);
 
 		if (!$objs)
-			$objs = array();
+			$objs = [];
 
 		try
 		{
@@ -277,7 +277,7 @@ trait EuroSiteIndividual
 		if (!$params)
 		{
 			// populate here with some defaultss
-			$params = array();
+			$params = [];
 		}
 		$data = static::GetResponseData($this->doRequest("getHotelServiceTypesRequest", $params), "getHotelServiceTypesResponse");
 		$services = ($data["Services"] && $data["Services"]["Service"]) ? $data["Services"]["Service"] : null;
@@ -295,7 +295,7 @@ trait EuroSiteIndividual
 		if (!$params)
 		{
 			// populate here with some defaultss
-			$params = array();
+			$params = [];
 		}
 		$data = static::GetResponseData($this->doRequest("getHotelServicePriceRequest", $params), "getHotelServicePriceResponse");
 		$service = ($data["Services"] && $data["Services"]["Service"]) ? $data["Services"]["Service"] : null;
@@ -367,10 +367,10 @@ trait EuroSiteIndividual
 			$data["ItemPaymentDLS"]["ItemPaymentDL"]["Fees"]["Fee"]) ? $data["ItemPaymentDLS"]["ItemPaymentDL"]["Fees"]["Fee"] : null;
 		
 		if (!$fees || (count($fees) === 0))
-			return array();
+			return [];
 
 		if (!$objs)
-			$objs = array();
+			$objs = [];
 
 		if (isset($fees["Value"]))
 			$fees = array($fees);
@@ -614,7 +614,7 @@ trait EuroSiteIndividual
 		}
 
 		if (!$objs)
-			$objs = array();
+			$objs = [];
 
 		$data = static::GetResponseData($this->doRequest("getUnitDiscountsRequest", [], true), "getUnitDiscountsResponse");
 
@@ -1768,7 +1768,7 @@ trait EuroSiteIndividual
 	private function getHotel($hotelDescription, &$objs = null, $force = false, $skipQuery = false, $hotelObj = null, $changeGeo = false)
 	{
 		if (!$objs)
-			$objs = array();
+			$objs = [];
 
 		if (empty($hotelDescription["ProductCode"]))
 		{
@@ -2288,10 +2288,10 @@ trait EuroSiteIndividual
 	private function getHotelsOffers($hotels, &$objs = null, $byHotel = false, $charters = false, $params = null, $initialParams = null)
 	{
 		if (!$hotels || (count($hotels) === 0))
-			return array();
+			return [];
 
 		if (!$objs)
-			$objs = array();
+			$objs = [];
 
 		//load cache data here
 		$this->loadCachedCompanies($objs);
@@ -2301,8 +2301,8 @@ trait EuroSiteIndividual
 		if ($fh && $fh["Product"] && ($_topcode = $fh["Product"]["TourOpCode"]))
 			$facilities = $this->getHotelsFacilities(["TourOpCode" => $_topcode]);
 
-		$ret = array();
-		$packagesIds = array();
+		$ret = [];
+		$packagesIds = [];
 
 		if (isset($hotels["Product"]))
 			$hotels = array($hotels);
@@ -2700,7 +2700,7 @@ trait EuroSiteIndividual
 			if (isset($hotelOffers['@attributes']))
 				$hotelOffers = array($hotelOffers);
 
-			$chotels = array();
+			$chotels = [];
 			if ($hotelOffers)
 			{
 				$hotelObj->Offers = new \QModelArray();
@@ -2963,7 +2963,7 @@ trait EuroSiteIndividual
 	private function getHotelOffer($offer, $hotelObj, $charters = false, &$objs = null, $params = null, $initialParams = null)
 	{
 		if (!$objs)
-			$objs = array();
+			$objs = [];
 		
 		//qvardump("OFFER", $this->TourOperatorRecord->Handle, $offer, $hotelObj);
 
@@ -3039,7 +3039,7 @@ trait EuroSiteIndividual
 		//$offerIndx = $hotelObj->Code."~".$offer['PackageVariantId']."~";
 		$offerIndx = $hotelObj->Code . "~";
 		$offerIndxParts = ['hotel_code' => $hotelObj->Code];
-		$rooms = array();
+		$rooms = [];
 		$roomCode = null;
 		$roomCode_for_INDX = "";
 		$__room_price = 0;

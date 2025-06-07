@@ -234,7 +234,11 @@ class ApiController
             'api_getRegions' => 'apiGetRegions',
             'api_getCities' => 'apiGetCities',
             'api_getHotels' => 'apiGetHotels',
-            'api_getOffers' => 'apiGetOffers'
+            'api_getOffers' => 'apiGetOffers',
+            'api_getOfferCancelFees' => 'apiGetOfferCancelFees',
+            'api_getOfferPaymentsPlan' => 'apiGetOfferPaymentsPlan',
+            'api_testConnection' => 'apiTestConnection',
+            'api_doBooking' => 'apiDoBooking'
         ];
     }
 }

@@ -2,17 +2,21 @@
 
 namespace Services\Megatec;
 
+use DateTime;
 use DateTimeImmutable;
 use Exception;
 use HttpClient\HttpClient;
 use HttpClient\Message\Request;
 use Logger\Log;
 use Models\Availability;
+use Models\Booking;
 use Models\City;
 use Models\Country;
 use Models\Hotel;
 use Models\HotelImage;
 use Models\Offer;
+use Models\OfferCancelFee;
+use Models\OfferPaymentPolicy;
 use Models\Region;
 use Psr\Http\Message\ServerRequestInterface;
 use Services\IntegrationSupport\AbstractApiService;
@@ -232,8 +236,6 @@ class MegatecApiService extends AbstractApiService
             ['meg_--_int' => 1993]
         ];
 
-        $post = $this->serverRequest->getParsedBody();
-
         $requestArrInner = [
             'meg_--_request' => [
                 'meg_--_PageSize' => 100000,
@@ -297,6 +299,39 @@ class MegatecApiService extends AbstractApiService
         $fault = $xml->children('http://schemas.xmlsoap.org/soap/envelope/')
             ->Body->children('http://schemas.xmlsoap.org/soap/envelope/')
             ->Fault->children();
+        
+        if (!empty($fault->faultstring) && ((string) $fault->faultstring) === html_entity_decode('Server was unable to process request. ---&gt; Invalid user or password (Invalid GUID)')) {
+            // redo request
+            $token = $this->cacheToken();
+
+            $requestArr = [
+                'soapenv_--_Envelope' => [
+                    '[xmlns_--_soapenv]' => 'http://schemas.xmlsoap.org/soap/envelope/',
+                    '[xmlns_--_meg]' => 'http://www.megatec.ru/',
+                    'soapenv_--_Body' => [
+                        'meg_--_SearchHotelServices' => [
+                            'meg_--_guid' => $token,
+                            $requestArrInner
+                        ]
+                    ]
+                ]
+            ];
+
+            $xmlString = Utils::arrayToXmlString($requestArr);
+            $xmlString = str_replace('_--_', ':', $xmlString);
+
+            $body = $xmlString;
+
+            $response = $this->client->request(Request::METHOD_POST, $this->apiUrl, $body, $headers);
+            $this->showRequest(Request::METHOD_POST, $this->apiUrl, $body, $headers, $response->getBody(), $response->getStatusCode());
+            $content = $response->getBody();
+
+            $xml = new SimpleXMLElement($content);
+
+            $fault = $xml->children('http://schemas.xmlsoap.org/soap/envelope/')
+                ->Body->children('http://schemas.xmlsoap.org/soap/envelope/')
+                ->Fault->children();
+        }
 
         if (!empty($fault->faultstring)) {
             Log::warning($this->handle . ': ' . (string) $fault->faultstring);
@@ -403,8 +438,7 @@ class MegatecApiService extends AbstractApiService
                 $availability = new Availability($hotelXml->HotelKey, $offers, $name);
             } else {
                 // add offer to offers
-                $offers = $availability->getOffers();
-                $offers[] = $offer;
+                $offers = $availability->addOffer($offer);
             }
 
             $availabilities[$availability->getId()] = $availability;
@@ -414,43 +448,55 @@ class MegatecApiService extends AbstractApiService
 
     private function getMealMap(): array
     {
-        $requestArr = [
-            'soapenv_--_Envelope' => [
-                '[xmlns_--_soapenv]' => 'http://schemas.xmlsoap.org/soap/envelope/',
-                '[xmlns_--_meg]' => 'http://www.megatec.ru/',
-                'soapenv_--_Body' => [
-                    'meg_--_GetPansions' => []
+        $file = 'mealMap';
+
+        $json = Utils::getFromCache($this, $file);
+
+        if ($json === null) {
+
+            $requestArr = [
+                'soapenv_--_Envelope' => [
+                    '[xmlns_--_soapenv]' => 'http://schemas.xmlsoap.org/soap/envelope/',
+                    '[xmlns_--_meg]' => 'http://www.megatec.ru/',
+                    'soapenv_--_Body' => [
+                        'meg_--_GetPansions' => []
+                    ]
                 ]
-            ]
-        ];
-        $xmlString = Utils::arrayToXmlString($requestArr);
-        $xmlString = str_replace('_--_', ':', $xmlString);
+            ];
+            $xmlString = Utils::arrayToXmlString($requestArr);
+            $xmlString = str_replace('_--_', ':', $xmlString);
 
-        $body = $xmlString;
-        $headers = [
-            'Content-Type' => 'text/xml; charset=utf-8'
-        ];
+            $body = $xmlString;
+            $headers = [
+                'Content-Type' => 'text/xml; charset=utf-8'
+            ];
 
-        $this->client->setExtraOptions([CURLOPT_SSL_VERIFYPEER => false]);
-        $response = $this->client->request(Request::METHOD_POST, $this->apiUrl, $body, $headers);
-        $this->showRequest(Request::METHOD_POST, $this->apiUrl, $body, $headers, $response->getBody(), $response->getStatusCode());
-        $content = $response->getBody();
-        $xml = new SimpleXMLElement($content);
-        $xml = $xml->children('http://schemas.xmlsoap.org/soap/envelope/')
-            ->Body->children('http://www.megatec.ru/')
-            ->GetPansionsResponse
-            ->GetPansionsResult;
+            $this->client->setExtraOptions([CURLOPT_SSL_VERIFYPEER => false]);
+            $response = $this->client->request(Request::METHOD_POST, $this->apiUrl, $body, $headers);
+            $this->showRequest(Request::METHOD_POST, $this->apiUrl, $body, $headers, $response->getBody(), $response->getStatusCode());
+            $content = $response->getBody();
+            $xml = new SimpleXMLElement($content);
+            $xml = $xml->children('http://schemas.xmlsoap.org/soap/envelope/')
+                ->Body->children('http://www.megatec.ru/')
+                ->GetPansionsResponse
+                ->GetPansionsResult;
 
-        $map = [];
-        foreach ($xml->Pansion as $pansion) {
-            $map[(string) $pansion->ID] = (string) $pansion->Name;
+            $map = [];
+            foreach ($xml->Pansion as $pansion) {
+                $map[(string) $pansion->ID] = (string) $pansion->Name;
+            }
+            Utils::writeToCache($this, $file, json_encode($map));
+
+            return $map;
+        } else {
+            return json_decode($json, true);
         }
-
-        return $map;
     }
 
-    private function getToken(): string
+    private function cacheToken(): string
     {
+        $file = 'token-' . $this->username;
+
         $requestArr = [
             'soapenv_--_Envelope' => [
                 '[xmlns_--_soapenv]' => 'http://schemas.xmlsoap.org/soap/envelope/',
@@ -481,532 +527,425 @@ class MegatecApiService extends AbstractApiService
             ->ConnectResult;
 
         $token = (string) $xml;
-        return $token;
+
+        if ($token !== 'Connection result code: -1. Invalid login or password' && strlen($token) === 36) {
+            Utils::writeToCache($this, $file, $token);
+            return $token;
+        } else {
+            return '';
+        }
     }
 
-//     private function convertIntoPayment(OfferCancelFeeCollection $offerCancelFeeCollection): OfferPaymentPolicyCollection
-//     {
-//         $paymentsList = new OfferPaymentPolicyCollection();
+    private function getToken(): string
+    {
+        $file = 'token-' . $this->username;
 
-//         $i = 0;
-//         $prices = 0;
+        $json = Utils::getFromCache($this, $file);
 
-//         /** @var OfferCancelFee $cancelFee */
-//         foreach ($offerCancelFeeCollection as $cancelFee) {
-//             $payment = new OfferPaymentPolicy();
-//             $payment->Currency = $cancelFee->Currency;
+        if ($json === null) {
 
-//             if ($i === 0) {
-//                 $payment->PayAfter = date('Y-m-d');
-//             } else {
-//                 $payment->PayAfter = (new DateTime($offerCancelFeeCollection->get($i - 1)->DateStart))->format('Y-m-d');
-//             }
-//             $payment->Amount = $cancelFee->Price - $prices;
+            $token = $this->cacheToken();
+            return $token;
+        } else {
+            return $json;
+        }
+    }
 
-//             $prices += $payment->Amount;
+    /**
+     * @param OfferCancelFee[] $offerCancelFeeCollection
+     */
+    private function convertIntoPayment(array $offerCancelFeeCollection): array
+    {
+        $paymentsList = [];
 
-//             $payUntilDT = (new DateTime($cancelFee->DateStart))->modify('- 1 day');
-//             $todayDT = new DateTime();
+        $i = 0;
+        $prices = 0;
 
-//             $payment->PayUntil = $todayDT > $payUntilDT ? $todayDT->format('Y-m-d') : $payUntilDT->format('Y-m-d');
+        foreach ($offerCancelFeeCollection as $cancelFee) {
 
-//             $paymentsList->add($payment);
-//             $i++;
-//         }
+            $payAfter = '';
+            if ($i === 0) {
+                $payAfter = date('Y-m-d');
+            } else {
+                $payAfter = (new DateTime($offerCancelFeeCollection[$i - 1]->getDateStart()))->format('Y-m-d');
+            }
+            $amount = $cancelFee->getPrice() - $prices;
 
-//         return $paymentsList;
-//     }
+            $prices += $amount;
 
-//     public function apiGetOfferCancelFees(CancellationFeeFilter $filter): OfferCancelFeeCollection
-//     {
-//         MegatecValidator::make()->validateOfferCancelFeesFilter($filter);
+            $payUntilDT = (new DateTime($cancelFee->getDateStart()))->modify('- 1 day');
+            $todayDT = new DateTime();
 
-//         $fees = new OfferCancelFeeCollection();
+            $payUntil = $todayDT > $payUntilDT ? $todayDT->format('Y-m-d') : $payUntilDT->format('Y-m-d');
+            
+            $payment = new OfferPaymentPolicy($payAfter, $payUntil, $amount, $cancelFee->getCurrency());
+            
+            $paymentsList[] = $payment;
+            $i++;
+        }
 
-//         $bookingDataArr = json_decode($filter->OriginalOffer->bookingDataJson, true);
+        return $paymentsList;
+    }
 
-//         $requestArr = [
-//             'soapenv_--_Envelope' => [
-//                 '[xmlns_--_soapenv]' => 'http://schemas.xmlsoap.org/soap/envelope/',
-//                 '[xmlns_--_meg]' => 'http://www.megatec.ru/',
-//                 'soapenv_--_Body' => [
-//                     'meg_--_GetCancellationPolicyInfoWithPenalty' => [
-//                         'meg_--_guid' => $this->getToken(),
-//                         'meg_--_dateFrom' => $filter->CheckIn,
-//                         'meg_--_dateTo' => $filter->CheckOut,
-//                         'meg_--_HotelKey' => $filter->Hotel->InTourOperatorId,
-//                         'meg_--_Pax' => $filter->Rooms->first()->adults,
-//                         'meg_--_RoomTypeKey' =>  $bookingDataArr['roomTypeKey'],
-//                         'meg_--_PansionKey' => $filter->OriginalOffer->MealItem->Merch->Id,
-//                         'meg_--_RoomCategoryKey' => $bookingDataArr['roomCategoryKey']
-//                     ]
-//                 ]
-//             ]
-//         ];
+    /**
+     * @return OfferCancelFee[]
+     */
+    public function apiGetOfferCancelFees(): array
+    {
+        $post = $this->serverRequest->getParsedBody();
 
-//         if ($filter->Rooms->first()->children > 0) {
-//             foreach ($filter->Rooms->first()->childrenAges as $age) {
-//                 $requestArr['soapenv_--_Envelope']['soapenv_--_Body']['meg_--_GetCancellationPolicyInfoWithPenalty']['meg_--_Ages'][] = ['meg_--_int' => $age];
-//             }
-//         }
+        MegatecValidator::make()->validateOfferCancelFeesFilter($post);
 
-//         $xmlString = Utils::arrayToXmlString($requestArr);
-//         $xmlString = str_replace('_--_', ':', $xmlString);
+        $fees = [];
 
-//         $body = $xmlString;
-//         $headers = [
-//             'Content-Type' => 'text/xml; charset=utf-8'
-//         ];
+        $bookingDataArr = json_decode($post['args'][0]['OriginalOffer']['bookingDataJson'], true);
 
-//         $response = $this->client->request(Request::METHOD_POST, $this->apiUrl, $body, $headers);
-//         $this->showRequest(Request::METHOD_POST, $this->apiUrl, $body, $headers, $response->getBody(), $response->getStatusCode());
+        $token = $this->getToken();
 
-//         $content = $response->getBody();
-//         $xml = new SimpleXMLElement($content);
-//         $xml = $xml->children('http://schemas.xmlsoap.org/soap/envelope/')
-//             ->Body->children('http://www.megatec.ru/')
-//             ->GetCancellationPolicyInfoWithPenaltyResponse
-//             ->GetCancellationPolicyInfoWithPenaltyResult;
+        $requestArr = [
+            'soapenv_--_Envelope' => [
+                '[xmlns_--_soapenv]' => 'http://schemas.xmlsoap.org/soap/envelope/',
+                '[xmlns_--_meg]' => 'http://www.megatec.ru/',
+                'soapenv_--_Body' => [
+                    'meg_--_GetCancellationPolicyInfoWithPenalty' => [
+                        'meg_--_guid' => $token,
+                        'meg_--_dateFrom' => $post['args'][0]['CheckIn'],
+                        'meg_--_dateTo' => $post['args'][0]['CheckOut'],
+                        'meg_--_HotelKey' => $post['args'][0]['Hotel']['InTourOperatorId'],
+                        'meg_--_Pax' => $post['args'][0]['Rooms'][0]['adults'],
+                        'meg_--_RoomTypeKey' =>  $bookingDataArr['roomTypeKey'],
+                        'meg_--_PansionKey' => $post['args'][0]['OriginalOffer']['MealItem']['Merch']['Id'],
+                        'meg_--_RoomCategoryKey' => $bookingDataArr['roomCategoryKey']
+                    ]
+                ]
+            ]
+        ];
 
-//         $feesXml = $xml->Data;
+        if ($post['args'][0]['Rooms'][0]['children'] > 0) {
+            foreach ($post['args'][0]['Rooms'][0]['childrenAges'] as $age) {
+                $requestArr['soapenv_--_Envelope']['soapenv_--_Body']['meg_--_GetCancellationPolicyInfoWithPenalty']['meg_--_Ages'][] = ['meg_--_int' => $age];
+            }
+        }
 
-//         $tariffId = $bookingDataArr['tariffId'];
+        $xmlString = Utils::arrayToXmlString($requestArr);
+        $xmlString = str_replace('_--_', ':', $xmlString);
 
-//         $selectedPol = null;
+        $body = $xmlString;
+        $headers = [
+            'Content-Type' => 'text/xml; charset=utf-8'
+        ];
 
-//         foreach ($feesXml->CancellationPolicyInfoWithPenalty as $cpiwp) {
-//             $firstTariffId = (string) $cpiwp->PolicyData->CancellationPolicyWithPenaltyValue->TariffId;
-//             if ($tariffId == $firstTariffId) {
-//                 $selectedPol = $cpiwp;
-//             }
-//         }
+        $response = $this->client->request(Request::METHOD_POST, $this->apiUrl, $body, $headers);
+        $this->showRequest(Request::METHOD_POST, $this->apiUrl, $body, $headers, $response->getBody(), $response->getStatusCode());
 
-//         $feesXml = $selectedPol->PolicyData;
+        $content = $response->getBody();
+        $xml = new SimpleXMLElement($content);
 
-//         $pricePerNight = (float) $filter->SuppliedPrice / (int) $filter->Duration;
+        $fault = $xml->children('http://schemas.xmlsoap.org/soap/envelope/')
+            ->Body->children('http://schemas.xmlsoap.org/soap/envelope/')
+            ->Fault->children();
 
-//         $today = date('Y-m-d');
-
-//         $i = 0;
-
-//         foreach ($feesXml->CancellationPolicyWithPenaltyValue as $feeXml) {
-//             $i++;
-
-//             if ((string) $feeXml->PenaltyValue === '0') {
-//                 continue;
-//             }
-
-//             $fee = new OfferCancelFee();
-
-//             $feeStartDateDT = (new DateTime((string) $feeXml->DateFrom))->setTime(0, 0);
-//             $todayDT = (new DateTime())->setTime(0, 0);
-
-//             $feeStartDate = $feeStartDateDT > $todayDT ? $feeStartDateDT->format('Y-m-d') : $todayDT->format('Y-m-d');
-//             $feeEndDate = (new DateTime((string) $feeXml->DateTo))->format('Y-m-d');
-
-//             $dateEnd = ((string) $feeXml->DateTo ?: $filter->CheckIn);
-
-//             $code = (string) $feeXml->Currency;
-//             if ($code === 'EU') {
-//                 $code = 'EUR';
-//             } else {
-//                 throw new Exception('invalid cp currency for ' . json_encode($filter));
-//             }
-//             $currency = new Currency();
-//             $currency->Code = $code;
-
-//             $policyIsOnCheckIn = false;
-//             if (!empty($feeStartDate) && $feeStartDate === $filter->CheckIn) {
-//                 $policyIsOnCheckIn = true;
-//             }
-
-//             if (!$policyIsOnCheckIn) {
-
-//                 $penaltyValue = (float) $feeXml->PenaltyValue;
-//                 if ((string) $feeXml->IsPercent === 'true') {
-//                     $fee->Price = $filter->SuppliedPrice * $penaltyValue / 100.0;
-//                 } else {
-//                     $days = (int) $filter->Duration;
-//                     if ($penaltyValue > $days) {
-//                         continue;
-//                     }
-//                     $fee->Price = $pricePerNight * $penaltyValue;
-
-//                     //$fee->Price = (float)$feeXml->PenaltyTotal;
-//                 }
-//             } else {
-//                 $fee->Price = $filter->SuppliedPrice;
-//             }
-
-//             $fee->Currency = $currency;
-//             $dateStart = $feeStartDate ?: $today;
-//             $fee->DateStart = (new DateTime($dateStart))->format('Y-m-d');
-
-//             $fee->DateEnd = (new DateTime($dateEnd))->format('Y-m-d');
-//             $fees->add($fee);
-
-//             if ($feeEndDate === $filter->CheckIn) {
-//                 break;
-//             }
-
-//             // last policy
-//             // if ($i === count($feesXml->CancellationPolicyWithPenaltyValue)) {
-//             //     // check the price
-
-//             //     if ($fee->Price !== (float) $filter->SuppliedPrice) {
-//             //         $fee = new OfferCancelFee();
-//             //         $fee->Currency = $currency;
-//             //         $fee->DateEnd = (new DateTime($filter->CheckIn))->format('Y-m-d');
-//             //         $fee->DateStart = $dateEnd;
-//             //         $fee->Price = (float) $filter->SuppliedPrice;
-//             //         $fees->add($fee);
-//             //     }
-//             // }
-//         }
-
-//         return $fees;
-//     }
-
-//     public function getOfferPaymentPlans(PaymentPlansFilter $filter): OfferPaymentPolicyCollection
-//     {
-//         $filter = new CancellationFeeFilter($filter->toArray());
-//         return $this->convertIntoPayment($this->apiGetOfferCancelFees($filter));
-//     }
-
-//     /*
-//     public function getOfferPaymentPlans_(PaymentPlansFilter $filter): OfferPaymentPolicyCollection
-//     {
-//         MegatecValidator::make()->validateOfferPaymentPlansFilter($filter);
-
-//         $fees = new OfferPaymentPolicyCollection();
-
-//         $bookingDataArr = json_decode($filter->OriginalOffer->bookingDataJson, true);
-
-//         $roomId = $filter->OriginalOffer->Rooms->first()->Id;
-
-//         $roomId = substr($roomId, 0, strpos($roomId, '-'));
-
-//         $requestArr = [
-//             'soapenv_--_Envelope' => [
-//                 '[xmlns_--_soapenv]' => 'http://schemas.xmlsoap.org/soap/envelope/',
-//                 '[xmlns_--_meg]' => 'http://www.megatec.ru/',
-//                 'soapenv_--_Body' => [
-//                     'meg_--_GetCancellationPolicyInfoWithPenalty' => [
-//                         'meg_--_guid' => $this->getToken(),
-//                         'meg_--_dateFrom' => $filter->CheckIn,
-//                         'meg_--_dateTo' => $filter->CheckOut,
-//                         'meg_--_HotelKey' => $filter->Hotel->InTourOperatorId,
-//                         'meg_--_Pax' => $filter->Rooms->first()->adults,
-//                         'meg_--_RoomTypeKey' => $roomId,
-//                         'meg_--_PansionKey' => $filter->OriginalOffer->MealItem->Merch->Id,
-//                         'meg_--_RoomCategoryKey' => $bookingDataArr['roomCategoryKey']
-//                     ]
-//                 ]
-//             ]
-//         ];
-
-//         if ($filter->Rooms->first()->children > 0) {
-//             foreach ($filter->Rooms->first()->childrenAges as $age) {
-//                 $requestArr['soapenv_--_Envelope']
-//                     ['soapenv_--_Body']
-//                         ['meg_--_GetCancellationPolicyInfoWithPenalty']
-//                             ['meg_--_Ages'][] = ['meg_--_int' => $age];
-//             }
-//         }
-
-//         $xmlString = Utils::arrayToXmlString($requestArr);
-//         $xmlString = str_replace('_--_', ':', $xmlString);
-
-//         $body = $xmlString;
-//         $headers = [
-//             'Content-Type' => 'text/xml; charset=utf-8'
-//         ];
-
-//         $client = HttpClient::create();
-//         $response = $client->request(Request::METHOD_POST, $this->apiUrl, $options);
-//         $this->showRequest(Request::METHOD_POST, $this->apiUrl, $body, $headers, $response->getBody(), $response->getStatusCode());
-//         $content = $response->getBody();
-//         $xml = new SimpleXMLElement($content);
-//         $xml = $xml->children('http://schemas.xmlsoap.org/soap/envelope/')
-//             ->Body->children('http://www.megatec.ru/')
-//             ->GetCancellationPolicyInfoWithPenaltyResponse
-//             ->GetCancellationPolicyInfoWithPenaltyResult;
+        if (!empty($fault->faultstring) && ((string) $fault->faultstring) === html_entity_decode('Server was unable to process request. ---&gt; Invalid user or password (Invalid GUID)')) {
+            // redo request
+            $token = $this->cacheToken();
+            $requestArr['soapenv_--_Envelope']['soapenv_--_Body']['meg_--_GetCancellationPolicyInfoWithPenalty']['meg_--_guid'] = $token;
         
-//         $feesXml = $xml->Data;
+            $xmlString = Utils::arrayToXmlString($requestArr);
+            $xmlString = str_replace('_--_', ':', $xmlString);
 
+            $body = $xmlString;
+            $headers = [
+                'Content-Type' => 'text/xml; charset=utf-8'
+            ];
 
-//         $tariffId = $bookingDataArr['tariffId'];
+            $response = $this->client->request(Request::METHOD_POST, $this->apiUrl, $body, $headers);
+            $this->showRequest(Request::METHOD_POST, $this->apiUrl, $body, $headers, $response->getBody(), $response->getStatusCode());
 
-//         $selectedPol = null;
+            $content = $response->getBody();
+            $xml = new SimpleXMLElement($content);
+        }
 
-//         foreach ($feesXml->CancellationPolicyInfoWithPenalty as $cpiwp) {
-//             $firstTariffId = (string) $cpiwp->PolicyData->CancellationPolicyWithPenaltyValue->TariffId;
-//             if ($tariffId == $firstTariffId) {
-//                 $selectedPol = $cpiwp;
-//             }
-//         }
+        $xml = $xml->children('http://schemas.xmlsoap.org/soap/envelope/')
+            ->Body->children('http://www.megatec.ru/')
+            ->GetCancellationPolicyInfoWithPenaltyResponse
+            ->GetCancellationPolicyInfoWithPenaltyResult;
 
-//         $feesXml = $selectedPol->PolicyData;
+        $feesXml = $xml->Data;
 
-//         $pricePerNight = (float) $filter->SuppliedPrice / (int) $filter->Duration;
+        $tariffId = $bookingDataArr['tariffId'];
 
-//         $todayDT = (new DateTime())->setTime(0,0);
-//         $today = $todayDT->format('Y-m-d');
+        $selectedPol = null;
 
-//         $i = 0;
-//         $price = 0;
-//         foreach ($feesXml->CancellationPolicyWithPenaltyValue as $feeXml) {
-//             $i++;
-//             if ((string) $feeXml->PenaltyValue === '0') {
-//                 continue;
-//             }
+        foreach ($feesXml->CancellationPolicyInfoWithPenalty as $cpiwp) {
+            $firstTariffId = (string) $cpiwp->PolicyData->CancellationPolicyWithPenaltyValue->TariffId;
+            if ($tariffId == $firstTariffId) {
+                $selectedPol = $cpiwp;
+            }
+        }
 
-//             if (((string)$feeXml->TariffId) !== $tariffId) {
-//                 throw new Exception('policy error');
-//             }
+        $feesXml = $selectedPol->PolicyData;
 
-//             $fee = new OfferPaymentPolicy();
-//             $penaltyValue = (float) $feeXml->PenaltyValue;
+        $pricePerNight = (float) $post['args'][0]['SuppliedPrice'] / (int) $post['args'][0]['Duration'];
 
-//             $dateStart = (new DateTime((string)$feeXml->DateFrom ?: $today));
-//             $dateStart->modify('-1 days')->setTime(0,0);
+        $today = date('Y-m-d');
+
+        $i = 0;
+
+        foreach ($feesXml->CancellationPolicyWithPenaltyValue as $feeXml) {
+            $i++;
+
+            if ((string) $feeXml->PenaltyValue === '0') {
+                continue;
+            }
+
+            $feeStartDateDT = (new DateTime((string) $feeXml->DateFrom))->setTime(0, 0);
+            $todayDT = (new DateTime())->setTime(0, 0);
+
+            $feeStartDate = $feeStartDateDT > $todayDT ? $feeStartDateDT->format('Y-m-d') : $todayDT->format('Y-m-d');
+            $feeEndDate = (new DateTime((string) $feeXml->DateTo))->format('Y-m-d');
+
+            $dateEnd = ((string) $feeXml->DateTo ?: $post['args'][0]['CheckIn']);
+
+            $code = (string) $feeXml->Currency;
+            if ($code === 'EU') {
+                $code = 'EUR';
+            } else {
+                throw new Exception('invalid cp currency for ' . json_encode($post));
+            }
+
+            $policyIsOnCheckIn = false;
+            if (!empty($feeStartDate) && $feeStartDate === $post['args'][0]['CheckIn']) {
+                $policyIsOnCheckIn = true;
+            }
+
+            $price = 0;
+            if (!$policyIsOnCheckIn) {
+
+                $penaltyValue = (float) $feeXml->PenaltyValue;
+                if ((string) $feeXml->IsPercent === 'true') {
+                    $price = $post['args'][0]['SuppliedPrice'] * $penaltyValue / 100.0;
+                } else {
+                    $days = (int) $post['args'][0]['Duration'];
+                    if ($penaltyValue > $days) {
+                        continue;
+                    }
+                    $price = $pricePerNight * $penaltyValue;
+                }
+            } else {
+                $price = $post['args'][0]['SuppliedPrice'];
+            }
+
+            $dateStart = $feeStartDate ?: $today;
+            $dateStart = (new DateTime($dateStart))->format('Y-m-d');
+
+            $dateEnd = (new DateTime($dateEnd))->format('Y-m-d');
             
-//             $fee->PayAfter = ($dateStart)->format('Y-m-d');
+            $fee = new OfferCancelFee($dateStart, $dateEnd, $price, $code);
+            $fees[] = $fee;
 
-//             $dateEndDT = (new DateTime(((string) $feeXml->DateTo ?: $filter->CheckIn)));
-//             $dateEndDT->modify('-1 days')->setTime(0,0);
+            if ($feeEndDate === $post['args'][0]['CheckIn']) {
+                break;
+            }
+        }
 
-//             if ((string) $feeXml->IsPercent === 'true') {
-//                 $feePrice = $filter->SuppliedPrice * $penaltyValue/100.0;
-//             } else {
- 
-//                 $days = (int) $filter->Duration;
-//                 if ($penaltyValue > $days) {
-//                     continue;
-//                 }
-//                 //$feePrice = $pricePerNight * $penaltyValue;
-//                 $feePrice = (float) $feeXml->PenaltyTotal;
-//             }
-            
-//             if ($i === count($feesXml->CancellationPolicyWithPenaltyValue)) {
-//                 $fee->Amount =  $filter->SuppliedPrice - $price;
-//             } else {
-//                 $fee->Amount = $feePrice - $price;
-//             }
-//             if ($fee->Amount == 0) {
-//                 continue;
-//             }
+        return $fees;
+    }
 
-//             if ($dateEndDT < $todayDT) {
-//                 // add to price and continue
-//                 $price =  $fee->Amount;
-//                 continue;
-//             }
+    public function apiGetOfferPaymentsPlan(): array
+    {
+        return $this->convertIntoPayment($this->apiGetOfferCancelFees());
+    }
 
-//             $dateEnd = $dateEndDT->format('Y-m-d');
+    private function getRatesMap(): array
+    {
+        $file = 'rates-map';
+        $mapJson = Utils::getFromCache($this->handle, $file);
+        if ($mapJson === null) {
+            $requestArr = [
+                'soapenv_--_Envelope' => [
+                    '[xmlns_--_soapenv]' => 'http://schemas.xmlsoap.org/soap/envelope/',
+                    '[xmlns_--_meg]' => 'http://www.megatec.ru/',
+                    'soapenv_--_Body' => [
+                        'meg_--_GetRates' => []
+                    ]
+                ]
+            ];
+            $xmlString = Utils::arrayToXmlString($requestArr);
+            $xmlString = str_replace('_--_', ':', $xmlString);
 
-//             $fee->PayUntil = $dateEnd;
-//             $price =  $fee->Amount;
+            $body = $xmlString;
+            $headers = [
+                'Content-Type' => 'text/xml; charset=utf-8'
+            ];
 
-//             $currency = new Currency();
-//             $code = (string) $feeXml->Currency;
-//             if ($code === 'EU') {
-//                 $code = 'EUR';
-//             } else {
-//                 throw new Exception('invalid cp currency for ' . json_encode($filter));
-//             }
-//             $currency->Code = $code;
-//             $fee->Currency = $currency;
-            
-//             $fees->add($fee);
-//         }
+            $response = $this->client->request(Request::METHOD_POST, $this->apiUrl, $body, $headers);
+            $this->showRequest(Request::METHOD_POST, $this->apiUrl, $body, $headers, $response->getBody(), $response->getStatusCode());
 
-//         return $fees;
-//     }*/
+            $content = $response->getBody();
+            $xml = new SimpleXMLElement($content);
+            $xml = $xml->children('http://schemas.xmlsoap.org/soap/envelope/')
+                ->Body->children('http://www.megatec.ru/')
+                ->GetRatesResponse
+                ->GetRatesResult;
+            $map = [];
+            foreach ($xml->Rate as $rate) {
+                $map[(string) $rate->Unicode] = (string) $rate->ID;
+            }
 
-//     private function getRatesMap(): array
-//     {
-//         $file = 'rates-map';
-//         $mapJson = Utils::getFromCache($this->handle, $file);
-//         if ($mapJson === null) {
-//             $requestArr = [
-//                 'soapenv_--_Envelope' => [
-//                     '[xmlns_--_soapenv]' => 'http://schemas.xmlsoap.org/soap/envelope/',
-//                     '[xmlns_--_meg]' => 'http://www.megatec.ru/',
-//                     'soapenv_--_Body' => [
-//                         'meg_--_GetRates' => []
-//                     ]
-//                 ]
-//             ];
-//             $xmlString = Utils::arrayToXmlString($requestArr);
-//             $xmlString = str_replace('_--_', ':', $xmlString);
+            Utils::writeToCache($this->handle, $file, json_encode($map));
+        } else {
+            $map = json_decode($mapJson, true);
+        }
+        return $map;
+    }
 
-//             $body = $xmlString;
-//             $headers = [
-//                 'Content-Type' => 'text/xml; charset=utf-8'
-//             ];
+    public function apiDoBooking(): array
+    {
+        $post = $this->serverRequest->getParsedBody();
 
-//             $response = $this->client->request(Request::METHOD_POST, $this->apiUrl, $body, $headers);
-//             $this->showRequest(Request::METHOD_POST, $this->apiUrl, $body, $headers, $response->getBody(), $response->getStatusCode());
+        MegatecValidator::make()
+            ->validateBookHotelFilter($post);
 
-//             $content = $response->getBody();
-//             $xml = new SimpleXMLElement($content);
-//             $xml = $xml->children('http://schemas.xmlsoap.org/soap/envelope/')
-//                 ->Body->children('http://www.megatec.ru/')
-//                 ->GetRatesResponse
-//                 ->GetRatesResult;
-//             $map = [];
-//             foreach ($xml->Rate as $rate) {
-//                 $map[(string) $rate->Unicode] = (string) $rate->ID;
-//             }
+        $rates = $this->getRatesMap();
 
-//             Utils::writeToCache($this->handle, $file, json_encode($map));
-//         } else {
-//             $map = json_decode($mapJson, true);
-//         }
-//         return $map;
-//     }
+        $today = new DateTimeImmutable();
+        $tourists = [];
+        $touristId = -1;
+        /** @var Passenger $passenger */
+        foreach ($post['args'][0]['Items'][0]['Passengers'] as $passenger) {
+            $birthDT = new DateTimeImmutable($passenger['BirthDate']);
+            $age = $today->diff($birthDT)->y;
+            $tourists[] = [
+                'Tourist' => [
+                    '[FirstNameLat]' => $passenger['Firstname'],
+                    '[SurNameLat]' => $passenger['Lastname'],
+                    '[BirthDate]' => $passenger['BirthDate'],
+                    '[Sex]' => $passenger['IsAdult'] ? ($passenger['Gender'] === 'female' ? 'Female' : 'Male') : ($age < 2 ? 'Infant' : 'Child'),
+                    '[AgeType]' => $passenger['IsAdult'] ? 'Adult' : ($age < 2 ? 'Infant' : 'Child'),
+                    '[ID]' => $touristId
+                ]
+            ];
+            $touristId--;
+        }
 
-//     public function apiDoBooking(BookHotelFilter $filter): array
-//     {
-//         MegatecValidator::make()
-//             ->validateBookHotelFilter($filter);
+        $servicesBooking = [];
+        $servicesCount = 1;
+        for ($tId = -1; $tId >= -count($tourists); $tId--) {
+            for ($sId = -1; $sId >= -$servicesCount; $sId--) {
+                $servicesBooking['TouristServices'][] = [
+                    'TouristService' => [
+                        'ID' => 0,
+                        'Name' => [],
+                        'TouristID' => $tId,
+                        'ServiceID' => -1
+                    ]
+                ];
+            }
+        }
 
-//         $rates = $this->getRatesMap();
+        $bookingDataArr = json_decode($post['args'][0]['Items'][0]['Offer_bookingDataJson'], true);
 
-//         $today = new DateTimeImmutable();
-//         $tourists = [];
-//         $touristId = -1;
-//         /** @var Passenger $passenger */
-//         foreach ($filter->Items->first()->Passengers as $passenger) {
-//             $birthDT = new DateTimeImmutable($passenger->BirthDate);
-//             $age = $today->diff($birthDT)->y;
-//             $tourists[] = [
-//                 'Tourist' => [
-//                     '[FirstNameLat]' => $passenger->Firstname,
-//                     '[SurNameLat]' => $passenger->Lastname,
-//                     '[BirthDate]' => $passenger->BirthDate,
-//                     '[Sex]' => $passenger->IsAdult ? ($passenger->Gender === 'female' ? 'Female' : 'Male') : ($age < 2 ? 'Infant' : 'Child'),
-//                     '[AgeType]' => $passenger->IsAdult ? 'Adult' : ($age < 2 ? 'Infant' : 'Child'),
-//                     '[ID]' => $touristId
-//                 ]
-//             ];
-//             $touristId--;
-//         }
+        $startDate = new DateTime($post['args'][0]['Items'][0]['Room_CheckinAfter']);
+        $endDate = new DateTime($post['args'][0]['Items'][0]['Room_CheckinBefore']);
+        $days = $endDate->diff($startDate)->d;
 
-//         $servicesBooking = [];
-//         $servicesCount = 1;
-//         for ($tId = -1; $tId >= -count($tourists); $tId--) {
-//             for ($sId = -1; $sId >= -$servicesCount; $sId--) {
-//                 $servicesBooking['TouristServices'][] = [
-//                     'TouristService' => [
-//                         'ID' => 0,
-//                         'Name' => [],
-//                         'TouristID' => $tId,
-//                         'ServiceID' => -1
-//                     ]
-//                 ];
-//             }
-//         }
+        $token = $this->cacheToken();
 
-//         $bookingDataArr = json_decode($filter->Items->first()->Offer_bookingDataJson, true);
+        $requestArr = [
+            'SOAP-ENV_--_Envelope' => [
+                '[xmlns_--_SOAP-ENV]' => 'http://schemas.xmlsoap.org/soap/envelope/',
+                '[xmlns_--_xsi]' => 'http://www.w3.org/2001/XMLSchema-instance',
+                '[xmlns_--_xsd]' => 'http://www.w3.org/2001/XMLSchema',
+                '[xmlns]' => 'http://www.megatec.ru/',
+                'SOAP-ENV_--_Body' => [
+                    'CreateReservation' => [
+                        'guid' => $token,
+                        'reserv' => [
+                            'Rate' => [
+                                'ID' => $rates['EUR']
+                            ],
+                            $servicesBooking,
+                            'Tourists' => $tourists,
+                            'Services' => [
+                                [
+                                    'Service' => [
+                                        '[xsi_--_type]' => 'HotelService',
+                                        'Hotel' => [
+                                            'ID' => $post['args'][0]['Items'][0]['Hotel']['InTourOperatorId']
+                                        ],
+                                        'Room' => [
+                                            'RoomTypeID' => $bookingDataArr['roomTypeKey'],
+                                            'RoomCategoryID' => $bookingDataArr['roomCategoryKey'],
+                                            'RoomAccomodationID' => $bookingDataArr['roomAccomodationKey']
+                                        ],
+                                        'PansionID' => $post['args'][0]['Items'][0]['Board_Def_InTourOperatorId'],
+                                        'AdditionalParams' => [
+                                            'ParameterPair' => [
+                                                '[Key]' => 'Tariff',
+                                                'Value' => [
+                                                    '[xsi_--_type]' => 'xsd:int',
+                                                    $bookingDataArr['tariffId']
+                                                ]
+                                            ]
+                                        ],
+                                        'Duration' => $days,
+                                        'StartDate' => $post['args'][0]['Items'][0]['Room_CheckinAfter'],
+                                        'NMen' => $post['args'][0]['Params']['Adults'][0],
+                                        'ID' => -1
+                                    ]
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
+            ]
+        ];
 
-//         $startDate = new DateTime($filter->Items->first()->Room_CheckinAfter);
-//         $endDate = new DateTime($filter->Items->first()->Room_CheckinBefore);
-//         $days = $endDate->diff($startDate)->d;
+        $xmlString = Utils::arrayToXmlString($requestArr);
+        $xmlString = str_replace('_--_', ':', $xmlString);
 
-//         $requestArr = [
-//             'SOAP-ENV_--_Envelope' => [
-//                 '[xmlns_--_SOAP-ENV]' => 'http://schemas.xmlsoap.org/soap/envelope/',
-//                 '[xmlns_--_xsi]' => 'http://www.w3.org/2001/XMLSchema-instance',
-//                 '[xmlns_--_xsd]' => 'http://www.w3.org/2001/XMLSchema',
-//                 '[xmlns]' => 'http://www.megatec.ru/',
-//                 'SOAP-ENV_--_Body' => [
-//                     'CreateReservation' => [
-//                         'guid' => $this->getToken(),
-//                         'reserv' => [
-//                             'Rate' => [
-//                                 'ID' => $rates['EUR']
-//                             ],
-//                             $servicesBooking,
-//                             'Tourists' => $tourists,
-//                             'Services' => [
-//                                 [
-//                                     'Service' => [
-//                                         '[xsi_--_type]' => 'HotelService',
-//                                         'Hotel' => [
-//                                             'ID' => $filter->Items->first()->Hotel->InTourOperatorId
-//                                         ],
-//                                         'Room' => [
-//                                             'RoomTypeID' => $bookingDataArr['roomTypeKey'],
-//                                             'RoomCategoryID' => $bookingDataArr['roomCategoryKey'],
-//                                             'RoomAccomodationID' => $bookingDataArr['roomAccomodationKey']
-//                                         ],
-//                                         'PansionID' => $filter->Items->first()->Board_Def_InTourOperatorId,
-//                                         'AdditionalParams' => [
-//                                             'ParameterPair' => [
-//                                                 '[Key]' => 'Tariff',
-//                                                 'Value' => [
-//                                                     '[xsi_--_type]' => 'xsd:int',
-//                                                     $bookingDataArr['tariffId']
-//                                                 ]
-//                                             ]
-//                                         ],
-//                                         'Duration' => $days,
-//                                         'StartDate' => $filter->Items->first()->Room_CheckinAfter,
-//                                         'NMen' => $filter->Params->Adults->first(),
-//                                         'ID' => -1
-//                                     ]
-//                                 ]
-//                             ]
-//                         ]
-//                     ]
-//                 ]
-//             ]
-//         ];
+        $soapAction = 'http://www.megatec.ru/CreateReservation';
 
-//         $xmlString = Utils::arrayToXmlString($requestArr);
-//         $xmlString = str_replace('_--_', ':', $xmlString);
+        $body = $xmlString;
+        $headers = [
+            'Content-Type' => 'text/xml; charset=utf-8',
+            'SOAPAction' => $soapAction
+        ];
 
-//         $soapAction = 'http://www.megatec.ru/CreateReservation';
+        $response = $this->client->request(Request::METHOD_POST, $this->apiUrl, $body, $headers);
+        $this->showRequest(Request::METHOD_POST, $this->apiUrl, $body, $headers, $response->getBody(), $response->getStatusCode());
+        $content = $response->getBody();
 
-//         $body = $xmlString;
-//         $headers = [
-//             'Content-Type' => 'text/xml; charset=utf-8',
-//             'SOAPAction' => $soapAction
-//         ];
+        $xml = new SimpleXMLElement($content);
 
-//         $response = $this->client->request(Request::METHOD_POST, $this->apiUrl, $body, $headers);
-//         $this->showRequest(Request::METHOD_POST, $this->apiUrl, $body, $headers, $response->getBody(), $response->getStatusCode());
-//         $content = $response->getBody();
+        $xml = $xml->children('http://schemas.xmlsoap.org/soap/envelope/')
+            ->Body->children('http://www.megatec.ru/')
+            ->CreateReservationResponse
+            ->CreateReservationResult;
 
-//         $xml = new SimpleXMLElement($content);
 
-//         $xml = $xml->children('http://schemas.xmlsoap.org/soap/envelope/')
-//             ->Body->children('http://www.megatec.ru/')
-//             ->CreateReservationResponse
-//             ->CreateReservationResult;
+        $offerPrice = $bookingDataArr['bookingPrice'];
+        $bookingPrice = (string) $xml->Brutto;
 
-//         $booking = new Booking();
-//         $offerPrice = $bookingDataArr['bookingPrice'];
-//         $bookingPrice = (string) $xml->Brutto;
+        if ($offerPrice != $bookingPrice) {
+            return [new Booking(null), 'Prices do not match. Response:' . $content];
+        }
 
-//         if ($offerPrice != $bookingPrice) {
-//             return [$booking, 'Prices do not match. Response:' . $content];
-//         }
-//         if (!empty($xml->Name)) {
-//             $booking->Id = $xml->Name;
-//         }
+        $id = null;
+        if (!empty($xml->Name)) {
+            $id = $xml->Name;
+        }
+        $booking = new Booking($id);
 
-//         return [$booking, $content];
-//     }
+        return [$booking, $content];
+    }
 
-//     public function apiTestConnection(): bool
-//     {
-//         $token = $this->getToken();
-//         if (!empty($token) && $token !== 'Connection result code: -1. Invalid login or password' && strlen($token) === 36) {
-//             return true;
-//         }
-//         return false;
-//     }
+    public function apiTestConnection(): bool
+    {
+        $token = $this->getToken();
+        if (!empty($token) && $token !== 'Connection result code: -1. Invalid login or password' && strlen($token) === 36) {
+            return true;
+        }
+        return false;
+    }
 }

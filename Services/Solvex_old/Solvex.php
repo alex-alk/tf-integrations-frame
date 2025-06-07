@@ -27,9 +27,9 @@ class Solvex extends \QStorageEntry implements \QIStorage
 
 	public static $RequestsData = [];
 
-	private static $_CacheData = array();
+	private static $_CacheData = [];
 
-	private static $_LoadedCacheData = array();
+	private static $_LoadedCacheData = [];
 
 	public static $Config = [];
 
@@ -366,7 +366,7 @@ class Solvex extends \QStorageEntry implements \QIStorage
 	public function getCountries(&$objs = null)
 	{
 		if (!$objs)
-			$objs = array();
+			$objs = [];
 		\Omi\TF\TOInterface::markReportStartpoint($objs, 'countries');
 
 		$data = $this->SOAPInstance->getCountries();

@@ -33,13 +33,13 @@ use App\Filters\BookHotelFilter;
 use App\Filters\CitiesFilter;
 use App\Filters\HotelDetailsFilter;
 use App\Filters\HotelsFilter;
-use App\Support\Collections\Custom\AvailabilityCollection;
+use App\Support\Collections\Custom\array;
 use App\Support\Collections\Custom\BookingCollection;
-use App\Support\Collections\Custom\CityCollection;
-use App\Support\Collections\Custom\CountryCollection;
-use App\Support\Collections\Custom\HotelCollection;
+use App\Support\Collections\Custom\array;
+use App\Support\Collections\Custom\array;
+use App\Support\Collections\Custom\[];
 use App\Support\Collections\Custom\OfferCancelFeeCollection;
-use App\Support\Collections\Custom\RegionCollection;
+use App\Support\Collections\Custom\[];
 use App\Support\Http\SimpleAsync\HttpClient;
 use App\Support\Http\SimpleAsync\Response\ResponseInterface;
 use DateInterval;
@@ -57,14 +57,14 @@ class ApitudeApiService extends AbstractApiService
         parent::__construct();
     }
 
-    public function apiGetCountries(): CountryCollection
+    public function apiGetCountries(): array
     {
         $url = $this->apiUrl . '/hotel-content-api/1.0/locations/countries?language=RUM&from=1&to=1000';
         $responseObj = $this->request($url);
 
-        $response = json_decode($responseObj->getContent(), true)['countries'];
+        $response = json_decode($responseObj->getBody(), true)['countries'];
 
-        $countries = new CountryCollection();
+        $countries = [];
         foreach ($response as $value) {
             $country = new Country();
             $country->Id = $value['isoCode'];
@@ -75,9 +75,9 @@ class ApitudeApiService extends AbstractApiService
         return $countries;
     }
 
-    public function apiGetCities(CitiesFilter $params = null): CityCollection
+    public function apiGetCities(CitiesFilter $params = null): array
     {
-        $cities = new CityCollection();
+        $cities = [];
 
         $countries = $this->apiGetCountries();
 
@@ -86,7 +86,7 @@ class ApitudeApiService extends AbstractApiService
             $url = $this->apiUrl . '/hotel-content-api/1.0/locations/destinations?language=RUM&from=' . $from . '&to=' . $to;
             $from++;
 
-            $response = json_decode($this->request($url)->getContent(), true)['destinations'];
+            $response = json_decode($this->request($url)->getBody(), true)['destinations'];
 
             foreach ($response as $regionResponse) {
 
@@ -112,11 +112,11 @@ class ApitudeApiService extends AbstractApiService
         return $cities;
     }
 
-    public function apiGetRegions(): RegionCollection
+    public function apiGetRegions(): []
     {
         $countries = $this->apiGetCountries();
 
-        $regions = new RegionCollection();
+        $regions = [];
 
         for ($from = 1; $from <= 6999; $from = $from + 999) {
             $to = $from + 999;
@@ -125,7 +125,7 @@ class ApitudeApiService extends AbstractApiService
 
             $responseObj = $this->request($url);
 
-            $response = json_decode($responseObj->getContent(), true)['destinations'];
+            $response = json_decode($responseObj->getBody(), true)['destinations'];
 
             foreach ($response as $value) {
 
@@ -147,16 +147,16 @@ class ApitudeApiService extends AbstractApiService
         return $regions;
     }
 
-    public function apiGetHotels(?HotelsFilter $filter = null): HotelCollection
+    public function apiGetHotels(?HotelsFilter $filter = null): []
     {
         $countries = $this->apiGetCountries();
         $regions = $this->apiGetRegions();
 
-        $hotels = new HotelCollection();
+        $hotels = [];
 
         $url = $this->apiUrl . '/hotel-content-api/1.0/hotels?language=RUM&from=1&to=1000&fields=countryCode,destinationCode,zoneCode,city,coordinates,address,images,description,code,name,S2C,web';
 
-        $response = json_decode($this->request($url)->getContent(), true)['hotels'];
+        $response = json_decode($this->request($url)->getBody(), true)['hotels'];
 
         foreach ($response as $hotelResponse) {
 
@@ -226,7 +226,7 @@ class ApitudeApiService extends AbstractApiService
         $hotelId = $filter->hotelId;
         $url = $this->apiUrl . '/hotel-content-api/1.0/hotels/' . $hotelId . '/details?language=RUM&from=1&to=1000&fields=countryCode,destinationCode,zoneCode,city,coordinates,address,images,description,code,name,S2C,web';
 
-        $response = json_decode($this->request($url)->getContent(), true)['hotel'];
+        $response = json_decode($this->request($url)->getBody(), true)['hotel'];
 
         // Content ImageGallery Items
         $items = new HotelImageGalleryItemCollection();
@@ -298,7 +298,7 @@ class ApitudeApiService extends AbstractApiService
         return $details;
     }
 
-    public function apiGetOffers(AvailabilityFilter $filter): AvailabilityCollection
+    public function apiGetOffers(AvailabilityFilter $filter): array
     {
         Validator::make()->validateAvailabilityFilter($filter);
 
@@ -349,7 +349,7 @@ class ApitudeApiService extends AbstractApiService
         $url = $this->apiUrl . '/hotel-api/1.0/hotels';
         $responseObj = $this->request($url, 'POST', $options);
 
-        $responseHotelsArr = json_decode($responseObj->getContent(), true);
+        $responseHotelsArr = json_decode($responseObj->getBody(), true);
 
         if (isset($responseHotelsArr['error'])) {
             throw new Exception($responseHotelsArr['error']);
@@ -357,7 +357,7 @@ class ApitudeApiService extends AbstractApiService
 
         $responseHotels = $responseHotelsArr['hotels']['hotels'] ?? [];
 
-        $response = new AvailabilityCollection();
+        $response = [];
 
         foreach ($responseHotels as $responseHotel) {
 
@@ -513,7 +513,7 @@ class ApitudeApiService extends AbstractApiService
 
             $preBookingObj = $this->request($url, 'POST', $options);
 
-            $preBooking = json_decode($preBookingObj->getContent(), true);
+            $preBooking = json_decode($preBookingObj->getBody(), true);
 
             $offerKey = $preBooking['hotel']['rooms'][0]['rates'][0]['rateKey'];
             if ($offerKey !== $filter->Items->get(0)->Offer_Code) {
@@ -522,23 +522,23 @@ class ApitudeApiService extends AbstractApiService
         }
 
         $paxes = [];
-        foreach ($filter->Items->get(0)->Passengers as $passenger) {
-            if (!empty($passenger->Firstname)) {
-                if ($passenger->IsAdult) {
+        foreach ($post['args'][0]['Items'][0]['Passengers'] as $passenger) {
+            if (!empty($passenger['Firstname'])) {
+                if ($passenger['IsAdult']) {
                     $paxes[] = [
                         'roomId' => 1,
-                        'name' => $passenger->Firstname,
-                        'surname' => $passenger->Lastname,
+                        'name' => $passenger['Firstname'],
+                        'surname' => $passenger['Lastname'],
                         'type' => 'AD',
                     ];
                 } else {
-                    $from = new DateTime($passenger->BirthDate);
+                    $from = new DateTime($passenger['BirthDate']);
                     $to = new DateTime();
                     $age = $from->diff($to)->y;
                     $paxes[] = [
                         'roomId' => 1,
-                        'name' => $passenger->Firstname,
-                        'surname' => $passenger->Lastname,
+                        'name' => $passenger['Firstname'],
+                        'surname' => $passenger['Lastname'],
                         'type' => 'CH',
                         'age' => $age
                     ];
@@ -564,16 +564,16 @@ class ApitudeApiService extends AbstractApiService
 
         $bookingObj = $this->request($url, 'POST', $options);
 
-        $bookingArr = json_decode($bookingObj->getContent(), true);
+        $bookingArr = json_decode($bookingObj->getBody(), true);
         $bookingId = $bookingArr['booking']['reference'];
         $booking = new Booking();
         $booking->Id = $bookingId;
-        //$booking->rawResp = $bookingObj->getContent();
+        //$booking->rawResp = $bookingObj->getBody();
 
         $bookingCollection = new BookingCollection();
         $bookingCollection->add($booking);
 
-        return [$booking, $bookingObj->getContent()];
+        return [$booking, $bookingObj->getBody()];
     }
 
     public function request(string $url, string $method = HttpClient::METHOD_GET, array $options = []): ResponseInterface

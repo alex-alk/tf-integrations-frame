@@ -36,19 +36,19 @@ class EuroSiteValidator extends Validator
             throw new Exception('City_Code is mandatory');
         }
 
-        if (empty($filter->Items->first()->Hotel->InTourOperatorId)) {
+        if (empty($post['args'][0]['Items'][0]['Hotel']['InTourOperatorId'])) {
             throw new Exception('InTourOperatorId is mandatory');
         }
 
-        if (empty($filter->Items->first()->Room_CheckinAfter)) {
+        if (empty($post['args'][0]['Items'][0]['Room_CheckinAfter'])) {
             throw new Exception('Room_CheckinAfter is mandatory');
         }
 
-        if (empty($filter->Items->first()->Room_CheckinBefore)) {
+        if (empty($post['args'][0]['Items'][0]['Room_CheckinBefore'])) {
             throw new Exception('Room_CheckinBefore is mandatory');
         }
 
-        if (empty($filter->Items->first()->Room_Type_InTourOperatorId)) {
+        if (empty($post['args'][0]['Items'][0]['Room_Type_InTourOperatorId']) {
             throw new Exception('Room_Type_InTourOperatorId is mandatory');
         }
 
@@ -83,11 +83,11 @@ class EuroSiteValidator extends Validator
     public function validateOfferCancelFeesFilter(CancellationFeeFilter $filter): self
     {
         parent::validateOfferCancelFeesFilter($filter);
-        if (empty($filter->Rooms->first()->adults)) {
+        if (empty($post['args'][0]['rooms'][0]['adults'])) {
             throw new Exception('adults is mandatory');
         }
 
-        if (!empty($filter->Rooms->first()->childrenAges) && empty($filter->Rooms->first()->childrenAges)) {
+        if (!empty($post['args'][0]['rooms'][0]['childrenAges']) && empty($post['args'][0]['rooms'][0]['childrenAges'])) {
             throw new Exception('childrenAges is mandatory');
         }
 
@@ -98,16 +98,16 @@ class EuroSiteValidator extends Validator
             throw new Exception('country is mandatory');
         }
 
-        if (empty($filter->Hotel->InTourOperatorId)) {
+        if (empty($post['args'][0]['Hotel']['InTourOperatorId'])) {
             throw new Exception('hotel id is mandatory');
         }
-        if (empty($filter->CheckIn)) {
+        if (empty($post['args'][0]['CheckIn'])) {
             throw new Exception('checkin is mandatory');
         }
-        if (empty($filter->CheckOut)) {
+        if (empty($post['args'][0]['CheckOut'])) {
             throw new Exception('checkOut is mandatory');
         }
-        if (empty($filter->OriginalOffer->Rooms->first()->Id)) {
+        if (empty($post['args'][0]['OriginalOffer']['Rooms'][0]['Id'])) {
             throw new Exception('roomId is mandatory');
         }
 

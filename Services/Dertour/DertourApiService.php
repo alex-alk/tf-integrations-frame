@@ -23,7 +23,7 @@ use App\Entities\Availability\TransportMerch;
 use App\Entities\Availability\TransportMerchCategory;
 use App\Entities\Availability\TransportMerchLocation;
 use App\Entities\AvailabilityDates\AvailabilityDates;
-use App\Entities\AvailabilityDates\AvailabilityDatesCollection;
+use App\Entities\AvailabilityDates\array;
 use App\Entities\AvailabilityDates\DateNight;
 use App\Entities\AvailabilityDates\DateNightCollection;
 use App\Entities\AvailabilityDates\TransportCity;
@@ -54,10 +54,10 @@ use App\Filters\BookHotelFilter;
 use App\Filters\CitiesFilter;
 use App\Filters\HotelsFilter;
 use App\Filters\PaymentPlansFilter;
-use App\Support\Collections\Custom\AvailabilityCollection;
-use App\Support\Collections\Custom\CityCollection;
-use App\Support\Collections\Custom\CountryCollection;
-use App\Support\Collections\Custom\HotelCollection;
+use App\Support\Collections\Custom\array;
+use App\Support\Collections\Custom\array;
+use App\Support\Collections\Custom\array;
+use App\Support\Collections\Custom\[];
 use App\Support\Collections\Custom\OfferCancelFeeCollection;
 use App\Support\Collections\Custom\OfferPaymentPolicyCollection;
 use App\Support\Collections\StringCollection;
@@ -91,11 +91,11 @@ class DertourApiService extends AbstractApiService
         parent::__construct();
     }
 
-    public function apiGetCountries(): CountryCollection
+    public function apiGetCountries(): array
     {
         $cities = $this->apiGetCities();
 
-        $countries = new CountryCollection();
+        $countries = [];
         foreach ($cities as $city) {
             $countries->put($city->Country->Id, $city->Country);
         }
@@ -103,7 +103,7 @@ class DertourApiService extends AbstractApiService
         return $countries;
     }
 
-    public function apiGetCities(CitiesFilter $params = null): CityCollection
+    public function apiGetCities(CitiesFilter $params = null): array
     {
         $citiesJson = Utils::getFromCache($this, 'cities');
 
@@ -114,7 +114,7 @@ class DertourApiService extends AbstractApiService
             $xml = file_get_contents($response);
             $xmlObj = new SimpleXMLElement($xml);
 
-            $cities = new CityCollection();
+            $cities = [];
 
             $romanaia = new Country();
             $romanaia->Code = 'RO';
@@ -321,7 +321,7 @@ class DertourApiService extends AbstractApiService
 
         } else {
             $citiesArray = json_decode($citiesJson, true);
-            $cities = ResponseConverter::convertToCollection($citiesArray, CityCollection::class);
+            $cities = ResponseConverter::convertToCollection($citiesArray, array::class);
         }
 
         return $cities;
@@ -347,9 +347,9 @@ class DertourApiService extends AbstractApiService
         return $map;
     }
 
-    public function apiGetAvailabilityDates(AvailabilityDatesFilter $filter): AvailabilityDatesCollection
+    public function apiGetAvailabilityDates(AvailabilityDatesFilter $filter): array
     {
-        $availabilityDatesCollection = new AvailabilityDatesCollection();
+        $availabilityDatesCollection = [];
         $transportType = AvailabilityDates::TRANSPORT_TYPE_PLANE;
         $cities = $this->apiGetCities();
 
@@ -978,7 +978,7 @@ class DertourApiService extends AbstractApiService
         }
     }
 
-    public function apiGetOffers(AvailabilityFilter $filter): AvailabilityCollection
+    public function apiGetOffers(AvailabilityFilter $filter): array
     {
         if ($filter->serviceTypes->get(0) === AvailabilityFilter::SERVICE_TYPE_CHARTER) {
             return $this->getCharterOffers($filter);
@@ -989,13 +989,13 @@ class DertourApiService extends AbstractApiService
         }
     }
 
-    private function getTourOffers(AvailabilityFilter $filter): AvailabilityCollection
+    private function getTourOffers(AvailabilityFilter $filter): array
     {
         DertourValidator::make()->validateTourOffersFilter($filter);
 
         $roomMap = $this->getHotelRoomMapping();
 
-        $availabilityCollection = new AvailabilityCollection();
+        $availabilityCollection = [];
         if ($filter->bigFile) {
             $folderOffers = Utils::getDownloadsPath() . '/' . $this->handle . '/' . self::FOLDER_OFFERS_TOUR . '/uncompressed/*';
         } else {
@@ -1009,7 +1009,7 @@ class DertourApiService extends AbstractApiService
             $checkIn = $filter->checkIn;
             $nights = $filter->days;
             $adults = (int) $filter->rooms->first()->adults;
-            $childrenAges = $filter->rooms->first()->childrenAges;
+            $childrenAges = $post['args'][0]['rooms'][0]['childrenAges'];
             $departureCity = $filter->departureCity ?: $filter->departureCityId;
             $cityId = $filter->cityId;
             $hotelCodeFilter = $filter->hotelId;
@@ -1203,7 +1203,7 @@ class DertourApiService extends AbstractApiService
                         . $filter->days . '~'
                         . $price . '~'
                         . $filter->rooms->get(0)->adults
-                        . (count($filter->rooms->first()->childrenAges) > 0 ? '~' . implode('|', $filter->rooms->get(0)->childrenAges->toArray()) : '');
+                        . (count($post['args'][0]['rooms'][0]['childrenAges']) > 0 ? '~' . implode('|', $filter->rooms->get(0)->childrenAges->toArray()) : '');
 
                     $offsetArrivalToAccom = trim(substr($row, 385, 2));
                     $arrivalDateTime = $accomodationDateTime->modify($offsetArrivalToAccom . ' days');
@@ -1395,7 +1395,7 @@ class DertourApiService extends AbstractApiService
         return $availabilityCollection;
     }
 
-    private function getCharterOffers(AvailabilityFilter $filter): AvailabilityCollection
+    private function getCharterOffers(AvailabilityFilter $filter): array
     {
         if (!$filter->bigFile) {
             DertourValidator::make()->validateCharterOffersFilter($filter);
@@ -1403,7 +1403,7 @@ class DertourApiService extends AbstractApiService
 
         $roomMap = $this->getHotelRoomMapping();
 
-        $availabilityCollection = new AvailabilityCollection();
+        $availabilityCollection = [];
 
         if ($filter->bigFile) {
             $folderOffers = Utils::getDownloadsPath() . '/' . $this->handle . '/' . self::FOLDER_OFFERS_CHARTER . '/uncompressed/*';
@@ -1418,7 +1418,7 @@ class DertourApiService extends AbstractApiService
             $checkIn = $filter->checkIn;
             $nights = $filter->days;
             $adults = (int) $filter->rooms->first()->adults;
-            $childrenAges = $filter->rooms->first()->childrenAges;
+            $childrenAges = $post['args'][0]['rooms'][0]['childrenAges'];
             $departureCity = $filter->departureCity;
             $cityId = $filter->cityId;
             $hotelCodeFilter = $filter->hotelId;
@@ -1627,7 +1627,7 @@ class DertourApiService extends AbstractApiService
                         . $filter->days . '~'
                         . $price . '~'
                         . $filter->rooms->get(0)->adults
-                        . (count($filter->rooms->first()->childrenAges) > 0 ? '~' . implode('|', $filter->rooms->get(0)->childrenAges->toArray()) : '');
+                        . (count($post['args'][0]['rooms'][0]['childrenAges']) > 0 ? '~' . implode('|', $filter->rooms->get(0)->childrenAges->toArray()) : '');
 
                     $offsetArrivalToAccom = trim(substr($row, 385, 2));
                     $arrivalDateTime = $accomodationDateTime->modify($offsetArrivalToAccom . ' days');
@@ -1825,11 +1825,11 @@ class DertourApiService extends AbstractApiService
         $offFees = new OfferCancelFeeCollection();
         $offPayments = new OfferPaymentPolicyCollection();
 
-        $adults = $filter->Rooms->first()->adults;
-        $children = $filter->Rooms->first()->children;
-        $childrenAges = $filter->Rooms->first()->childrenAges;
-        $checkOut = new DateTimeImmutable($filter->CheckOut);
-        $checkIn = new DateTimeImmutable($filter->CheckIn);
+        $adults = $post['args'][0]['rooms'][0]['adults'];
+        $children = $post['args'][0]['rooms'][0]['children'];
+        $childrenAges = $post['args'][0]['rooms'][0]['childrenAges'];
+        $checkOut = new DateTimeImmutable($post['args'][0]['CheckOut']);
+        $checkIn = new DateTimeImmutable($post['args'][0]['CheckIn']);
         $apiHKey = $filter->OriginalOffer->InitialData;
 
         $online = $this->getOnlinePrice($adults, $children, $childrenAges, $checkOut, $apiHKey);
@@ -1949,9 +1949,9 @@ class DertourApiService extends AbstractApiService
         $client = HttpClient::create();
         $resp = $client->request(HttpClient::METHOD_POST, $url, $options);
 
-        $this->showRequest(HttpClient::METHOD_POST, $url, $options, $resp->getContent(false), $resp->getStatusCode());
+        $this->showRequest(HttpClient::METHOD_POST, $url, $options, $resp->getBody(), $resp->getStatusCode());
 
-        $bearer = json_decode($resp->getContent(), true)['access_token'];
+        $bearer = json_decode($resp->getBody(), true)['access_token'];
 
         $passengerAssignments = [];
         $passengers = [];
@@ -1999,9 +1999,9 @@ class DertourApiService extends AbstractApiService
         $url = $this->apiUrl . '/booking/v1/availability-check';
         $resp = $client->request(HttpClient::METHOD_POST, $url, $options);
 
-        $this->showRequest(HttpClient::METHOD_POST, $url, $options, $resp->getContent(false), $resp->getStatusCode());
+        $this->showRequest(HttpClient::METHOD_POST, $url, $options, $resp->getBody(), $resp->getStatusCode());
 
-        $content = json_decode($resp->getContent(), true);
+        $content = json_decode($resp->getBody(), true);
 
         return $content;
     }
@@ -2025,12 +2025,12 @@ class DertourApiService extends AbstractApiService
         return $arr;
     }
 
-    private function getHotelOffers(AvailabilityFilter $filter): AvailabilityCollection
+    private function getHotelOffers(AvailabilityFilter $filter): array
     {
         DertourValidator::make()->validateIndividualOffersFilter($filter);
 
         $roomMap = $this->getHotelRoomMapping();
-        $availabilityCollection = new AvailabilityCollection();
+        $availabilityCollection = [];
 
         if ($filter->bigFile) {
             $folderOffers = Utils::getDownloadsPath() . '/' . $this->handle . '/' . self::FOLDER_OFFERS_HOTEL . '/uncompressed/*';
@@ -2043,7 +2043,7 @@ class DertourApiService extends AbstractApiService
             $checkIn = $filter->checkIn;
             $nights = $filter->days;
             $adults = (int) $filter->rooms->first()->adults;
-            $childrenAges = $filter->rooms->first()->childrenAges;
+            $childrenAges = $post['args'][0]['rooms'][0]['childrenAges'];
             $cityId = $filter->cityId;
             $hotelCodeFilter = $filter->hotelId;
 
@@ -2230,7 +2230,7 @@ class DertourApiService extends AbstractApiService
                         . $filter->days . '~'
                         . $price . '~'
                         . $filter->rooms->get(0)->adults
-                        . (count($filter->rooms->first()->childrenAges) > 0 ? '~' . implode('|', $filter->rooms->get(0)->childrenAges->toArray()) : '');
+                        . (count($post['args'][0]['rooms'][0]['childrenAges']) > 0 ? '~' . implode('|', $filter->rooms->get(0)->childrenAges->toArray()) : '');
 
                     $offer->Currency = $currency;
                     $offer->Days = $array['nights'];
@@ -2412,14 +2412,14 @@ class DertourApiService extends AbstractApiService
         return $price;
     }
 
-    public function apiGetHotels(?HotelsFilter $filter = null): HotelCollection
+    public function apiGetHotels(?HotelsFilter $filter = null): []
     {
         $file = $this->requestFile(self::DOWNLOAD_HOTELS);
 
         $xml = file_get_contents($file);
         $xmlObj = new SimpleXMLElement($xml);
 
-        $hotels = new HotelCollection();
+        $hotels = [];
 
         foreach ($xmlObj->tour as $hotelApi) {
             if (!isset($hotelApi->location)) {
@@ -2512,7 +2512,7 @@ class DertourApiService extends AbstractApiService
         $endDate = $filter->Items->get(0)->Room_CheckinBefore;
         $apiHKey = $filter->Items->get(0)->Offer_InitialData;
 
-        $passengersInput = $filter->Items->first()->Passengers;
+        $passengersInput = $post['args'][0]['Items'][0]['Passengers'];
 
         $url = $this->apiUrl . '/auth/realms/beapi/protocol/openid-connect/token';
 
@@ -2521,9 +2521,9 @@ class DertourApiService extends AbstractApiService
 
         $client = HttpClient::create();
         $resp = $client->request(HttpClient::METHOD_POST, $url, $options);
-        $this->showRequest(HttpClient::METHOD_POST, $url, $options, $resp->getContent(false), $resp->getStatusCode());
+        $this->showRequest(HttpClient::METHOD_POST, $url, $options, $resp->getBody(), $resp->getStatusCode());
 
-        $bearer = json_decode($resp->getContent(false), true)['access_token'];
+        $bearer = json_decode($resp->getBody(), true)['access_token'];
 
         $options['headers'] = [
             'Authorization' => 'Bearer ' . $bearer,
@@ -2612,9 +2612,9 @@ class DertourApiService extends AbstractApiService
 
         $url = $this->apiUrl . '/booking/v1/bookings';
         $resp = $client->request(HttpClient::METHOD_POST, $url, $options);
-        $this->showRequest(HttpClient::METHOD_POST, $url, $options, $resp->getContent(false), $resp->getStatusCode());
+        $this->showRequest(HttpClient::METHOD_POST, $url, $options, $resp->getBody(), $resp->getStatusCode());
 
-        $json = $resp->getContent(false);
+        $json = $resp->getBody();
         $content = json_decode($json, true);
 
         $response = new Booking();
@@ -2891,10 +2891,10 @@ class DertourApiService extends AbstractApiService
                 $arrivalCity = $hotel->Address->City;
                 $tour->Id = $hotel->Id;
                 $tour->Title = $hotel->Name;
-                $destinations = new CityCollection();
+                $destinations = [];
                 $destinations->add($arrivalCity);
                 $tour->Destinations = $destinations;
-                $destCountries = new CountryCollection();
+                $destCountries = [];
                 $destCountries->add($hotel->Address->City->Country);
                 $tour->Destinations_Countries = $destCountries;
 
@@ -2940,8 +2940,8 @@ class DertourApiService extends AbstractApiService
         ];
         $client = HttpClient::create(['verify_peer' => false]);
         $resp = $client->request(HttpClient::METHOD_POST, $url, $options);
-        $this->showRequest(HttpClient::METHOD_POST, $url, $options, $resp->getContent(false), $resp->getStatusCode());
-        $json = $resp->getContent();
+        $this->showRequest(HttpClient::METHOD_POST, $url, $options, $resp->getBody(), $resp->getStatusCode());
+        $json = $resp->getBody();
 
         $arr = json_decode($json, true);
 
@@ -2975,9 +2975,9 @@ class DertourApiService extends AbstractApiService
                 $url = $this->apiUrl . '/booking/v1/availability-check';
                 $resp = $client->request(HttpClient::METHOD_POST, $url, $options);
 
-                $this->showRequest(HttpClient::METHOD_POST, $url, $options, $resp->getContent(false), $resp->getStatusCode());
+                $this->showRequest(HttpClient::METHOD_POST, $url, $options, $resp->getBody(), $resp->getStatusCode());
 
-                $content = json_decode($resp->getContent(false), true);
+                $content = json_decode($resp->getBody(), true);
                 if (isset($content['code'])) {
                     $code = $content['code'];
                     if ($code === 'ERR_BE_030') {

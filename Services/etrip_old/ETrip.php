@@ -290,9 +290,9 @@ class ETrip extends \QStorageEntry implements \QIStorage
 		],
 	];
 
-	public static $_CacheData = array();
+	public static $_CacheData = [];
 
-	private static $_LoadedCacheData = array();
+	private static $_LoadedCacheData = [];
 
 	private static $_Facilities = [];
 
@@ -1158,7 +1158,7 @@ class ETrip extends \QStorageEntry implements \QIStorage
 				return;
 			}
 
-			$new_params = array();
+			$new_params = [];
 			$new_params["ResultIndex"] = $offerIndex;
 			$new_params["HotelOptions"] = array("MealPlanIndex" => $mealIndex);
 			$new_params["FlightOptions"] = array("OutboundIndex" => 0, "InboundIndex" => 0, 'JourneyIndices' => []);
@@ -1265,7 +1265,7 @@ class ETrip extends \QStorageEntry implements \QIStorage
 		$showDecisions = false;
 
 		// Group offers by Hotel
-		$offers_desc = array();
+		$offers_desc = [];
 		$_hotels_ids = [];
 		$_tours_ids = [];
 		if ($res && is_array($res))
@@ -1562,7 +1562,7 @@ class ETrip extends \QStorageEntry implements \QIStorage
 			#qvardump("Results", $res, $this->TourOperatorRecord->Handle, $params);
 
 		// Group offers by Hotel
-		$offers_desc = array();
+		$offers_desc = [];
 		$_to_load_hotels = [];
 
 		if ($res && is_array($res))

@@ -8,6 +8,8 @@ use Exception;
 use Models\City;
 use Models\Country;
 use Models\Hotel;
+use Models\OfferCancelFee;
+use Models\OfferPaymentPolicy;
 use Models\Region;
 use Models\RequestLog;
 use Psr\Http\Message\ServerRequestInterface;
@@ -27,7 +29,7 @@ abstract class AbstractApiService
 
     /** @var RequestLog[] */
     protected array $requests;
-    protected array $post;
+    //protected array $post;
     // ApiUsername
     protected string $username;
     // ApiPassword
@@ -183,21 +185,21 @@ abstract class AbstractApiService
         return [];
     }
 
-    // /**  use only if there is a separate api endpoint */
-    // public function apiGetHotelDetails(HotelDetailsFilter $filter): Hotel
-    // {
-    //     return new Hotel();
-    // }
+    /**
+     * @return OfferCancelFee[]
+     */
+    public function apiGetOfferCancelFees(): array
+    {
+        return [];
+    }
 
-    // public function apiGetOfferCancelFees(CancellationFeeFilter $filter): OfferCancelFeeCollection
-    // {
-    //     return new OfferCancelFeeCollection();
-    // }
-
-    // public function getOfferPaymentPlans(PaymentPlansFilter $filter): OfferPaymentPolicyCollection
-    // {
-    //     return new OfferPaymentPolicyCollection();
-    // }
+    /**
+     * @return OfferPaymentPolicy[]
+     */
+    public function apiGetOfferPaymentsPlan(): array
+    {
+        return [];
+    }
 
     // /**
     //  * Check Dertour
@@ -218,29 +220,15 @@ abstract class AbstractApiService
 
     abstract function apiGetOffers(): array;
 
-    // /** array with booking object and raw response */
-    // abstract function apiDoBooking(BookHotelFilter $filter): array;
+    /** array with booking object and raw response */
+    abstract function apiDoBooking(): array;
 
-    // public function apiGetAvailabilityDates(AvailabilityDatesFilter $filter): AvailabilityDatesCollection
+    // public function apiGetAvailabilityDates(AvailabilityDatesFilter $filter): array
     // {
-    //     return new AvailabilityDatesCollection();
+    //     return [];
     // }
 
-    // public function apiTestConnection(): bool
-    // {
-    //     $this->skipTopCache = true;
-
-    //     try {
-    //         $countries = $this->apiGetCountries();
-    //     } catch (Exception $e) {
-    //         return false;
-    //     }
-    //     $ok = false;
-    //     if (count($countries) > 0) {
-    //         $ok = true;
-    //     }
-    //     return $ok;
-    // }
+    abstract function apiTestConnection(): bool;
 
     // get response/responses objects from api calls
     function getResponses(): array

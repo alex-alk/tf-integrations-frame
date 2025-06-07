@@ -2,9 +2,9 @@
 
 namespace IntegrationSupport;
 
-use App\Entities\AvailabilityDates\AvailabilityDatesCollection;
+use App\Entities\AvailabilityDates\array;
 use App\Support\Collections\AbstractTypedCollection;
-use App\Support\Collections\Custom\AvailabilityCollection;
+use App\Support\Collections\Custom\array;
 use ReflectionClass;
 
 class ResponseConverter
@@ -24,9 +24,9 @@ class ResponseConverter
         return $collection;
     }
 
-    public static function convertToAvailabilityDatesCollection(array $array): AvailabilityDatesCollection
+    public static function convertToarray(array $array): array
     {
-        return self::convertToCollection($array, AvailabilityDatesCollection::class);
+        return self::convertToCollection($array, array::class);
     }
 
     public static function convertToItemResponse(mixed $anyObject, string $classType): ?object

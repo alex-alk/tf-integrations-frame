@@ -27,7 +27,7 @@ class TourVisioValidator extends Validator
             throw new Exception('args[0][Items][0][Offer_bookingCurrency] is mandatory');
         }
 
-        if (empty($filter->Items->first()->Room_CheckinAfter)) {
+        if (empty($post['args'][0]['Items'][0]['Room_CheckinAfter'])) {
             throw new Exception('args[0][Items][0][Room_CheckinAfter] is mandatory');
         }
         return $this;

@@ -41,4 +41,9 @@ class Availability implements JsonSerializable
     {
         return $this->offers;
     }
+
+    public function addOffer(Offer $offer): void
+    {
+        $this->offers[] = $offer;
+    }
 }

@@ -38,7 +38,7 @@ class ETripApi
 	public function initApi()
 	{
 		//$this->debug = 1;
-		//$params = $this->debug ? ['trace' => 1] : array();
+		//$params = $this->debug ? ['trace' => 1] : [];
 		$params = ['trace' => 1];
 		$params["login"] = ($this->ApiUsername__ ?: $this->ApiUsername);
 		$params["password"] = ($this->ApiPassword__ ?: $this->ApiPassword);
@@ -245,7 +245,7 @@ class ETripApi
 		$ret = $this->getGeography(null, "City");
 		if ($country === null)
 		{
-			$new_list = array();
+			$new_list = [];
 			if ($ret && count($ret))
 			{
 				foreach ($ret as $city)
@@ -256,7 +256,7 @@ class ETripApi
 			return $new_list;
 		}
 		
-		$new_list = array();
+		$new_list = [];
 		
 		if ($ret && count($ret))
 		{
@@ -482,7 +482,7 @@ class ETripApi
 		else
 		{
 			$result = $this->request('GetGeography');
-			$this->countries = array();
+			$this->countries = [];
 		}
 		$comp_type = $type ?: "Country";
 		$this->getGeography_Rec($result, $comp_type);
@@ -521,8 +521,8 @@ class ETripApi
 
 	/**
 	 * Searches for available packages in the ETrip system
-	 * @param array() $params
-	 * @return array() of stdClass
+	 * @param [] $params
+	 * @return [] of stdClass
 	 * @throws \Exception
 	 */
 	public function PackageSearch($params)
@@ -564,8 +564,8 @@ class ETripApi
 	/**
 	 * Searches for available hotels and their prices
 	 * 
-	 * @param array() $params - The search params
-	 * @return array() of stdClass
+	 * @param [] $params - The search params
+	 * @return [] of stdClass
 	 * @throws \Exception
 	 */
 	public function HotelSearch($params)
@@ -588,7 +588,7 @@ class ETripApi
 	 * Returns a list of all hotels in the ETrip system
 	 * No input
 	 * 
-	 * @return array()
+	 * @return []
 	 * @throws \Exception
 	 */
 	public function GetHotels()
@@ -600,7 +600,7 @@ class ETripApi
 	 * Returns a list with all packages in the ETrip system
 	 * No input
 	 * 
-	 * @return array()
+	 * @return []
 	 * @throws \Exception
 	 */
 	public function GetPackages()
@@ -611,10 +611,10 @@ class ETripApi
 	public function MakeReservation($params, $etripInstance, $order)
 	{		
 		$hotel_params = $this->preparseFromEurositeParams($params);
-		$new_params = array();
+		$new_params = [];
 		
 		$new_params["ResultIndex"] = (int)$params["IndexOffer"];
-		$new_params["PaxInfo"] = array();
+		$new_params["PaxInfo"] = [];
 		$orderCallParams = $order->CallParams ? json_decode($order->CallParams, true) : null;
 		$now_date = date_create(($orderCallParams && $orderCallParams["CheckIn"]) ? date("Y-m-d", strtotime($orderCallParams["CheckIn"])) : date("Y-m-d"));
 		if ($hotel_params["Rooms"]["Room"]["PaxNames"])
@@ -684,7 +684,7 @@ class ETripApi
 
 	public function preparseFromEurositeParams($params, $index = 0)
 	{
-		$ret = array();
+		$ret = [];
 		$items = $params["BookingItems"][$index]["BookingItem"]["HotelItem"]  ? 
 					$params["BookingItems"][$index]["BookingItem"]["HotelItem"] :  
 						$params["BookingItems"][$index]["BookingItem"]["CircuitItem"];

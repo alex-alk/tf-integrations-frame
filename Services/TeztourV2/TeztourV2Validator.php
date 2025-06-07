@@ -19,23 +19,23 @@ class TeztourV2Validator extends Validator
             throw new Exception('args[0][Items][0][Hotel][Country_InTourOperatorId] is mandatory');
         }
         
-        if (empty($filter->Items->first()->Hotel->InTourOperatorId)) {
+        if (empty($post['args'][0]['Items'][0]['Hotel']['InTourOperatorId'])) {
             throw new Exception('args[0][Items][0][Hotel][InTourOperatorId] is mandatory');
         }
 
-        if (empty($filter->Items->first()->Board_Def_InTourOperatorId)) {
+        if (empty($post['args'][0]['Items'][0]['Board_Def_InTourOperatorId'])) {
             throw new Exception('args[0][Items][0][Board_Def_InTourOperatorId] is mandatory');
         }
 
-        if (empty($filter->Items->first()->Room_Type_InTourOperatorId)) {
+        if (empty($post['args'][0]['Items'][0]['Room_Type_InTourOperatorId']) {
             throw new Exception('args[0][Items][0][Room_Type_InTourOperatorId] is mandatory');
         }
 
-        if (empty($filter->Items->first()->Room_CheckinAfter)) {
+        if (empty($post['args'][0]['Items'][0]['Room_CheckinAfter'])) {
             throw new Exception('args[0][Items][0][Room_CheckinAfter] is mandatory');
         }
 
-        if (empty($filter->Items->first()->Room_CheckinBefore)) {
+        if (empty($post['args'][0]['Items'][0]['Room_CheckinBefore'])) {
             throw new Exception('args[0][Items][0][Room_CheckinBefore] is mandatory');
         }
 

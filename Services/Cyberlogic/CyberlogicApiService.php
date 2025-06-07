@@ -35,12 +35,12 @@ use App\Filters\CitiesFilter;
 use App\Filters\HotelDetailsFilter;
 use App\Filters\HotelsFilter;
 use App\Support\Collections\Collection;
-use App\Support\Collections\Custom\AvailabilityCollection;
-use App\Support\Collections\Custom\CityCollection;
-use App\Support\Collections\Custom\CountryCollection;
-use App\Support\Collections\Custom\HotelCollection;
+use App\Support\Collections\Custom\array;
+use App\Support\Collections\Custom\array;
+use App\Support\Collections\Custom\array;
+use App\Support\Collections\Custom\[];
 use App\Support\Collections\Custom\OfferCancelFeeCollection;
-use App\Support\Collections\Custom\RegionCollection;
+use App\Support\Collections\Custom\[];
 use App\Support\Http\SimpleAsync\HttpClient;
 use App\Support\Http\SimpleAsync\Response\ResponseInterface;
 use DateInterval;
@@ -62,7 +62,7 @@ class CyberlogicApiService extends AbstractApiService
         parent::__construct();
     }
 
-    public function apiGetCountries(): CountryCollection
+    public function apiGetCountries(): array
     {
         Validator::make()->validateUsernameAndPassword($this->post);
         $requestArr = [
@@ -78,11 +78,11 @@ class CyberlogicApiService extends AbstractApiService
         $options['body'] = "xml=$xml";
 
         $response = $this->request($this->apiUrl . '/PlaceSearch', HttpClient::METHOD_POST, $options);
-        $rawResponse = $response->getContent();
+        $rawResponse = $response->getBody();
         $responseXml = simplexml_load_string($rawResponse);
         $countryResults =  $responseXml->Response->Countries;
 
-        $countries = new CountryCollection();
+        $countries = [];
         
         foreach ($countryResults->Country as $countryResult) {
             $country = new Country();
@@ -95,7 +95,7 @@ class CyberlogicApiService extends AbstractApiService
         return $countries;
     }
 
-    public function apiGetCities(CitiesFilter $params = null): CityCollection
+    public function apiGetCities(CitiesFilter $params = null): array
     {
         Validator::make()->validateUsernameAndPassword($this->post);
 
@@ -112,7 +112,7 @@ class CyberlogicApiService extends AbstractApiService
         $options['body'] = "xml=$xml";
 
         $response = $this->request($this->apiUrl . '/PlaceSearch', HttpClient::METHOD_POST, $options);
-        $rawResponse = $response->getContent();
+        $rawResponse = $response->getBody();
         $responseXml = simplexml_load_string($rawResponse);
         $citiesResult =  $responseXml->Response->Cities;
 
@@ -120,7 +120,7 @@ class CyberlogicApiService extends AbstractApiService
         $mapCountries = $this->getCountriesByCountryCodeAsMap();
         $mapProvinceId = $this->getProvinceNameByProvinceIdAsMap();
 
-        $cities = new CityCollection();
+        $cities = [];
         foreach ($citiesResult->City as $cityResult) {
 
             $provinceId = (string) $cityResult->attributes()->province_id;
@@ -149,12 +149,12 @@ class CyberlogicApiService extends AbstractApiService
         return $cities;
     }
 
-    public function apiGetRegions(): RegionCollection
+    public function apiGetRegions(): []
     {
         Validator::make()->validateUsernameAndPassword($this->post);
 
         $cities = $this->apiGetCities();
-        $regions = new RegionCollection();
+        $regions = [];
 
         foreach ($cities as $city) {
             $regions->put($city->County->Id, $city->County);
@@ -163,7 +163,7 @@ class CyberlogicApiService extends AbstractApiService
         return $regions;
     }
 
-    public function apiGetOffers(AvailabilityFilter $filter): AvailabilityCollection
+    public function apiGetOffers(AvailabilityFilter $filter): array
     {
         //todo: de verficat daca vin dubluri
         Validator::make()->validateUsernameAndPassword($this->post);
@@ -225,10 +225,10 @@ class CyberlogicApiService extends AbstractApiService
         $xml = Utils::arrayToXmlString($requestArr);
 
         $options['body'] = "xml=$xml";
-        $response = new AvailabilityCollection();
+        $response = [];
 
         $responseObj = $this->request($this->apiUrl . '/HotelsSearch',HttpClient::METHOD_POST,  $options);
-        $rawResponse = $responseObj->getContent();
+        $rawResponse = $responseObj->getBody();
         $responseXml = simplexml_load_string($rawResponse);
         $responseHotels =  $responseXml->Response->Hotels->Hotel;
 
@@ -371,7 +371,7 @@ class CyberlogicApiService extends AbstractApiService
         $roomId = $filter->Items->get(0)->Room_Type_InTourOperatorId;
         $contractId = $filter->Items->get(0)->Offer_ContractId;
         $boardCode = $filter->Items->get(0)->Board_Def_InTourOperatorId;
-        $passengers = $filter->Items->get(0)->Passengers;
+        $passengers = $post['args'][0]['Items'][0]['Passengers'];
         
         $booking = new Booking();
 
@@ -382,10 +382,10 @@ class CyberlogicApiService extends AbstractApiService
         $passengerReference = 0;
         foreach ($passengers as $passenger) {
 
-            if (!empty($passenger->Firstname)) {
+            if (!empty($passenger['Firstname'])) {
                 $title = '';
-                if ($passenger->IsAdult) {
-                    if ($passenger->Gender == '2') {
+                if ($passenger['IsAdult']) {
+                    if ($passenger['Gender'] == '2') {
                         $title = 2;
                     } else {
                         $title = 1;
@@ -396,8 +396,8 @@ class CyberlogicApiService extends AbstractApiService
                 $adults[] = [
                     'Adult' => [
                         ['[Title]' => $title],
-                        ['[Name]' => $passenger->Firstname],
-                        ['[Surname]' => $passenger->Lastname],
+                        ['[Name]' => $passenger['Firstname']],
+                        ['[Surname]' => $passenger['Lastname']],
                         ['[Reference]' => $passengerReference]
                     ]
                 ];
@@ -470,7 +470,7 @@ class CyberlogicApiService extends AbstractApiService
         $options['body'] = "xml=$xml";
 
         $responseObj = $this->request($this->apiUrl . '/Reservation', HttpClient::METHOD_POST, $options);
-        $rawResponse = $responseObj->getContent();
+        $rawResponse = $responseObj->getBody();
         $responseXml = simplexml_load_string($rawResponse);
         $response =  $responseXml->Response;
 
@@ -480,7 +480,7 @@ class CyberlogicApiService extends AbstractApiService
         return [$booking, json_encode($response)];
     }
 
-    public function apiGetHotels(?HotelsFilter $filter = null): HotelCollection
+    public function apiGetHotels(?HotelsFilter $filter = null): []
     {
         Validator::make()->validateUsernameAndPassword($this->post);
         $requestArr = [
@@ -496,13 +496,13 @@ class CyberlogicApiService extends AbstractApiService
 
         $response = $this->request($this->apiUrl . '/HotelList', HttpClient::METHOD_POST,  $options);
 
-        $rawResponse = $response->getContent();
+        $rawResponse = $response->getBody();
         $responseXml = simplexml_load_string($rawResponse);
         $responseHotels =  $responseXml->Response->Hotels;
 
         $countriesMap = $this->getCountriesByCountryCodeAsMap();
 
-        $hotels = new HotelCollection();
+        $hotels = [];
         foreach ($responseHotels->Hotel as $hotelResponse) {
 
             // $address->City->Country
@@ -576,7 +576,7 @@ class CyberlogicApiService extends AbstractApiService
         $options['body'] = "xml=$xml";
 
         $response = $this->request($this->apiUrl . '/HotelCancellationPolicies', HttpClient::METHOD_POST, $options);
-        $rawResponse = $response->getContent();
+        $rawResponse = $response->getBody();
         $responseXml = simplexml_load_string($rawResponse);
         $policiesResponse =  $responseXml->Response->HotelCancelationPolicies->Hotel;
 
@@ -605,8 +605,8 @@ class CyberlogicApiService extends AbstractApiService
                 3. Criterion: 1 Stay, 2 Arrival(not used)
                 4. Amount Type: 1 % of Reservation, 2 Night(s) of Stay
                 */
-                $checkInDate = new DateTimeImmutable($filter->CheckIn);
-                $checkOutDate = new DateTimeImmutable($filter->CheckOut);
+                $checkInDate = new DateTimeImmutable($post['args'][0]['CheckIn']);
+                $checkOutDate = new DateTimeImmutable($post['args'][0]['CheckOut']);
                 $stayFromDate = new DateTimeImmutable($policy->StayFrom);
                 $stayToDate = new DateTimeImmutable($policy->StayTo);
                 $beforeArrivalFromInterval = new DateInterval('P' . $policy->BeforeArrivalFrom . 'D');
@@ -624,10 +624,10 @@ class CyberlogicApiService extends AbstractApiService
                 // if out of interval, skip
                 if ($isInInterval) {
                     // checkIn - beforeArrivalFrom
-                    $dateStart = (new DateTime($filter->CheckIn))->sub($beforeArrivalFromInterval)->format('Y-m-d');
+                    $dateStart = (new DateTime($post['args'][0]['CheckIn']))->sub($beforeArrivalFromInterval)->format('Y-m-d');
 
                     // checkIn - beforeArrivalEnd
-                    $dateEnd = (new DateTime($filter->CheckIn))->sub($beforeArrivalToInterval)->format('Y-m-d');
+                    $dateEnd = (new DateTime($post['args'][0]['CheckIn']))->sub($beforeArrivalToInterval)->format('Y-m-d');
                 } else {
                     continue;
                 }
@@ -639,13 +639,13 @@ class CyberlogicApiService extends AbstractApiService
 
                     // skip the next rules if the number of nights of the policy is greater and set end date
                     if ($amount >= $nightsOfStay) {
-                        $dateEnd = $filter->CheckIn;
+                        $dateEnd = $post['args'][0]['CheckIn'];
                         $skipNextRules = true;
                         $amount = $nightsOfStay;
                     }
-                    $fee = $filter->SuppliedPrice * $amount / $nightsOfStay;
+                    $fee = $post['args'][0]['SuppliedPrice'] * $amount / $nightsOfStay;
                 } else {
-                    $fee = $filter->SuppliedPrice * $amount / 100;
+                    $fee = $post['args'][0]['SuppliedPrice'] * $amount / 100;
                 }
 
                 // compare with the rest of the array
@@ -671,13 +671,13 @@ class CyberlogicApiService extends AbstractApiService
 
                 // FeeType No show or Early Departure: dates will be check In
                 if ((int) $policy->FeeTypeID === FeeType::NO_SHOW_FEE || (int) $policy->FeeTypeID === FeeType::EARLY_DEPARTURE_FEE) {
-                    $dateStart = $filter->CheckIn;
-                    $dateEnd = $filter->CheckIn;
+                    $dateStart = $post['args'][0]['CheckIn'];
+                    $dateEnd = $post['args'][0]['CheckIn'];
                 }
 
                 if ((int) $policy->AmountTypeID === AmountType::PERCENT_OF_RESERVATION) {
                     $amount = (float) $policy->Amount;
-                    $fee = $filter->SuppliedPrice * $amount / 100;
+                    $fee = $post['args'][0]['SuppliedPrice'] * $amount / 100;
                 }
 
                 $cp['DateStart'] = $dateStart;
@@ -709,7 +709,7 @@ class CyberlogicApiService extends AbstractApiService
     
     public function apiGetOfferCancelFees(CancellationFeeFilter $filter): OfferCancelFeeCollection
     {
-        $policies = $this->getCancelFeesByHotel($filter->Hotel->InTourOperatorId);
+        $policies = $this->getCancelFeesByHotel($post['args'][0]['Hotel']['InTourOperatorId']);
 
         $ret = new Collection();
         $result = new OfferCancelFeeCollection();
@@ -728,8 +728,8 @@ class CyberlogicApiService extends AbstractApiService
                 3. Criterion: 1 Stay, 2 Arrival(not used)
                 4. Amount Type: 1 % of Reservation, 2 Night(s) of Stay
                 */
-                $checkInDate = new DateTimeImmutable($filter->CheckIn);
-                $checkOutDate = new DateTimeImmutable($filter->CheckOut);
+                $checkInDate = new DateTimeImmutable($post['args'][0]['CheckIn']);
+                $checkOutDate = new DateTimeImmutable($post['args'][0]['CheckOut']);
                 $stayFromDate = new DateTimeImmutable($policy->StayFrom);
                 $stayToDate = new DateTimeImmutable($policy->StayTo);
                 $beforeArrivalFromInterval = new DateInterval('P' . $policy->BeforeArrivalFrom . 'D');
@@ -747,10 +747,10 @@ class CyberlogicApiService extends AbstractApiService
                 // if out of interval, skip
                 if ($isInInterval) {
                     // checkIn - beforeArrivalFrom
-                    $dateStart = (new DateTime($filter->CheckIn))->sub($beforeArrivalFromInterval)->format('Y-m-d');
+                    $dateStart = (new DateTime($post['args'][0]['CheckIn']))->sub($beforeArrivalFromInterval)->format('Y-m-d');
 
                     // checkIn - beforeArrivalEnd
-                    $dateEnd = (new DateTime($filter->CheckIn))->sub($beforeArrivalToInterval)->format('Y-m-d');
+                    $dateEnd = (new DateTime($post['args'][0]['CheckIn']))->sub($beforeArrivalToInterval)->format('Y-m-d');
                 } else {
                     continue;
                 }
@@ -762,13 +762,13 @@ class CyberlogicApiService extends AbstractApiService
 
                     // skip the next rules if the number of nights of the policy is greater and set end date
                     if ($amount >= $nightsOfStay) {
-                        $dateEnd = $filter->CheckIn;
+                        $dateEnd = $post['args'][0]['CheckIn'];
                         $skipNextRules = true;
                         $amount = $nightsOfStay;
                     }
-                    $fee = $filter->SuppliedPrice * $amount / $nightsOfStay;
+                    $fee = $post['args'][0]['SuppliedPrice'] * $amount / $nightsOfStay;
                 } else {
-                    $fee = $filter->SuppliedPrice * $amount / 100;
+                    $fee = $post['args'][0]['SuppliedPrice'] * $amount / 100;
                 }
 
                 // compare with the rest of the array
@@ -794,13 +794,13 @@ class CyberlogicApiService extends AbstractApiService
 
                 // FeeType No show or Early Departure: dates will be check In
                 if ((int) $policy->FeeTypeID === FeeType::NO_SHOW_FEE || (int) $policy->FeeTypeID === FeeType::EARLY_DEPARTURE_FEE) {
-                    $dateStart = $filter->CheckIn;
-                    $dateEnd = $filter->CheckIn;
+                    $dateStart = $post['args'][0]['CheckIn'];
+                    $dateEnd = $post['args'][0]['CheckIn'];
                 }
 
                 if ((int) $policy->AmountTypeID === AmountType::PERCENT_OF_RESERVATION) {
                     $amount = (float) $policy->Amount;
-                    $fee = $filter->SuppliedPrice * $amount / 100;
+                    $fee = $post['args'][0]['SuppliedPrice'] * $amount / 100;
                 }
 
                 $cp['DateStart'] = $dateStart;
@@ -848,7 +848,7 @@ class CyberlogicApiService extends AbstractApiService
         $options['body'] = "xml=$xml";
 
         $responseHotel = $this->request($this->apiUrl . '/HotelInfo', HttpClient::METHOD_POST, $options);
-        $rawResponse = $responseHotel->getContent();
+        $rawResponse = $responseHotel->getBody();
         $responseXml = simplexml_load_string($rawResponse);
         $response =  $responseXml->Response->Hotels->Hotel;
         //dump($response);
@@ -974,7 +974,7 @@ class CyberlogicApiService extends AbstractApiService
         $options['body'] = "xml=$xml";
 
         $response = $this->request($this->apiUrl . '/PlaceSearch', HttpClient::METHOD_POST, $options);
-        $rawResponse = $response->getContent();
+        $rawResponse = $response->getBody();
         $responseXml = simplexml_load_string($rawResponse);
         $prefectures =  $responseXml->Response->Prefectures;
 
@@ -1001,7 +1001,7 @@ class CyberlogicApiService extends AbstractApiService
         $options['body'] = "xml=$xml";
 
         $response = $this->request($this->apiUrl . '/PlaceSearch', HttpClient::METHOD_POST, $options);
-        $rawResponse = $response->getContent();
+        $rawResponse = $response->getBody();
         $responseXml = simplexml_load_string($rawResponse);
         $provinces =  $responseXml->Response->Provinces;
 
@@ -1016,7 +1016,7 @@ class CyberlogicApiService extends AbstractApiService
     {        
         $httpClient = HttpClient::create();
         $response = $httpClient->request($method, $url, $options);
-        $this->showRequest($method, $url, $options, $response->getContent(), $response->getStatusCode());
+        $this->showRequest($method, $url, $options, $response->getBody(), $response->getStatusCode());
 
         return $response;
     }

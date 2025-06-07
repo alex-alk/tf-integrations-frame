@@ -36,10 +36,10 @@ use App\Filters\BookHotelFilter;
 use App\Filters\CitiesFilter;
 use App\Filters\HotelDetailsFilter;
 use App\Filters\HotelsFilter;
-use App\Support\Collections\Custom\AvailabilityCollection;
-use App\Support\Collections\Custom\CityCollection;
-use App\Support\Collections\Custom\CountryCollection;
-use App\Support\Collections\Custom\HotelCollection;
+use App\Support\Collections\Custom\array;
+use App\Support\Collections\Custom\array;
+use App\Support\Collections\Custom\array;
+use App\Support\Collections\Custom\[];
 use App\Support\Collections\Custom\OfferCancelFeeCollection;
 use App\Support\Collections\Custom\OfferPaymentPolicyCollection;
 use App\Support\Collections\Custom\RoomTypeCollection;
@@ -66,7 +66,7 @@ class HotelconApiService extends AbstractApiService
         parent::__construct();
     }
 
-    public function apiGetCountries(): CountryCollection
+    public function apiGetCountries(): array
     {
         Validator::make()->validateUsernameAndPassword($this->post);
 
@@ -98,14 +98,14 @@ class HotelconApiService extends AbstractApiService
         ];
 
         $response = $client->request(HttpClient::METHOD_POST, $url, $options);
-        $this->showRequest(HttpClient::METHOD_POST, $url, $options, $response->getContent(false), $response->getStatusCode());
-        $content = $response->getContent();
+        $this->showRequest(HttpClient::METHOD_POST, $url, $options, $response->getBody(), $response->getStatusCode());
+        $content = $response->getBody();
        
         $content = str_replace('ns2:', '', $content);
         $content = str_replace('soap:', '', $content);
 
         $response = new SimpleXMLElement($content);
-        $newResult = new CountryCollection();
+        $newResult = [];
 
         foreach ($response->Body->getCountriesResponse->country as $v) {
             $country = new Country();
@@ -118,7 +118,7 @@ class HotelconApiService extends AbstractApiService
         return $newResult;
     }
 
-    public function apiGetCities(CitiesFilter $params = null): CityCollection
+    public function apiGetCities(CitiesFilter $params = null): array
     {
         Validator::make()->validateUsernameAndPassword($this->post);
 
@@ -129,7 +129,7 @@ class HotelconApiService extends AbstractApiService
 
             $countries = $this->apiGetCountries();
 
-            $cities = new CityCollection();
+            $cities = [];
             $getFromCache = false;
 
             $client = HttpClient::create();
@@ -168,8 +168,8 @@ class HotelconApiService extends AbstractApiService
             foreach ($requests as $request) {
                 $responseObj = $request[0];
                 $options = $request[1];
-                $this->showRequest(HttpClient::METHOD_POST, $url, $options, $responseObj->getContent(false), $responseObj->getStatusCode());
-                $content = $responseObj->getContent(false);
+                $this->showRequest(HttpClient::METHOD_POST, $url, $options, $responseObj->getBody(), $responseObj->getStatusCode());
+                $content = $responseObj->getBody();
                 $tries = 0;
                 
                 if ($responseObj->getStatusCode() !== 200) {
@@ -178,7 +178,7 @@ class HotelconApiService extends AbstractApiService
                             sleep(10);
                         }
                         $responseObj = $client->request(HttpClient::METHOD_POST, $url, $options);
-                        $content = $responseObj->getContent(false);
+                        $content = $responseObj->getBody();
                         
                         if ($responseObj->getStatusCode() === 200) {
                             break;
@@ -219,26 +219,26 @@ class HotelconApiService extends AbstractApiService
                     throw new Exception($this->handle . ': cannot get cities from API and no files are cached');
                 }
                 $citiesArray = json_decode($citiesJson, true);
-                $cities = ResponseConverter::convertToCollection($citiesArray, CityCollection::class);
+                $cities = ResponseConverter::convertToCollection($citiesArray, array::class);
             } else {
                 $data = json_encode_pretty($cities);
                 Utils::writeToCache($this->handle, $file, $data, 0);
             }
         } else {
             $citiesArray = json_decode($citiesJson, true);
-            $cities = ResponseConverter::convertToCollection($citiesArray, CityCollection::class);
+            $cities = ResponseConverter::convertToCollection($citiesArray, array::class);
         }
 
         return $cities;
     }
 
-    public function apiGetOffers(AvailabilityFilter $filter): AvailabilityCollection
+    public function apiGetOffers(AvailabilityFilter $filter): array
     {
         Validator::make()
             ->validateUsernameAndPassword($this->post)
             ->validateAvailabilityFilter($filter);
 
-        $availabilities = new AvailabilityCollection();
+        $availabilities = [];
         if ($filter->serviceTypes->first() !== AvailabilityFilter::SERVICE_TYPE_HOTEL) {
             return $availabilities;
         }
@@ -303,9 +303,9 @@ class HotelconApiService extends AbstractApiService
         ];
 
         $response = $client->request(HttpClient::METHOD_POST, $url, $options);
-        $this->showRequest(HttpClient::METHOD_POST, $url, $options, $response->getContent(false), $response->getStatusCode());
+        $this->showRequest(HttpClient::METHOD_POST, $url, $options, $response->getBody(), $response->getStatusCode());
 
-        $content = $response->getContent(false);
+        $content = $response->getBody();
         $content = str_replace('ns2:', '', $content);
         $content = str_replace('soap:', '', $content);
         $content = mb_convert_encoding($content, 'UTF-8', 'ISO-8859-1');    
@@ -485,11 +485,11 @@ class HotelconApiService extends AbstractApiService
         return $availabilities;
     }
 
-    public function apiGetHotels(?HotelsFilter $filter = null): HotelCollection
+    public function apiGetHotels(?HotelsFilter $filter = null): []
     {
         $response = $this->getHotelsArr($this->handle);
 
-        $hotels = new HotelCollection();
+        $hotels = [];
         //$i = 0;
         foreach ($response as $hotelResponse) {
            // $i++;
@@ -679,9 +679,9 @@ AD000083;Golden Tulip Andorra Fenix Hotel;Prat Gran;   3 - 5;Escaldes-Engordany;
         ];
 
         $response = $client->request(HttpClient::METHOD_POST, $url, $options);
-        $this->showRequest(HttpClient::METHOD_POST, $url, $options, $response->getContent(false), $response->getStatusCode());
+        $this->showRequest(HttpClient::METHOD_POST, $url, $options, $response->getBody(), $response->getStatusCode());
 
-        $content = $response->getContent(false);
+        $content = $response->getBody();
         $content = str_replace('ns2:', '', $content);
         $content = str_replace('soap:', '', $content);
         $content = mb_convert_encoding($content, 'UTF-8', 'ISO-8859-1');    
@@ -821,8 +821,8 @@ AD000083;Golden Tulip Andorra Fenix Hotel;Prat Gran;   3 - 5;Escaldes-Engordany;
             ];
 
             $response = $client->request(HttpClient::METHOD_POST, $url, $options);
-            $this->showRequest(HttpClient::METHOD_POST, $url, $options, $response->getContent(false), 0);
-            $content = $response->getContent();
+            $this->showRequest(HttpClient::METHOD_POST, $url, $options, $response->getBody(), 0);
+            $content = $response->getBody();
         
             $content = str_replace('ns2:', '', $content);
             $content = str_replace('soap:', '', $content);
@@ -893,8 +893,8 @@ AD000083;Golden Tulip Andorra Fenix Hotel;Prat Gran;   3 - 5;Escaldes-Engordany;
         ];
 
         $response = $client->request(HttpClient::METHOD_POST, $url, $options);
-        $this->showRequest(HttpClient::METHOD_POST, $url, $options, $response->getContent(false), 0);
-        $content = $response->getContent();
+        $this->showRequest(HttpClient::METHOD_POST, $url, $options, $response->getBody(), 0);
+        $content = $response->getBody();
        
         $content = str_replace('ns2:', '', $content);
         $content = str_replace('soap:', '', $content);
@@ -904,15 +904,15 @@ AD000083;Golden Tulip Andorra Fenix Hotel;Prat Gran;   3 - 5;Escaldes-Engordany;
 
         // booking
         $pax = [];
-        foreach ($filter->Items->get(0)->Passengers as $passenger) {
-            if ($passenger->Firstname !== '') {
+        foreach ($post['args'][0]['Items'][0]['Passengers'] as $passenger) {
+            if ($passenger['Firstname'] !== '') {
                 $paxArray = [
-                    '[title]' => $passenger->Gender == 2 ? 'Mrs' : 'Mr',
-                    'firstName' => $passenger->Firstname,
-                    'lastName' => $passenger->Lastname,
+                    '[title]' => $passenger['Gender'] == 2 ? 'Mrs' : 'Mr',
+                    'firstName' => $passenger['Firstname'],
+                    'lastName' => $passenger['Lastname'],
                 ];
-                if (!$passenger->IsAdult) {
-                    $age = (new DateTime())->diff(new DateTime($passenger->BirthDate))->y;
+                if (!$passenger['IsAdult']) {
+                    $age = (new DateTime())->diff(new DateTime($passenger['BirthDate']))->y;
                     $paxArray['[childAge]'] = $age;
                     $paxArray['[isChild]'] = 'true';
                 }
@@ -962,8 +962,8 @@ AD000083;Golden Tulip Andorra Fenix Hotel;Prat Gran;   3 - 5;Escaldes-Engordany;
         ];
 
         $response = $client->request(HttpClient::METHOD_POST, $url, $options);
-        $this->showRequest(HttpClient::METHOD_POST, $url, $options, $response->getContent(false), 0);
-        $contentOrig = $response->getContent();
+        $this->showRequest(HttpClient::METHOD_POST, $url, $options, $response->getBody(), 0);
+        $contentOrig = $response->getBody();
        
         $content = str_replace('ns2:', '', $contentOrig);
         $content = str_replace('soap:', '', $content);
@@ -1062,7 +1062,7 @@ AD000083;Golden Tulip Andorra Fenix Hotel;Prat Gran;   3 - 5;Escaldes-Engordany;
 
         $client = HttpClient::create();
         $respObj = $client->request(HttpClient::METHOD_POST, $this->apiUrl, $options);
-        $data = $respObj->getContent();
+        $data = $respObj->getBody();
 
         $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $options, $data, $respObj->getStatusCode());
 

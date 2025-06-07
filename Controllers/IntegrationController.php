@@ -34,4 +34,24 @@ class IntegrationController
     {
         return View::make('integration/offers', []);
     }
+
+    public function cancelFees(): View
+    {
+        return View::make('integration/cancel-fees', []);
+    }
+
+    public function paymentPlans(): View
+    {
+        return View::make('integration/payment-plans', []);
+    }
+
+    public function testConnection(): View
+    {
+        return View::make('integration/test-connection', []);
+    }
+
+    public function book(): View
+    {
+        return View::make('integration/book', []);
+    }
 }

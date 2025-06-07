@@ -28,7 +28,7 @@ trait EuroSiteCharters
 	{
 		//CircuitSearchCityRequest
 		if (!$params)
-			$params = array();
+			$params = [];
 
 		$data = static::GetResponseData($this->Request("getCharterCitiesRequest", $params), "getCharterCitiesResponse");
 		return $this->getCountriesWithServices($data ? $data["Country"] : null, $objs);
@@ -46,7 +46,7 @@ trait EuroSiteCharters
 		if (!$params)
 		{
 			// populate here with some defaultss
-			$params = array();
+			$params = [];
 		}
 
 		$data = static::GetResponseData($this->doRequest("getCharterPriceRequest", $params), "getCharterPriceResponse");
@@ -54,17 +54,17 @@ trait EuroSiteCharters
 		$charters = $data["Charter"] ? $data["Charter"] : null;
 
 		if (!$charters || (count($charters) === 0))
-			return array();
+			return [];
 
 		if (isset($charters["@attributes"]))
 			$charters = array($charters);
 		
 		if (!$objs)
-			$objs = array();
+			$objs = [];
 		
 		$app = \QApp::NewData();
 		
-		$ret = array();
+		$ret = [];
 		foreach ($charters as $charter)
 		{
 			$offers = ($charter["Offers"] && $charter["Offers"]["Offer"]) ? $charter["Offers"]["Offer"] : null;
@@ -115,7 +115,7 @@ trait EuroSiteCharters
 		if (!$params)
 		{
 			// populate here with some defaultss
-			$params = array();
+			$params = [];
 		}
 
 		$params["ProductType"] = "charter";
@@ -136,7 +136,7 @@ trait EuroSiteCharters
 		if (!$params)
 		{
 			// populate here with some defaultss
-			$params = array();
+			$params = [];
 		}
 
 		$data = static::GetResponseData($this->doRequest("getCharterServiceRequest", $params), "getCharterServiceResponse");
@@ -155,7 +155,7 @@ trait EuroSiteCharters
 		if (!$params)
 		{
 			// populate here with some defaultss
-			$params = array();
+			$params = [];
 		}
 		$data = static::GetResponseData($this->doRequest("getCharterServicePriceRequest", $params), "getCharterServicePriceResponse");
 		$service = ($data["Services"] && $data["Services"]["Service"]) ? $data["Services"]["Service"] : null;
@@ -344,7 +344,7 @@ trait EuroSiteCharters
 		}
 
 		if (!$objs)
-			$objs = array();
+			$objs = [];
 		// needs to set up TourOpCode
 		$data = static::GetResponseData($this->doRequest("getPackageChartersDiscountsRequest", [], true), "getPackageChartersDiscountsResponse");
 		$appData = \QApp::NewData();

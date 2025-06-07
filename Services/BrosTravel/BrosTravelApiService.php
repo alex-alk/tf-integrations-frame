@@ -40,13 +40,13 @@ use App\Filters\CitiesFilter;
 use App\Filters\HotelDetailsFilter;
 use App\Filters\HotelsFilter;
 use App\Filters\Passenger;
-use App\Support\Collections\Custom\AvailabilityCollection;
-use App\Support\Collections\Custom\CityCollection;
-use App\Support\Collections\Custom\CountryCollection;
-use App\Support\Collections\Custom\HotelCollection;
+use App\Support\Collections\Custom\array;
+use App\Support\Collections\Custom\array;
+use App\Support\Collections\Custom\array;
+use App\Support\Collections\Custom\[];
 use App\Support\Collections\Custom\OfferCancelFeeCollection;
 use App\Support\Collections\Custom\OfferPaymentPolicyCollection;
-use App\Support\Collections\Custom\RegionCollection;
+use App\Support\Collections\Custom\[];
 use App\Support\Http\RequestLog;
 use App\Support\Http\SimpleAsync\HttpClient;
 use App\Support\Http\SimpleAsync\Response\ResponseInterface;
@@ -78,7 +78,7 @@ class BrosTravelApiService extends AbstractApiService
             ],
             'id' => 1,
         ]);
-        $jsonLogin = $this->request($this->apiUrl, HttpClient::METHOD_POST, $optionsLogin)->getContent();
+        $jsonLogin = $this->request($this->apiUrl, HttpClient::METHOD_POST, $optionsLogin)->getBody();
 
         $responseLogin = json_decode($jsonLogin, true);
 
@@ -89,13 +89,13 @@ class BrosTravelApiService extends AbstractApiService
         $token = $responseLogin['result']['token'] ?? null;
 
         $guests = [];
-        $filter->Items->get(0)->Passengers->each(function(Passenger $passenger) use (&$guests) {
-            if (!empty($passenger->Firstname)) {
+        $post['args'][0]['Items'][0]['Passengers']->each(function(Passenger $passenger) use (&$guests) {
+            if (!empty($passenger['Firstname'])) {
                 $guests[] = [
-                    'type' => isset($passenger->IsAdult) && $passenger->IsAdult ? 'adult' : 'child',
-                    'firstName' => $passenger->Firstname,
-                    'lastName' => $passenger->Lastname,
-                    'dateOfBirth' => $passenger->BirthDate
+                    'type' => isset($passenger['IsAdult']) && $passenger['IsAdult'] ? 'adult' : 'child',
+                    'firstName' => $passenger['Firstname'],
+                    'lastName' => $passenger['Lastname'],
+                    'dateOfBirth' => $passenger['BirthDate']
                 ];
             }
         });
@@ -122,7 +122,7 @@ class BrosTravelApiService extends AbstractApiService
         ]);
 
         $options['headers'] = ['Authorization' => 'Bearer ' . $token];
-        $jsonPrepared = $this->request($this->apiUrl, HttpClient::METHOD_POST, $options)->getContent();
+        $jsonPrepared = $this->request($this->apiUrl, HttpClient::METHOD_POST, $options)->getBody();
         $responsePrepared = json_decode($jsonPrepared, true);
 
         if (!empty($responsePrepared['error'])) {
@@ -152,7 +152,7 @@ class BrosTravelApiService extends AbstractApiService
         ]);
 
         $optionsBooking['headers'] = ['Authorization' => 'Bearer ' . $token];
-        $jsonBooking = $this->request($this->apiUrl, HttpClient::METHOD_POST, $optionsBooking)->getContent();
+        $jsonBooking = $this->request($this->apiUrl, HttpClient::METHOD_POST, $optionsBooking)->getBody();
         $responseBooking = json_decode($jsonBooking, true);
 
         $booking = new Booking();
@@ -160,7 +160,7 @@ class BrosTravelApiService extends AbstractApiService
         return [$booking, json_encode($responseBooking)];
     }
 
-    public function apiGetCities(CitiesFilter $params = null): CityCollection
+    public function apiGetCities(CitiesFilter $params = null): array
     {
         Validator::make()->validateUsernameAndPassword($this->post);
         $countries = $this->apiGetCountries();
@@ -172,10 +172,10 @@ class BrosTravelApiService extends AbstractApiService
             'params' => null,
             'id' => 1
         ]);
-        $json = $this->request($this->apiUrl, HttpClient::METHOD_POST, $options)->getContent();
+        $json = $this->request($this->apiUrl, HttpClient::METHOD_POST, $options)->getBody();
         $array = json_decode($json, true)['result'];
 
-        $cities = new CityCollection();
+        $cities = [];
         foreach ($array as $element) {
             $city = new City();
             $city->Name = $element['name'];
@@ -191,7 +191,7 @@ class BrosTravelApiService extends AbstractApiService
         return $cities;
     }
 
-    public function apiGetRegions(): RegionCollection
+    public function apiGetRegions(): []
     {
         Validator::make()->validateUsernameAndPassword($this->post);
         $regionsCached = Utils::getFromCache($this->handle, 'regions');
@@ -204,10 +204,10 @@ class BrosTravelApiService extends AbstractApiService
                 'params' => null,
                 'id' => 1
             ]);
-            $json = $this->request($this->apiUrl, HttpClient::METHOD_POST, $options)->getContent();
+            $json = $this->request($this->apiUrl, HttpClient::METHOD_POST, $options)->getBody();
             $array = json_decode($json, true)['result'];
 
-            $regions = new RegionCollection();
+            $regions = [];
             foreach ($array as $element) {
                 $region = new Region();
                 $region->Name = $element['region'];
@@ -218,13 +218,13 @@ class BrosTravelApiService extends AbstractApiService
             }
             Utils::writeToCache($this->handle, 'regions', json_encode($regions), 0);
         } else {
-            $regions = ResponseConverter::convertToCollection(json_decode($regionsCached, true), RegionCollection::class);
+            $regions = ResponseConverter::convertToCollection(json_decode($regionsCached, true), []::class);
         }
 
         return $regions;
     }
 
-    public function apiGetCountries(): CountryCollection
+    public function apiGetCountries(): array
     {
         Validator::make()->validateUsernameAndPassword($this->post);
         $options['body'] = json_encode([
@@ -233,11 +233,11 @@ class BrosTravelApiService extends AbstractApiService
             'params' => null,
             'id' => 1
         ]);
-        $json = $this->request($this->apiUrl, HttpClient::METHOD_POST, $options)->getContent();
+        $json = $this->request($this->apiUrl, HttpClient::METHOD_POST, $options)->getBody();
         $array = json_decode($json, true)['result'];
         $map = CountryCodeMap::getCountryCodeMap();
 
-        $countries = new CountryCollection();
+        $countries = [];
         foreach ($array as $element) {
             $country = new Country();
             $country->Name = trim($element['country']);
@@ -260,7 +260,7 @@ class BrosTravelApiService extends AbstractApiService
             ],
             'id' => 1
         ]);
-        $json = $this->request($this->apiUrl, HttpClient::METHOD_POST, $options)->getContent();
+        $json = $this->request($this->apiUrl, HttpClient::METHOD_POST, $options)->getBody();
         $hotelResponse = json_decode($json, true)['result'];
         
         $city = $cities->first(fn(City $cityResponse) => $cityResponse->Id == $hotelResponse['locationid']);
@@ -446,7 +446,7 @@ class BrosTravelApiService extends AbstractApiService
         ]; 
     }
 
-    public function apiGetHotels(?HotelsFilter $filter = null): HotelCollection
+    public function apiGetHotels(?HotelsFilter $filter = null): []
     {
         Validator::make()->validateUsernameAndPassword($this->post);
         $cities = $this->apiGetCities();
@@ -458,10 +458,10 @@ class BrosTravelApiService extends AbstractApiService
             'id' => 1
         ]);
         
-        $json = $this->request($this->apiUrl, HttpClient::METHOD_POST,  $options)->getContent();
+        $json = $this->request($this->apiUrl, HttpClient::METHOD_POST,  $options)->getBody();
         $array = json_decode($json, true)['result'];
         
-        $hotels = new HotelCollection();
+        $hotels = [];
 
         $client = HttpClient::create(['verify_peer' => false]);
 
@@ -486,7 +486,7 @@ class BrosTravelApiService extends AbstractApiService
             //     $this->responses->add($responseObj);
             // }
 
-            $hotelResponse = json_decode($responseObj->getContent(), true)['result'];
+            $hotelResponse = json_decode($responseObj->getBody(), true)['result'];
             $city = $cities->first(fn(City $cityResponse) => $cityResponse->Id == $hotelResponse['locationid']);
 
             // $hotel->Address
@@ -562,7 +562,7 @@ class BrosTravelApiService extends AbstractApiService
         return $hotels;
     }
 
-    public function apiGetOffers(AvailabilityFilter $filter): AvailabilityCollection
+    public function apiGetOffers(AvailabilityFilter $filter): array
     {
         Validator::make()
             ->validateUsernameAndPassword($this->post)
@@ -580,7 +580,7 @@ class BrosTravelApiService extends AbstractApiService
         $client = HttpClient::create();
 
         $responseObj = $client->request(HttpClient::METHOD_POST, $this->apiUrl, $optionsLogin);
-        $jsonLogin = $responseObj->getContent();
+        $jsonLogin = $responseObj->getBody();
         $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $optionsLogin, $jsonLogin, $responseObj->getStatusCode());
 
         $responseLogin = json_decode($jsonLogin, true);
@@ -647,8 +647,8 @@ class BrosTravelApiService extends AbstractApiService
         
         $responseObj = $client->request(HttpClient::METHOD_POST, $this->apiUrl, $options);
        
-        $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $options, $responseObj->getContent(false), $responseObj->getStatusCode());
-        $json = $responseObj->getContent();
+        $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $options, $responseObj->getBody(), $responseObj->getStatusCode());
+        $json = $responseObj->getBody();
         
         $response = json_decode($json, true);
 
@@ -656,7 +656,7 @@ class BrosTravelApiService extends AbstractApiService
             throw new Exception($response['error']['message']);
         }
 
-        $availabilityCollection = new AvailabilityCollection();
+        $availabilityCollection = [];
 
         foreach($response['result'] as $offerResponse) {
             $hotelId = $offerResponse['propertyid'];
@@ -876,7 +876,7 @@ class BrosTravelApiService extends AbstractApiService
             ],
             'id' => 1
         ]);
-        $json = $this->request($this->apiUrl, HttpClient::METHOD_POST, $options)->getContent();
+        $json = $this->request($this->apiUrl, HttpClient::METHOD_POST, $options)->getBody();
         $hotelResponse = json_decode($json, true)['result'];
 
         $hotelCancelFees = [];
@@ -937,7 +937,7 @@ class BrosTravelApiService extends AbstractApiService
         $response = $httpClient->request($method, $url, $options);
         if (isset($this->post['get-raw-data'])) {
             $request = new RequestLog($method, $url, $options);
-            $request->response = $response->getContent();
+            $request->response = $response->getBody();
             $this->requests->add($request);
         }
         return $response;

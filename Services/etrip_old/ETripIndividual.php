@@ -150,7 +150,7 @@ trait ETripIndividual
 
 	public function getRoomsList($rooms)
     {
-        $list = array();
+        $list = [];
         if (!is_array($rooms))
 		{
 			$rooms = array($rooms);
@@ -225,7 +225,7 @@ trait ETripIndividual
 					(($Package->FareType[0] == "special_offer") || ($Package->FareType[0] == "last_minute") || ($Package->FareType[0] == "early_booking"))));
 
 		$offers = new \QModelArray();
-		$rooms_list = array();
+		$rooms_list = [];
 		if ($hotelDetails->Rooms)
 			$rooms_list = $this->getRoomsList($hotelDetails->Rooms);
 

@@ -20,7 +20,7 @@ use App\Entities\Availability\TransportMerch;
 use App\Entities\Availability\TransportMerchCategory;
 use App\Entities\Availability\TransportMerchLocation;
 use App\Entities\AvailabilityDates\AvailabilityDates;
-use App\Entities\AvailabilityDates\AvailabilityDatesCollection;
+use App\Entities\AvailabilityDates\array;
 use App\Entities\AvailabilityDates\DateNight;
 use App\Entities\AvailabilityDates\DateNightCollection;
 use App\Entities\AvailabilityDates\TransportCity;
@@ -53,13 +53,13 @@ use App\Filters\HotelDetailsFilter;
 use App\Filters\HotelsFilter;
 use App\Filters\PaymentPlansFilter;
 use App\Handles;
-use App\Support\Collections\Custom\AvailabilityCollection;
-use App\Support\Collections\Custom\CityCollection;
-use App\Support\Collections\Custom\CountryCollection;
-use App\Support\Collections\Custom\HotelCollection;
+use App\Support\Collections\Custom\array;
+use App\Support\Collections\Custom\array;
+use App\Support\Collections\Custom\array;
+use App\Support\Collections\Custom\[];
 use App\Support\Collections\Custom\OfferCancelFeeCollection;
 use App\Support\Collections\Custom\OfferPaymentPolicyCollection;
-use App\Support\Collections\Custom\RegionCollection;
+use App\Support\Collections\Custom\[];
 use App\Support\Collections\StringCollection;
 use App\Support\HttpClient\Client\HttpClient;
 use App\Support\HttpClient\Factory\RequestFactory;
@@ -126,9 +126,9 @@ class AnexApiService extends AbstractApiService
 	}
 
 	/*
-    public function apiGetCountriesOld(): CountryCollection
+    public function apiGetCountriesOld(): array
     {
-        $countries = new CountryCollection();
+        $countries = [];
 
 		$cities = $this->apiGetCities();
 
@@ -142,7 +142,7 @@ class AnexApiService extends AbstractApiService
     }
 	*/
 
-	public function apiGetCountries(): CountryCollection
+	public function apiGetCountries(): array
 	{
 		$file = 'countries';
 
@@ -150,7 +150,7 @@ class AnexApiService extends AbstractApiService
 
 		if ($json === null) {
 
-			$countries = new CountryCollection();
+			$countries = [];
 
 			$countriesMap = CountryCodeMap::getCountryCodeMap();
 
@@ -163,18 +163,18 @@ class AnexApiService extends AbstractApiService
 
 			Utils::writeToCache($this, $file, json_encode($countries));
 		} else {
-			$countries = ResponseConverter::convertToCollection(json_decode($json, true), CountryCollection::class);
+			$countries = ResponseConverter::convertToCollection(json_decode($json, true), array::class);
 		}
 
 		return $countries;
 	}
 
-	public function apiGetRegions(): RegionCollection
+	public function apiGetRegions(): []
 	{
 
 		$cities = $this->apiGetCities();
 
-		$regions = new RegionCollection();
+		$regions = [];
 
 		/** @var City $city */
 		foreach ($cities as $city) {
@@ -189,9 +189,9 @@ class AnexApiService extends AbstractApiService
 	}
 
 	/*
-	public function apiGetRegionsOld(): RegionCollection
+	public function apiGetRegionsOld(): []
 	{
-		$regions = new RegionCollection();
+		$regions = [];
 		$cities = $this->apiGetCities();
 
 		/** @var City $city */
@@ -378,12 +378,12 @@ class AnexApiService extends AbstractApiService
 		return $data;
 	}
 
-	public function apiGetCities(?CitiesFilter $filter = null): CityCollection
+	public function apiGetCities(?CitiesFilter $filter = null): array
 	{
 		$file = 'cities';
 		$citiesJson = Utils::getFromCache($this, $file);
 
-		$cities = new CityCollection();
+		$cities = [];
 		if ($citiesJson === null) {
 
 			$respTownsFrom = $this->client->request(RequestFactory::METHOD_GET, $this->apiUrl . '/samo/searchtour/townfroms?type=json&xdebug=false');
@@ -443,20 +443,20 @@ class AnexApiService extends AbstractApiService
 
 			Utils::writeToCache($this, $file, json_encode($cities));
 		} else {
-			$cities = ResponseConverter::convertToCollection(json_decode($citiesJson, true), CityCollection::class);
+			$cities = ResponseConverter::convertToCollection(json_decode($citiesJson, true), array::class);
 		}
 		return $cities;
 	}
 
 	/*
-    public function apiGetCitiesOld(CitiesFilter $params = null): CityCollection
+    public function apiGetCitiesOld(CitiesFilter $params = null): array
     {
 		$file = 'cities';
 		$citiesJson = Utils::getFromCache($this, $file);
 
 		if ($citiesJson === null) {
 
-			$cities = new CityCollection();
+			$cities = [];
 			$map = CountryCodeMap::getCountryCodeMap();
 
 			// HOTEL
@@ -618,13 +618,13 @@ class AnexApiService extends AbstractApiService
 	/*
 			Utils::writeToCache($this, $file, json_encode($cities));
 		} else {
-			$cities = ResponseConverter::convertToCollection(json_decode($citiesJson, true), CityCollection::class);
+			$cities = ResponseConverter::convertToCollection(json_decode($citiesJson, true), array::class);
 		}
 
         return $cities;
     }*/
 
-	public function apiGetHotels(?HotelsFilter $filter = null): HotelCollection
+	public function apiGetHotels(?HotelsFilter $filter = null): []
 	{
 		$file = 'hotels';
 		$json = Utils::getFromCache($this, $file);
@@ -633,7 +633,7 @@ class AnexApiService extends AbstractApiService
 		if ($json === null) {
 
 			$cities = $this->apiGetCities();
-			$hotels = new HotelCollection();
+			$hotels = [];
 
 			// INDIVIDUAL
 			$stateFroms = $this->requestData('SearchHotel_STATEFROM');
@@ -729,7 +729,7 @@ class AnexApiService extends AbstractApiService
 			}
 			Utils::writeToCache($this, $file, json_encode($hotels));
 		} else {
-			$hotels = ResponseConverter::convertToCollection(json_decode($json, true), HotelCollection::class);
+			$hotels = ResponseConverter::convertToCollection(json_decode($json, true), []::class);
 		}
 
 		return $hotels;
@@ -1220,7 +1220,7 @@ class AnexApiService extends AbstractApiService
 		return $hotel;
 	}
 
-	public function apiGetOffers(AvailabilityFilter $filter): AvailabilityCollection
+	public function apiGetOffers(AvailabilityFilter $filter): array
 	{
 		if ($filter->serviceTypes->first() === AvailabilityFilter::SERVICE_TYPE_HOTEL) {
 			return $this->getIndividualOffers($filter);
@@ -1229,16 +1229,16 @@ class AnexApiService extends AbstractApiService
 		}
 	}
 
-	private function getIndividualOffers(AvailabilityFilter $filter): AvailabilityCollection
+	private function getIndividualOffers(AvailabilityFilter $filter): array
 	{
 		AnexValidator::make()->validateUsernameAndPassword($this->post)
 			->validateIndividualOffersFilter($filter);
 
-		$availabilities = new AvailabilityCollection();
+		$availabilities = [];
 
 		$cities = $this->apiGetCities();
 
-		$childrenAges = $filter->rooms->first()->childrenAges ? $filter->rooms->first()->childrenAges->toArray() : null;
+		$childrenAges = $post['args'][0]['rooms'][0]['childrenAges'] ? $post['args'][0]['rooms'][0]['childrenAges']->toArray() : null;
 
 		$checkIn = (new DateTime($filter->checkIn))->format('Ymd');
 
@@ -1277,11 +1277,11 @@ class AnexApiService extends AbstractApiService
 			$params["HOTELS"] = $filter->hotelId;
 		}
 
-		if (!empty($filter->rooms->first()->children)) {
-			$params['CHILD'] = $filter->rooms->first()->children;
+		if (!empty($post['args'][0]['rooms'][0]['children'])) {
+			$params['CHILD'] = $post['args'][0]['rooms'][0]['children'];
 
 			$params['AGES'] = '';
-			foreach ($filter->rooms->first()->childrenAges as $childrenAge) {
+			foreach ($post['args'][0]['rooms'][0]['childrenAges'] as $childrenAge) {
 				$params['AGES'] = $params['AGES'] . $childrenAge . ',';
 			}
 
@@ -1426,7 +1426,7 @@ class AnexApiService extends AbstractApiService
 		AnexValidator::make()->validateAllCredentials($this->post)
 			->validateOfferPaymentPlansFilter($filter);
 
-		$bookingData = $filter->OriginalOffer->bookingDataJson;
+		$bookingData = $post['args'][0]['OriginalOffer']['bookingDataJson'];
 		$bookingData = json_decode($bookingData, true);
 
 		$offerId = $bookingData['claim'];
@@ -1476,9 +1476,9 @@ class AnexApiService extends AbstractApiService
 			return [$order, 'pre booking error, check logs'];
 		}
 
-		$ages = $filter->Rooms->first()->childrenAges ? $filter->Rooms->first()->childrenAges->toArray() : [];
+		$ages = $post['args'][0]['rooms'][0]['childrenAges'] ? $post['args'][0]['rooms'][0]['childrenAges']->toArray() : [];
 
-		$priceXmlStr = $this->recalculatePrice($xmlPre, $filter->Rooms->first()->adults, $ages, $filter->CheckIn);
+		$priceXmlStr = $this->recalculatePrice($xmlPre, $post['args'][0]['rooms'][0]['adults'], $ages, $post['args'][0]['CheckIn']);
 		$priceXml = simplexml_load_string($priceXmlStr);
 
 		if (empty($priceXml->claim->claimDocument->moneys->money[0]['price'])) {
@@ -2005,7 +2005,7 @@ class AnexApiService extends AbstractApiService
 		return $id;
 	}
 
-	private function getCharterOrTourOffersForJoinUp(AvailabilityFilter $filter): AvailabilityCollection
+	private function getCharterOrTourOffersForJoinUp(AvailabilityFilter $filter): array
 	{
 		AnexValidator::make()->validateUsernameAndPassword($this->post)
 			->validateCharterOffersFilter($filter);
@@ -2014,10 +2014,10 @@ class AnexApiService extends AbstractApiService
 			$filter->departureCity = $filter->departureCityId;
 		}
 
-		$availabilities = new AvailabilityCollection();
+		$availabilities = [];
 
 		//$cities = $this->apiGetCities();
-		$childrenAges = $filter->rooms->first()->childrenAges ? $filter->rooms->first()->childrenAges->toArray() : null;
+		$childrenAges = $post['args'][0]['rooms'][0]['childrenAges'] ? $post['args'][0]['rooms'][0]['childrenAges']->toArray() : null;
 
 		$checkInDT = new DateTimeImmutable($filter->checkIn);
 		$checkIn = $checkInDT->format('Ymd');
@@ -2080,11 +2080,11 @@ class AnexApiService extends AbstractApiService
 			$params["HOTELS"] = $filter->hotelId;
 		}
 
-		if (!empty($filter->rooms->first()->children)) {
-			$params['CHILD'] = $filter->rooms->first()->children;
+		if (!empty($post['args'][0]['rooms'][0]['children'])) {
+			$params['CHILD'] = $post['args'][0]['rooms'][0]['children'];
 
 			$params['AGES'] = '';
-			foreach ($filter->rooms->first()->childrenAges as $childrenAge) {
+			foreach ($post['args'][0]['rooms'][0]['childrenAges'] as $childrenAge) {
 				$params['AGES'] = $params['AGES'] . $childrenAge . ',';
 			}
 
@@ -2334,7 +2334,7 @@ class AnexApiService extends AbstractApiService
 		return $availabilities;
 	}
 
-	private function getCharterOrTourOffersForPrestige(AvailabilityFilter $filter): AvailabilityCollection
+	private function getCharterOrTourOffersForPrestige(AvailabilityFilter $filter): array
 	{
 		AnexValidator::make()->validateUsernameAndPassword($this->post)
 			->validateCharterOffersFilter($filter);
@@ -2343,10 +2343,10 @@ class AnexApiService extends AbstractApiService
 			$filter->departureCity = $filter->departureCityId;
 		}
 
-		$availabilities = new AvailabilityCollection();
+		$availabilities = [];
 
 		//$cities = $this->apiGetCities();
-		$childrenAges = $filter->rooms->first()->childrenAges ? $filter->rooms->first()->childrenAges->toArray() : null;
+		$childrenAges = $post['args'][0]['rooms'][0]['childrenAges'] ? $post['args'][0]['rooms'][0]['childrenAges']->toArray() : null;
 
 		$checkInDT = new DateTimeImmutable($filter->checkIn);
 		$checkIn = $checkInDT->format('Ymd');
@@ -2415,11 +2415,11 @@ class AnexApiService extends AbstractApiService
 			}
 		}
 
-		if (!empty($filter->rooms->first()->children)) {
-			$params['CHILD'] = $filter->rooms->first()->children;
+		if (!empty($post['args'][0]['rooms'][0]['children'])) {
+			$params['CHILD'] = $post['args'][0]['rooms'][0]['children'];
 
 			$params['AGES'] = '';
-			foreach ($filter->rooms->first()->childrenAges as $childrenAge) {
+			foreach ($post['args'][0]['rooms'][0]['childrenAges'] as $childrenAge) {
 				$params['AGES'] = $params['AGES'] . $childrenAge . ',';
 			}
 
@@ -2742,7 +2742,7 @@ class AnexApiService extends AbstractApiService
 		return $availabilities;
 	}
 
-	private function getCharterOrTourOffers(AvailabilityFilter $filter): AvailabilityCollection
+	private function getCharterOrTourOffers(AvailabilityFilter $filter): array
 	{
 
 		if (false) {
@@ -2752,7 +2752,7 @@ class AnexApiService extends AbstractApiService
 		}
 	}
 
-	private function getCharterOrTourOffersForPrestigeNew(AvailabilityFilter $filter): AvailabilityCollection
+	private function getCharterOrTourOffersForPrestigeNew(AvailabilityFilter $filter): array
 	{
 		AnexValidator::make()->validateUsernameAndPassword($this->post)
 			->validateCharterOffersFilter($filter);
@@ -2761,10 +2761,10 @@ class AnexApiService extends AbstractApiService
 			$filter->departureCity = $filter->departureCityId;
 		}
 
-		$availabilities = new AvailabilityCollection();
+		$availabilities = [];
 
 		//$cities = $this->apiGetCities();
-		$childrenAges = $filter->rooms->first()->childrenAges ? $filter->rooms->first()->childrenAges->toArray() : null;
+		$childrenAges = $post['args'][0]['rooms'][0]['childrenAges'] ? $post['args'][0]['rooms'][0]['childrenAges']->toArray() : null;
 
 		$checkInDT = new DateTimeImmutable($filter->checkIn);
 		$checkIn = $checkInDT->format('Ymd');
@@ -2832,11 +2832,11 @@ class AnexApiService extends AbstractApiService
 			}
 		}
 
-		if (!empty($filter->rooms->first()->children)) {
-			$params['CHILD'] = $filter->rooms->first()->children;
+		if (!empty($post['args'][0]['rooms'][0]['children'])) {
+			$params['CHILD'] = $post['args'][0]['rooms'][0]['children'];
 
 			$params['AGES'] = '';
-			foreach ($filter->rooms->first()->childrenAges as $childrenAge) {
+			foreach ($post['args'][0]['rooms'][0]['childrenAges'] as $childrenAge) {
 				$params['AGES'] = $params['AGES'] . $childrenAge . ',';
 			}
 
@@ -3362,8 +3362,8 @@ class AnexApiService extends AbstractApiService
 							$tour->Id = $tourResp['id'] . '-' . $night . '-' . $hotelResp['id'];
 							$tour->Title = $tourResp['name'] . ' ' . $hotelResp['name'];
 
-							$destinations = new CityCollection();
-							$countries = new CountryCollection();
+							$destinations = [];
+							$countries = [];
 
 							$locationCity = null;
 							foreach ($holidayCitiesData as $holidayCity) {
@@ -3412,7 +3412,7 @@ class AnexApiService extends AbstractApiService
 		return $tours;
 	}
 
-	public function apiGetAvailabilityDates(AvailabilityDatesFilter $filter): AvailabilityDatesCollection
+	public function apiGetAvailabilityDates(AvailabilityDatesFilter $filter): array
 	{
 		AnexValidator::make()
 			->validateAllCredentials($this->post)
@@ -3424,7 +3424,7 @@ class AnexApiService extends AbstractApiService
 		$regionMapExists = Utils::cachedFileExists($this, 'region-map-transports');
 
 		// group by region
-		$ad = new AvailabilityDatesCollection();
+		$ad = [];
 		$regionMap = [];
 
 		// compare transports
@@ -3493,7 +3493,7 @@ class AnexApiService extends AbstractApiService
 		return $ad;
 	}
 
-	public function getAvailabilityDates(AvailabilityDatesFilter $filter): AvailabilityDatesCollection
+	public function getAvailabilityDates(AvailabilityDatesFilter $filter): array
 	{
 		AnexValidator::make()
 			->validateAllCredentials($this->post)
@@ -3502,7 +3502,7 @@ class AnexApiService extends AbstractApiService
 		$cities = $this->apiGetCities();
 		$regions = $this->apiGetRegions();
 
-		$avDates = new AvailabilityDatesCollection();
+		$avDates = [];
 
 		$respTownsFrom = $this->client->request(RequestFactory::METHOD_GET, $this->apiUrl . '/samo/searchtour/townfroms?type=json&xdebug=false');
 		$content = $respTownsFrom->getBody();
@@ -3682,7 +3682,7 @@ class AnexApiService extends AbstractApiService
 		$respAuth = json_decode($respAuth, true);
 
 		// get offer id
-		$bookingData = $filter->Items->first()->Offer_bookingDataJson;
+		$bookingData = $post['args'][0]['Items'][0]['Offer_bookingDataJson'];
 		$bookingData = json_decode($bookingData, true);
 		$offerId = $bookingData['claim'];
 
@@ -3800,7 +3800,7 @@ class AnexApiService extends AbstractApiService
 			$passengerType = $passengersTypesTranslations[$passenger->Type];
 
 			if ($passengerType == 'CHD') {
-				$passengerAge = (int)date_diff(date_create($checkIn ?: date("Y-m-d")), date_create($passenger->BirthDate))->format("%y");
+				$passengerAge = (int)date_diff(date_create($checkIn ?: date("Y-m-d")), date_create($passenger['BirthDate']))->format("%y");
 				if ($passengerAge < 2)
 					$passengerType = 'INF';
 			}

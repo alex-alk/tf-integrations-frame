@@ -6,10 +6,10 @@
     <?php require __DIR__ . '/../common/header.php' ?>
     <div class="container-fluid" style="padding-top: 20px;">
         <div class="row flex-xl-nowrap">
-            <div style="padding-top: 20px;">
+            <div class="col-md-3 col-xl-2" style="padding-top: 20px;">
                 <?php require __DIR__ . '/../common/menu.php' ?>
             </div>
-            <main class="col-md-9 col-xl-8 py-md-3 pl-md-5 bd-content" role="main">
+            <main class="col-md-9 col-xl-10 py-md-3 pl-md-5 bd-content" role="main">
                 <h3 class="bd-title" id="content">Search - Availability</h3>
                 <div>
                     <pre class="">This service provides the list of availabilities.</pre>
@@ -356,7 +356,7 @@
 
                                 <td>
 
-                                    <input type="text" name="args[0][checkOut]">
+                                    <input type="text" name="args[0][checkOut]" value="2025-09-02">
                                 </td>
                                 <td>2025-06-08 </td>
                             </tr>
@@ -416,7 +416,7 @@
 
                                 <td>
 
-                                    <input type="text" name="args[0][cityId]" value="">
+                                    <input type="text" name="args[0][cityId]" value="68">
                                 </td>
                                 <td>The city’s code. </td>
                             </tr>
@@ -464,7 +464,7 @@
 
                                 <td>
 
-                                    <input type="text" name="args[0][travelItemId]">
+                                    <input type="text" name="args[0][travelItemId]" value="2029">
                                 </td>
                                 <td>Hotel Id. </td>
                             </tr>
@@ -535,7 +535,6 @@
                                 </td>
 
                                 <td>
-
                                     <input type="text" name="args[0][rooms][0][childrenAges][3]">
                                 </td>
                                 <td>ex: 7 </td>
@@ -547,10 +546,7 @@
                                 </td>
 
                                 <td>
-
-
                                     <textarea style="width: 100%;" name="json"></textarea>
-
                                 </td>
                                 <td>Use this instead of fields </td>
                             </tr>
@@ -582,6 +578,8 @@
                         <tr>
                             <td>Id</td>
                             <td>Name</td>
+                            <td>Rooms</td>
+                            <td>PP/CP/UP</td>
                         </tr>
 
                     </thead>

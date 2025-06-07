@@ -10,10 +10,10 @@ use App\Filters\BookHotelFilter;
 use App\Filters\CitiesFilter;
 use App\Filters\HotelDetailsFilter;
 use App\Filters\HotelsFilter;
-use App\Support\Collections\Custom\AvailabilityCollection;
-use App\Support\Collections\Custom\CityCollection;
-use App\Support\Collections\Custom\CountryCollection;
-use App\Support\Collections\Custom\HotelCollection;
+use App\Support\Collections\Custom\array;
+use App\Support\Collections\Custom\array;
+use App\Support\Collections\Custom\array;
+use App\Support\Collections\Custom\[];
 use App\Support\Http\SimpleAsync\HttpClient;
 use App\Support\Http\SimpleAsync\Response\ResponseInterface;
 use App\Support\Request;
@@ -33,7 +33,7 @@ class EtripAgencyApiService extends AbstractApiService
         return [];
     }
 
-    public function apiGetCities(CitiesFilter $params = null): CityCollection
+    public function apiGetCities(CitiesFilter $params = null): array
     {
         $url = $this->apiUrl . '/v2/geography/city/query';
         
@@ -46,12 +46,12 @@ class EtripAgencyApiService extends AbstractApiService
         ];
         $options['body'] = json_encode($body);
         
-        $json = $this->request($url, HttpClient::METHOD_POST, $options)->getContent();
+        $json = $this->request($url, HttpClient::METHOD_POST, $options)->getBody();
       
         $response = json_decode($json, true)['results'];
         
 
-        $cities = new CityCollection();
+        $cities = [];
 
         foreach ($response as $countryResponse) {
             $city = new City();
@@ -62,7 +62,7 @@ class EtripAgencyApiService extends AbstractApiService
         return $cities;
     }
 
-    public function apiGetCountries(): CountryCollection
+    public function apiGetCountries(): array
     {   
         $client = HttpClient::create();
 
@@ -82,12 +82,12 @@ class EtripAgencyApiService extends AbstractApiService
             'Authorization' => $this->password
         ];
 
-        $countriesJson = $client->request(HttpClient::METHOD_POST, $url, $options)->getContent();
+        $countriesJson = $client->request(HttpClient::METHOD_POST, $url, $options)->getBody();
         $this->showRequest(HttpClient::METHOD_POST, $url, $options, $countriesJson, 0);
         
         $countriesResponse = json_decode($countriesJson, true)['results'];
 
-        $countries = new CountryCollection();
+        $countries = [];
 
         foreach ($countriesResponse as $countryResponse) {
             $country = new Country();
@@ -104,14 +104,14 @@ class EtripAgencyApiService extends AbstractApiService
         return new Hotel();
     }
 
-    public function apiGetHotels(?HotelsFilter $filter = null): HotelCollection
+    public function apiGetHotels(?HotelsFilter $filter = null): []
     {
-        return new HotelCollection();
+        return [];
     }
 
-    public function apiGetOffers(AvailabilityFilter $filter): AvailabilityCollection
+    public function apiGetOffers(AvailabilityFilter $filter): array
     {
-        return new AvailabilityCollection();
+        return [];
     }
     
     public function request(string $url, string $method = HttpClient::METHOD_GET, array $options = []): ResponseInterface

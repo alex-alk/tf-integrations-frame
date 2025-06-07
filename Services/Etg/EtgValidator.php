@@ -14,10 +14,10 @@ class EtgValidator extends Validator
     public function validateOfferCancelFeesFilter(CancellationFeeFilter $filter): Validator
     {
         parent::validateOfferCancelFeesFilter($filter);
-        if (empty($filter->OriginalOffer->bookingDataJson)) {
+        if (empty($post['args'][0]['OriginalOffer']['bookingDataJson'])) {
             throw new Exception('bookingDataJson is mandatory');
         }
-        if (empty($filter->CheckIn)) {
+        if (empty($post['args'][0]['CheckIn'])) {
             throw new Exception('CheckIn is mandatory');
         }
         return $this;
@@ -28,7 +28,7 @@ class EtgValidator extends Validator
     {
         parent::validateBookHotelFilter($filter);
 
-        if (empty($filter->Items->first()->Offer_bookingDataJson)) {
+        if (empty($post['args'][0]['Items'][0]['Offer_bookingDataJson'])) {
             throw new Exception('Offer_bookingDataJson is mandatory');
         }
         if (empty($filter->BillingTo->Email)) {
@@ -41,25 +41,25 @@ class EtgValidator extends Validator
             throw new Exception('Offer_Gross is mandatory');
         }
 
-        // if (empty($filter->Items->first()->Hotel->InTourOperatorId)) {
+        // if (empty($post['args'][0]['Items'][0]['Hotel']['InTourOperatorId'])) {
         //     throw new Exception('args[0][Items][0][Hotel][InTourOperatorId] is mandatory');
         // }
-        // if (empty($filter->Items->first()->Room_Type_InTourOperatorId)) {
+        // if (empty($post['args'][0]['Items'][0]['Room_Type_InTourOperatorId']) {
         //     throw new Exception('args[0][Items][0][Room_Type_InTourOperatorId] is mandatory');
         // }
         // if (empty($filter->Items->first()->Room_Def_Code)) {
         //     throw new Exception('args[0][Items][0][Room_Def_Code] is mandatory');
         // }
-        // if (empty($filter->Items->first()->Offer_bookingDataJson)) {
+        // if (empty($post['args'][0]['Items'][0]['Offer_bookingDataJson'])) {
         //     throw new Exception('args[0][Items][0][Offer_bookingDataJson] is mandatory');
         // }
-        // if (empty($filter->Items->first()->Board_Def_InTourOperatorId)) {
+        // if (empty($post['args'][0]['Items'][0]['Board_Def_InTourOperatorId'])) {
         //     throw new Exception('args[0][Items][0][Board_Def_InTourOperatorId] is mandatory');
         // }
-        // if (empty($filter->Items->first()->Room_CheckinAfter)) {
+        // if (empty($post['args'][0]['Items'][0]['Room_CheckinAfter'])) {
         //     throw new Exception('args[0][Items][0][Room_CheckinAfter] is mandatory');
         // }
-        // if (empty($filter->Items->first()->Room_CheckinBefore)) {
+        // if (empty($post['args'][0]['Items'][0]['Room_CheckinBefore'])) {
         //     throw new Exception('args[0][Items][0][Room_CheckinBefore] is mandatory');
         // }
         // if (empty($filter->Items->first()->Offer_Days)) {
@@ -89,31 +89,31 @@ class EtgValidator extends Validator
     public function validateOfferCancelFeesFilter(CancellationFeeFilter $filter): Validator
     {
         parent::validateOfferCancelFeesFilter($filter);
-        if (empty($filter->CheckIn)) {
+        if (empty($post['args'][0]['CheckIn'])) {
             throw new Exception('args[0][CheckIn] is mandatory');
         }
-        if (empty($filter->Duration)) {
+        if (empty($post['args'][0]['Duration'])) {
             throw new Exception('args[0][Duration] is mandatory');
         }
-        if (empty($filter->CheckOut)) {
+        if (empty($post['args'][0]['CheckOut'])) {
             throw new Exception('args[0][CheckOut] is mandatory');
         }
-        if (empty($filter->Hotel->InTourOperatorId)) {
+        if (empty($post['args'][0]['Hotel']['InTourOperatorId'])) {
             throw new Exception('args[0][Hotel][InTourOperatorId] is mandatory');
         }
-        if (empty($filter->Rooms->first()->adults)) {
+        if (empty($post['args'][0]['rooms'][0]['adults'])) {
             throw new Exception('args[0][Rooms][0][adults] is mandatory');
         }
-        if (empty($filter->OriginalOffer->Rooms->first()->Id)) {
+        if (empty($post['args'][0]['OriginalOffer']['Rooms'][0]['Id'])) {
             throw new Exception('args[0][OriginalOffer][Rooms][0][Id] is mandatory');
         }
-        if (empty($filter->OriginalOffer->MealItem->Merch->Id)) {
+        if (empty($post['args'][0]['OriginalOffer']['MealItem']['Merch']['Id'])) {
             throw new Exception('args[0][OriginalOffer][MealItem][Merch][Id] is mandatory');
         }
         if (empty($filter->OriginalOffer->InitialData)) {
             throw new Exception('args[0][OriginalOffer][InitialData] is mandatory');
         }
-        if (empty($filter->SuppliedPrice)) {
+        if (empty($post['args'][0]['SuppliedPrice'])) {
             throw new Exception('args[0][SuppliedPrice] is mandatory');
         }
         if (empty($filter->OriginalOffer->roomCombinationPriceDescription)) {
@@ -126,28 +126,28 @@ class EtgValidator extends Validator
     public function validateOfferPaymentPlansFilter(PaymentPlansFilter $filter): Validator
     {
         parent::validateOfferPaymentPlansFilter($filter);
-        if (empty($filter->CheckIn)) {
+        if (empty($post['args'][0]['CheckIn'])) {
             throw new Exception('args[0][CheckIn] is mandatory');
         }
-        if (empty($filter->Duration)) {
+        if (empty($post['args'][0]['Duration'])) {
             throw new Exception('args[0][Duration] is mandatory');
         }
-        if (empty($filter->CheckOut)) {
+        if (empty($post['args'][0]['CheckOut'])) {
             throw new Exception('args[0][CheckOut] is mandatory');
         }
-        if (empty($filter->Hotel->InTourOperatorId)) {
+        if (empty($post['args'][0]['Hotel']['InTourOperatorId'])) {
             throw new Exception('args[0][Hotel][InTourOperatorId] is mandatory');
         }
-        if (empty($filter->Rooms->first()->adults)) {
+        if (empty($post['args'][0]['rooms'][0]['adults'])) {
             throw new Exception('args[0][Rooms][0][adults] is mandatory');
         }
-        if (empty($filter->OriginalOffer->Rooms->first()->Id)) {
+        if (empty($post['args'][0]['OriginalOffer']['Rooms'][0]['Id'])) {
             throw new Exception('args[0][OriginalOffer][Rooms][0][Id] is mandatory');
         }
-        if (empty($filter->OriginalOffer->MealItem->Merch->Id)) {
+        if (empty($post['args'][0]['OriginalOffer']['MealItem']['Merch']['Id'])) {
             throw new Exception('args[0][OriginalOffer][MealItem][Merch][Id] is mandatory');
         }
-        if (empty($filter->SuppliedPrice)) {
+        if (empty($post['args'][0]['SuppliedPrice'])) {
             throw new Exception('args[0][SuppliedPrice] is mandatory');
         }
         if (empty($filter->OriginalOffer->InitialData)) {

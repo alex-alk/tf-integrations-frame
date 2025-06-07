@@ -23,10 +23,10 @@ use App\Filters\HotelsFilter;
 use App\Filters\Passenger;
 use App\Filters\PaymentPlansFilter;
 use App\Handles;
-use App\Support\Collections\Custom\AvailabilityCollection;
-use App\Support\Collections\Custom\CityCollection;
-use App\Support\Collections\Custom\CountryCollection;
-use App\Support\Collections\Custom\HotelCollection;
+use App\Support\Collections\Custom\array;
+use App\Support\Collections\Custom\array;
+use App\Support\Collections\Custom\array;
+use App\Support\Collections\Custom\[];
 use App\Support\Collections\Custom\OfferCancelFeeCollection;
 use App\Support\Collections\Custom\OfferPaymentPolicyCollection;
 use App\Support\Ftp\FtpsClient;
@@ -43,9 +43,9 @@ use Utils\Utils;
 class EtgApiService extends AbstractApiService
 {
 
-    public function apiGetCountries(): CountryCollection
+    public function apiGetCountries(): array
     {
-        $countries = new CountryCollection();
+        $countries = [];
 
         $cities = $this->apiGetCities();
 
@@ -57,12 +57,12 @@ class EtgApiService extends AbstractApiService
         return $countries;
     }
 
-    public function apiGetCities(?CitiesFilter $filter = null): CityCollection
+    public function apiGetCities(?CitiesFilter $filter = null): array
     {
         $cache = 'cities';
 
         $json = Utils::getFromCache($this, $cache);
-        $cities = new CityCollection();
+        $cities = [];
 
         if ($json === null) {
             $client = HttpClient::create();
@@ -75,7 +75,7 @@ class EtgApiService extends AbstractApiService
             ]);
             $req = $client->request(HttpClient::METHOD_POST, $this->apiUrl . '/hotel/region/dump/', $options);
 
-            $content = $req->getContent();
+            $content = $req->getBody();
             $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl . '/hotel/region/dump/', $options, $content, $req->getStatusCode());
 
             $contentArr = json_decode($content, true);
@@ -125,7 +125,7 @@ class EtgApiService extends AbstractApiService
 
             Utils::writeToCache($this, $cache, json_encode($cities));
         } else {
-            $cities = ResponseConverter::convertToCollection(json_decode($json, true), CityCollection::class);
+            $cities = ResponseConverter::convertToCollection(json_decode($json, true), array::class);
         }
 
         return $cities;
@@ -156,7 +156,7 @@ class EtgApiService extends AbstractApiService
                         $options['body'] = json_encode($body);
                         $req = $client->request(HttpClient::METHOD_POST, $url, $options);
                 
-                        $content = $req->getContent();
+                        $content = $req->getBody();
                         $this->showRequest(HttpClient::METHOD_POST, $url, $options, $content, $req->getStatusCode());
 
                         $rowArr = json_decode($content, true)['data'];
@@ -234,7 +234,7 @@ class EtgApiService extends AbstractApiService
         return $result;
     }
  
-    public function apiGetHotels(?HotelsFilter $filter = null): HotelCollection
+    public function apiGetHotels(?HotelsFilter $filter = null): []
     {
         if (empty($filter->CityId)) {
             throw new Exception('CityId is required');
@@ -242,7 +242,7 @@ class EtgApiService extends AbstractApiService
 
         $cacheFolder = Utils::getCachePath() . '/' .$this->handle . '/hotels/' . date('Y-m-d');
         
-        $hotels = new HotelCollection();
+        $hotels = [];
 
         
 
@@ -269,7 +269,7 @@ class EtgApiService extends AbstractApiService
             ]);
             $req = $client->request(HttpClient::METHOD_POST, $this->apiUrl . '/hotel/info/dump/', $options);
 
-            $content = $req->getContent();
+            $content = $req->getBody();
             $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl . '/hotel/info/dump/', $options, $content, $req->getStatusCode());
 
             $contentArr = json_decode($content, true);
@@ -510,9 +510,9 @@ class EtgApiService extends AbstractApiService
                 $options['body'] = json_encode(['Hotelcodes' => $hotelCodesStr]);
 
                 $resp = $client->request(HttpClient::METHOD_POST, $this->apiUrl . '/HotelDetails', $options);
-                $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl . '/HotelDetails', $options, $resp->getContent(), $resp->getStatusCode());
+                $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl . '/HotelDetails', $options, $resp->getBody(), $resp->getStatusCode());
 
-                $respArr = json_decode($resp->getContent(), true);
+                $respArr = json_decode($resp->getBody(), true);
         
                 if (!isset($respArr['HotelDetails'])) {
                     Log::warning($this->handle .': no details for ' . json_encode($filters['Hotels']));
@@ -567,13 +567,13 @@ class EtgApiService extends AbstractApiService
     */
 
     // todo: availability?
-    public function apiGetOffers(AvailabilityFilter $filter): AvailabilityCollection
+    public function apiGetOffers(AvailabilityFilter $filter): array
     {
         Validator::make()
             ->validateUsernameAndPassword($this->post)
             ->validateIndividualOffersFilter($filter);
         
-        $availabilities = new AvailabilityCollection();
+        $availabilities = [];
 
 
         $client = HttpClient::create();
@@ -581,7 +581,7 @@ class EtgApiService extends AbstractApiService
             'Authorization' => 'Basic '. base64_encode("{$this->username}:{$this->password}")
         ];
 
-        $ages = $filter->rooms->first()->childrenAges->toArray();
+        $ages = $post['args'][0]['rooms'][0]['childrenAges']->toArray();
 
         $body = [
             'checkin' => $filter->checkIn,
@@ -611,7 +611,7 @@ class EtgApiService extends AbstractApiService
         $options['body'] = json_encode($body);
         $req = $client->request(HttpClient::METHOD_POST, $url, $options);
 
-        $content = $req->getContent();
+        $content = $req->getBody();
         $this->showRequest(HttpClient::METHOD_POST, $url, $options, $content, $req->getStatusCode());
 
         $contentArr = json_decode($content, true);
@@ -643,7 +643,7 @@ class EtgApiService extends AbstractApiService
                     new DateTimeImmutable($filter->checkIn),
                     new DateTimeImmutable($filter->checkOut),
                     $filter->rooms->first()->adults,
-                    $filter->rooms->first()->childrenAges->toArray(),
+                    $post['args'][0]['rooms'][0]['childrenAges']->toArray(),
                     $rate['payment_options']['payment_types'][0]['show_currency_code'],
                     $rate['payment_options']['payment_types'][0]['show_amount'],
                     $rate['payment_options']['payment_types'][0]['show_amount'],
@@ -680,7 +680,7 @@ class EtgApiService extends AbstractApiService
             'Content-Type' => 'application/json'
         ];
 
-        $data = json_decode($filter->OriginalOffer->bookingDataJson, true);
+        $data = json_decode($post['args'][0]['OriginalOffer']['bookingDataJson'], true);
 
         $body = [
             'hash' => $data['book_hash'],
@@ -692,7 +692,7 @@ class EtgApiService extends AbstractApiService
         $options['body'] = json_encode($body);
         $req = $client->request(HttpClient::METHOD_POST, $url, $options);
 
-        $content = $req->getContent();
+        $content = $req->getBody();
         $this->showRequest(HttpClient::METHOD_POST, $url, $options, $content, $req->getStatusCode());
 
         $contentArr = json_decode($content, true)['data']['hotels'][0]['rates'][0];
@@ -749,7 +749,7 @@ class EtgApiService extends AbstractApiService
             'Authorization' => 'Basic '. base64_encode("{$this->username}:{$this->password}"),
             'Content-Type' => 'application/json'
         ];
-        $bookingData = json_decode($filter->Items->first()->Offer_bookingDataJson, true);
+        $bookingData = json_decode($post['args'][0]['Items'][0]['Offer_bookingDataJson'], true);
         $uid = uniqid();
 
         $body = [
@@ -764,7 +764,7 @@ class EtgApiService extends AbstractApiService
         $options['body'] = json_encode($body);
         $req = $client->request(HttpClient::METHOD_POST, $url, $options);
 
-        $content = $req->getContent();
+        $content = $req->getBody();
         $this->showRequest(HttpClient::METHOD_POST, $url, $options, $content, $req->getStatusCode());
 
         $contentArr = json_decode($content, true);
@@ -781,14 +781,14 @@ class EtgApiService extends AbstractApiService
 
         $guests = [];
         /** @var Passenger $passenger */
-        foreach ($filter->Items->first()->Passengers as $passenger) {
+        foreach ($post['args'][0]['Items'][0]['Passengers'] as $passenger) {
             $guest = [
-                'first_name' => $passenger->Firstname,
-                'last_name' => $passenger->Lastname
+                'first_name' => $passenger['Firstname'],
+                'last_name' => $passenger['Lastname']
             ];
-            if (!$passenger->IsAdult) {
+            if (!$passenger['IsAdult']) {
                 $guest['is_child'] = true;
-                $guest['age'] = (new DateTime())->diff(new DateTime($passenger->BirthDate))->y;
+                $guest['age'] = (new DateTime())->diff(new DateTime($passenger['BirthDate']))->y;
             }
             $guests[] = $guest;
         }
@@ -821,7 +821,7 @@ class EtgApiService extends AbstractApiService
         $options['body'] = json_encode($body);
         $req = $client->request(HttpClient::METHOD_POST, $url, $options);
 
-        $content = $req->getContent();
+        $content = $req->getBody();
         $this->showRequest(HttpClient::METHOD_POST, $url, $options, $content, $req->getStatusCode());
 
         $contentArr = json_decode($content, true);
@@ -841,7 +841,7 @@ class EtgApiService extends AbstractApiService
         $options['body'] = json_encode($body);
         $req = $client->request(HttpClient::METHOD_POST, $url, $options);
 
-        $content = $req->getContent();
+        $content = $req->getBody();
         $this->showRequest(HttpClient::METHOD_POST, $url, $options, $content, $req->getStatusCode());
 
         $contentArr = json_decode($content, true);
@@ -857,7 +857,7 @@ class EtgApiService extends AbstractApiService
             sleep(1);
             $req = $client->request(HttpClient::METHOD_POST, $url, $options);
 
-            $content = $req->getContent();
+            $content = $req->getBody();
             $this->showRequest(HttpClient::METHOD_POST, $url, $options, $content, $req->getStatusCode());
 
             $contentArr = json_decode($content, true);

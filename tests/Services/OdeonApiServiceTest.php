@@ -6,43 +6,41 @@ use HttpClient\HttpClient;
 use HttpClient\Message\Request;
 use HttpClient\Message\Stream;
 use HttpClient\Message\Uri;
-use Integrations\Odeon\OdeonApiService;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
 use RequestHandler\ServerRequest;
+use Services\Odeon\OdeonApiService;
 
 class OdeonApiServiceTest extends TestCase
 {
     public function test_getCountries(): void
     {
         $mockHttpClient = $this->createMock(HttpClient::class);
-        $mockResponse = $this->createMock(ResponseInterface::class);
+        $mockTokenResponse = $this->createMock(ResponseInterface::class);
+        $mockGeographyResponse = $this->createMock(ResponseInterface::class);
 
         $mockResponse
             ->method('getBody')
-            ->willReturn(new Stream('<?xml version="1.0" encoding="utf-8"?>
-                <soap:Envelope 
-                    xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" 
-                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
-                    xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-                    <soap:Body>
-                        <GetCountriesResponse xmlns="http://www.megatec.ru/">
-                            <GetCountriesResult>
-                                <Country><Name>ROMANIA</Name><ID>1</ID><IsIncoming>false</IsIncoming></Country>
-                                <Country><Name>ROMANI</Name><ID>1</ID><IsIncoming>false</IsIncoming></Country>
-                                <Country><Name>BULGARIA</Name><ID>4</ID><IsIncoming>false</IsIncoming></Country>
-                            </GetCountriesResult>
-                        </GetCountriesResponse>
-                    </soap:Body>
-                </soap:Envelope>'))
-        ;
+            ->willReturn(new Stream('{
+                "Details": "[{\"CountryID\":1,\"CountryName\":\"Turkey\",\"CountryLName\":\"Turcia\",\"RegionID\":15014,\"RegionName\":\"Afyon\",\"RegionLName\":\"Afyon\",\"AreaID\":2,\"AreaName\":\"Afyon\",\"AreaLName\":\"Afyon\",\"PlaceID\":1,\"PlaceName\":\"Afyon\",\"PlaceLName\":\"Afyon\"}, {\"CountryID\":10,\"CountryName\":\"Romania\",\"CountryLName\":\"Romania\",\"RegionID\":5,\"RegionName\":\"Buc\",\"RegionLName\":\"Buc\",\"AreaID\":9254,\"AreaName\":\"buc\",\"AreaLName\":\"Buc\",\"PlaceID\":100,\"PlaceName\":\"Bucuresti\",\"PlaceLName\":\"Bucuresti\"}, {\"CountryID\":1,\"CountryName\":\"Turkey\",\"CountryLName\":\"Turcia\",\"RegionID\":15014,\"RegionName\":\"Antalya\",\"RegionLName\":\"Antalya\",\"AreaID\":5,\"AreaName\":\"Antalya\",\"AreaLName\":\"Antalya\",\"PlaceID\":79,\"PlaceName\":\"Antalya\",\"PlaceLName\":\"Antalya\"}]",
+                "Error": false,
+                "Response": "SUCCESS",
+                "Token": "fcb34454-c935-4241-acf3-6214b1d3704d",
+                "ValidationError": false
+                }'))
+            ;
 
         $mockHttpClient
             ->method('request')
             ->willReturn($mockResponse);
 
         $body = json_encode([
-            'to' => ['handle']
+            'to' => [
+                'Handle' => 'test',
+                'ApiUsername' => 'test',
+                'ApiPassword' => 'test',
+                'ApiUrl' => 'test'
+            ]
         ]);
 
         $serverRequest = new ServerRequest(Request::METHOD_POST, new Uri('test'), new Stream($body));

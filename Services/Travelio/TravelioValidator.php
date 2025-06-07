@@ -17,7 +17,7 @@ class TravelioValidator extends Validator
         if (empty($filter->OriginalOffer->InitialData)) {
             throw new Exception('args[0][OriginalOffer][InitialData] is mandatory');
         }
-        if (empty($filter->SuppliedPrice)) {
+        if (empty($post['args'][0]['SuppliedPrice'])) {
             throw new Exception('SuppliedPrice is mandatory');
         }
         if (empty($filter->OriginalOffer->roomCombinationPriceDescription)) {

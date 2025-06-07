@@ -23,13 +23,13 @@ use App\Filters\HotelsFilter;
 use App\Filters\Passenger;
 use App\Filters\PaymentPlansFilter;
 use App\Handles;
-use App\Support\Collections\Custom\AvailabilityCollection;
-use App\Support\Collections\Custom\CityCollection;
-use App\Support\Collections\Custom\CountryCollection;
-use App\Support\Collections\Custom\HotelCollection;
+use App\Support\Collections\Custom\array;
+use App\Support\Collections\Custom\array;
+use App\Support\Collections\Custom\array;
+use App\Support\Collections\Custom\[];
 use App\Support\Collections\Custom\OfferCancelFeeCollection;
 use App\Support\Collections\Custom\OfferPaymentPolicyCollection;
-use App\Support\Collections\Custom\RegionCollection;
+use App\Support\Collections\Custom\[];
 use App\Support\Ftp\FtpsClient;
 use App\Support\Http\SimpleAsync\HttpClient;
 use App\Support\Log;
@@ -61,17 +61,17 @@ class IrixApiService extends AbstractApiService
         $options['body'] = json_encode($optionsArr);
 
         $resp = $client->request(HttpClient::METHOD_POST, $url, $options);
-        $this->showRequest(HttpClient::METHOD_POST, $url, $options, $resp->getContent(), $resp->getStatusCode());
+        $this->showRequest(HttpClient::METHOD_POST, $url, $options, $resp->getBody(), $resp->getStatusCode());
 
-        $content = json_decode($resp->getContent(), true);
+        $content = json_decode($resp->getBody(), true);
         return $content['access_token'];
     }
 
-    public function apiGetCountries(): CountryCollection
+    public function apiGetCountries(): array
     {
         $token = $this->getToken();
 
-        $countries = new CountryCollection();
+        $countries = [];
 
         $client = HttpClient::create();
 
@@ -80,10 +80,10 @@ class IrixApiService extends AbstractApiService
         ];
 
         $resp = $client->request(HttpClient::METHOD_GET, $this->apiUrl . '/api/mapping/v1/countries?perPage=100', $options);
-        $this->showRequest(HttpClient::METHOD_GET, $this->apiUrl . '/api/mapping/v1/countries', $options, $resp->getContent(false), $resp->getStatusCode());
+        $this->showRequest(HttpClient::METHOD_GET, $this->apiUrl . '/api/mapping/v1/countries', $options, $resp->getBody(), $resp->getStatusCode());
 
         $responses = [];
-        $countriesResp = json_decode($resp->getContent(), true);
+        $countriesResp = json_decode($resp->getBody(), true);
         $responses[] = $countriesResp;
         
         $pages = $countriesResp['_page_count'];
@@ -91,9 +91,9 @@ class IrixApiService extends AbstractApiService
 
         while ($page < $pages) {
             $resp = $client->request(HttpClient::METHOD_GET, $this->apiUrl . '/api/mapping/v1/countries?perPage=100&page='.$page + 1, $options);
-            $this->showRequest(HttpClient::METHOD_GET, $this->apiUrl . '/api/mapping/v1/countries', $options, $resp->getContent(false), $resp->getStatusCode());
+            $this->showRequest(HttpClient::METHOD_GET, $this->apiUrl . '/api/mapping/v1/countries', $options, $resp->getBody(), $resp->getStatusCode());
     
-            $countriesResp = json_decode($resp->getContent(), true);
+            $countriesResp = json_decode($resp->getBody(), true);
             $responses[] = $countriesResp;
             
             $pages = $countriesResp['_page_count'];
@@ -113,12 +113,12 @@ class IrixApiService extends AbstractApiService
         return $countries;
     }
 
-    public function apiGetCities(?CitiesFilter $filter = null): CityCollection
+    public function apiGetCities(?CitiesFilter $filter = null): array
     {
         $cache = 'cities';
 
         $json = Utils::getFromCache($this, $cache);
-        $cities = new CityCollection();
+        $cities = [];
 
         if ($json === null) {
             
@@ -131,10 +131,10 @@ class IrixApiService extends AbstractApiService
             ];
 
             $resp = $client->request(HttpClient::METHOD_GET, $this->apiUrl . '/api/mapping/v1/cities?perPage=100', $options);
-            $this->showRequest(HttpClient::METHOD_GET, $this->apiUrl . '/api/mapping/v1/cities', $options, $resp->getContent(false), $resp->getStatusCode());
+            $this->showRequest(HttpClient::METHOD_GET, $this->apiUrl . '/api/mapping/v1/cities', $options, $resp->getBody(), $resp->getStatusCode());
 
             $responses = [];
-            $resp = json_decode($resp->getContent(), true);
+            $resp = json_decode($resp->getBody(), true);
             $responses[] = $resp;
 
             $pages = $resp['_page_count'];
@@ -142,9 +142,9 @@ class IrixApiService extends AbstractApiService
 
             while ($page < $pages) {
                 $resp = $client->request(HttpClient::METHOD_GET, $this->apiUrl . '/api/mapping/v1/cities?perPage=100&page='.$page + 1, $options);
-                $this->showRequest(HttpClient::METHOD_GET, $this->apiUrl . '/api/mapping/v1/cities', $options, $resp->getContent(false), $resp->getStatusCode());
+                $this->showRequest(HttpClient::METHOD_GET, $this->apiUrl . '/api/mapping/v1/cities', $options, $resp->getBody(), $resp->getStatusCode());
         
-                $resp = json_decode($resp->getContent(), true);
+                $resp = json_decode($resp->getBody(), true);
                 Log::debug($page);
                 $responses[] = $resp;
                 
@@ -169,19 +169,19 @@ class IrixApiService extends AbstractApiService
 
             Utils::writeToCache($this, $cache, json_encode($cities));
         } else {
-            $cities = ResponseConverter::convertToCollection(json_decode($json, true), CityCollection::class);
+            $cities = ResponseConverter::convertToCollection(json_decode($json, true), array::class);
         }
 
         return $cities;
     }
 
     /*
-    public function apiGetRegions(): RegionCollection
+    public function apiGetRegions(): []
     {
         $cache = 'regions';
 
         $json = Utils::getFromCache($this, $cache);
-        $regions = new RegionCollection();
+        $regions = [];
 
         if ($json === null) {
             
@@ -194,10 +194,10 @@ class IrixApiService extends AbstractApiService
             ];
 
             $resp = $client->request(HttpClient::METHOD_GET, $this->apiUrl . '/api/mapping/v1/regions?perPage=100', $options);
-            $this->showRequest(HttpClient::METHOD_GET, $this->apiUrl . '/api/mapping/v1/regions', $options, $resp->getContent(false), $resp->getStatusCode());
+            $this->showRequest(HttpClient::METHOD_GET, $this->apiUrl . '/api/mapping/v1/regions', $options, $resp->getBody(), $resp->getStatusCode());
 
             $responses = [];
-            $resp = json_decode($resp->getContent(), true);
+            $resp = json_decode($resp->getBody(), true);
             $responses[] = $resp;
             dd($resp);
 
@@ -206,9 +206,9 @@ class IrixApiService extends AbstractApiService
 
             while ($page < $pages) {
                 $resp = $client->request(HttpClient::METHOD_GET, $this->apiUrl . '/api/mapping/v1/cities?perPage=100&page='.$page + 1, $options);
-                $this->showRequest(HttpClient::METHOD_GET, $this->apiUrl . '/api/mapping/v1/cities', $options, $resp->getContent(false), $resp->getStatusCode());
+                $this->showRequest(HttpClient::METHOD_GET, $this->apiUrl . '/api/mapping/v1/cities', $options, $resp->getBody(), $resp->getStatusCode());
         
-                $resp = json_decode($resp->getContent(), true);
+                $resp = json_decode($resp->getBody(), true);
                 Log::debug($page);
                 $responses[] = $resp;
                 
@@ -233,14 +233,14 @@ class IrixApiService extends AbstractApiService
 
             Utils::writeToCache($this, $cache, json_encode($cities));
         } else {
-            $cities = ResponseConverter::convertToCollection(json_decode($json, true), CityCollection::class);
+            $cities = ResponseConverter::convertToCollection(json_decode($json, true), array::class);
         }
 
         return $regions;
     }
     */
  
-    public function apiGetHotels(?HotelsFilter $filter = null): HotelCollection
+    public function apiGetHotels(?HotelsFilter $filter = null): []
     {
         if (empty($filter->CityId)) {
             throw new Exception('CityId is required');
@@ -255,10 +255,10 @@ class IrixApiService extends AbstractApiService
         ];
 
         $resp = $client->request(HttpClient::METHOD_GET, $this->apiUrl . '/api/mapping/v1/hotels?perPage=100&cityId='.$filter->CityId, $options);
-        $this->showRequest(HttpClient::METHOD_GET, $this->apiUrl . '/api/mapping/v1/hotels?perPage=100&cityId='.$filter->CityId, $options, $resp->getContent(false), $resp->getStatusCode());
+        $this->showRequest(HttpClient::METHOD_GET, $this->apiUrl . '/api/mapping/v1/hotels?perPage=100&cityId='.$filter->CityId, $options, $resp->getBody(), $resp->getStatusCode());
 
         $responses = [];
-        $countriesResp = json_decode($resp->getContent(), true);
+        $countriesResp = json_decode($resp->getBody(), true);
         $responses[] = $countriesResp;
         
         $pages = $countriesResp['_page_count'];
@@ -266,16 +266,16 @@ class IrixApiService extends AbstractApiService
 
         while ($page < $pages) {
             $resp = $client->request(HttpClient::METHOD_GET, $this->apiUrl . '/api/mapping/v1/hotels?perPage=100&cityId='.$filter->CityId.'&page='.$page + 1, $options);
-            $this->showRequest(HttpClient::METHOD_GET, $this->apiUrl . '/api/mapping/v1/hotels?perPage=100&cityId='.$filter->CityId.'&page='.$page + 1, $options, $resp->getContent(false), $resp->getStatusCode());
+            $this->showRequest(HttpClient::METHOD_GET, $this->apiUrl . '/api/mapping/v1/hotels?perPage=100&cityId='.$filter->CityId.'&page='.$page + 1, $options, $resp->getBody(), $resp->getStatusCode());
     
-            $resp = json_decode($resp->getContent(), true);
+            $resp = json_decode($resp->getBody(), true);
             $responses[] = $resp;
             
             $pages = $resp['_page_count'];
             $page = $resp['_page'];
         }
 
-        $hotels = new HotelCollection();
+        $hotels = [];
 
         $cities = $this->apiGetCities();
 
@@ -329,9 +329,9 @@ class IrixApiService extends AbstractApiService
                 $options['body'] = json_encode(['Hotelcodes' => $hotelCodesStr]);
 
                 $resp = $client->request(HttpClient::METHOD_POST, $this->apiUrl . '/HotelDetails', $options);
-                $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl . '/HotelDetails', $options, $resp->getContent(), $resp->getStatusCode());
+                $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl . '/HotelDetails', $options, $resp->getBody(), $resp->getStatusCode());
 
-                $respArr = json_decode($resp->getContent(), true);
+                $respArr = json_decode($resp->getBody(), true);
         
                 if (!isset($respArr['HotelDetails'])) {
                     Log::warning($this->handle .': no details for ' . json_encode($filters['Hotels']));
@@ -384,13 +384,13 @@ class IrixApiService extends AbstractApiService
         return $result;
     }
 
-    public function apiGetOffers(AvailabilityFilter $filter): AvailabilityCollection
+    public function apiGetOffers(AvailabilityFilter $filter): array
     {
         Validator::make()
             ->validateUsernameAndPassword($this->post)
             ->validateIndividualOffersFilter($filter);
         
-        $availabilities = new AvailabilityCollection();
+        $availabilities = [];
 
         $token = $this->getToken();
 
@@ -409,7 +409,7 @@ class IrixApiService extends AbstractApiService
                 'rooms' => [
                     [
                         'adults' => (int)$filter->rooms->first()->adults,
-                        'childrenAges' => $filter->rooms->first()->childrenAges
+                        'childrenAges' => $post['args'][0]['rooms'][0]['childrenAges']
                     ]
                 ]
             ],
@@ -426,17 +426,17 @@ class IrixApiService extends AbstractApiService
         $options['body'] = json_encode($body);
 
         $resp = $client->request(HttpClient::METHOD_POST, $this->apiUrl . '/api/hotels/v1/search/start', $options);
-        $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl . '/api/hotels/v1/search/start', $options, $resp->getContent(false), $resp->getStatusCode());
+        $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl . '/api/hotels/v1/search/start', $options, $resp->getBody(), $resp->getStatusCode());
 
-        $respAsync = json_decode($resp->getContent(), true);
+        $respAsync = json_decode($resp->getBody(), true);
 
         $srk = $respAsync['srk'];
         $token = $respAsync['tokens']['async'];
 
         $resp = $client->request(HttpClient::METHOD_GET, $this->apiUrl . '/api/hotels/v1/search/async/'.$srk.'?token='.$token, $options);
-        $this->showRequest(HttpClient::METHOD_GET, $this->apiUrl . '/api/hotels/v1/search/async/'.$srk.'?token='.$token, $options, $resp->getContent(false), $resp->getStatusCode());
+        $this->showRequest(HttpClient::METHOD_GET, $this->apiUrl . '/api/hotels/v1/search/async/'.$srk.'?token='.$token, $options, $resp->getBody(), $resp->getStatusCode());
 
-        $resp = json_decode($resp->getContent(), true);
+        $resp = json_decode($resp->getBody(), true);
         $token = $resp['tokens']['next'];
 
         $results = [];
@@ -449,9 +449,9 @@ class IrixApiService extends AbstractApiService
             }
 
             $resp = $client->request(HttpClient::METHOD_GET, $this->apiUrl . '/api/hotels/v1/search/async/'.$srk.'?token='.$token, $options);
-            $this->showRequest(HttpClient::METHOD_GET, $this->apiUrl . '/api/hotels/v1/search/async/'.$srk.'?token='.$token, $options, $resp->getContent(false), $resp->getStatusCode());
+            $this->showRequest(HttpClient::METHOD_GET, $this->apiUrl . '/api/hotels/v1/search/async/'.$srk.'?token='.$token, $options, $resp->getBody(), $resp->getStatusCode());
 
-            $resp = json_decode($resp->getContent(), true);
+            $resp = json_decode($resp->getBody(), true);
 
             if ($resp['tokens']['next'] === null) {
                 if (!empty($resp['hotels'])) {
@@ -516,7 +516,7 @@ class IrixApiService extends AbstractApiService
                             new DateTimeImmutable($filter->checkIn),
                             new DateTimeImmutable($filter->checkOut),
                             $filter->rooms->first()->adults,
-                            $filter->rooms->first()->childrenAges->toArray(),
+                            $post['args'][0]['rooms'][0]['childrenAges']->toArray(),
                             $roomResp['price']['selling']['currency'],
                             $roomResp['price']['selling']['value'],
                             $roomResp['price']['selling']['value'],
@@ -567,7 +567,7 @@ class IrixApiService extends AbstractApiService
             'Content-Type' => 'application/json'
         ];
 
-        $bookingData = json_decode($filter->OriginalOffer->bookingDataJson, true);
+        $bookingData = json_decode($post['args'][0]['OriginalOffer']['bookingDataJson'], true);
 
         $body = [
             'packageToken' => $bookingData['packageToken'],
@@ -580,9 +580,9 @@ class IrixApiService extends AbstractApiService
             $this->apiUrl . '/api/hotels/v1/search/results/'.$bookingData['srk'].'/hotels/'.$bookingData['hotelIndex'].'/offers/'.$bookingData['offerIndex'].'/availability?token='.$bookingData['token'], 
             $options
         );
-        $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl . '/api/hotels/v1/search/results/'.$bookingData['srk'].'/hotels/'.$bookingData['hotelIndex'].'/offers/'.$bookingData['offerIndex'].'/availability?token='.$bookingData['token'], $options, $resp->getContent(false), $resp->getStatusCode());
+        $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl . '/api/hotels/v1/search/results/'.$bookingData['srk'].'/hotels/'.$bookingData['hotelIndex'].'/offers/'.$bookingData['offerIndex'].'/availability?token='.$bookingData['token'], $options, $resp->getBody(), $resp->getStatusCode());
 
-        $respAsync = json_decode($resp->getContent(), true);
+        $respAsync = json_decode($resp->getBody(), true);
 
         foreach ($respAsync['cancellationPolicy']['policies'] as $policy) {
             if (isset($policy['charge'])) {
@@ -617,7 +617,7 @@ class IrixApiService extends AbstractApiService
             'Content-Type' => 'application/json'
         ];
         $body = [
-            'hash' => $filter->OriginalOffer->bookingDataJson
+            'hash' => $post['args'][0]['OriginalOffer']['bookingDataJson']
         ];
 
         $url = $this->apiUrl . '/serp/prebook/';
@@ -625,7 +625,7 @@ class IrixApiService extends AbstractApiService
         $options['body'] = json_encode($body);
         $req = $client->request(HttpClient::METHOD_POST, $url, $options);
 
-        $content = $req->getContent();
+        $content = $req->getBody();
         $this->showRequest(HttpClient::METHOD_POST, $url, $options, $content, $req->getStatusCode());
 
         $contentArr = json_decode($content, true);
@@ -658,7 +658,7 @@ class IrixApiService extends AbstractApiService
             'Content-Type' => 'application/json'
         ];
 
-        $bookingData = json_decode($filter->Items->first()->Offer_bookingDataJson, true);
+        $bookingData = json_decode($post['args'][0]['Items'][0]['Offer_bookingDataJson'], true);
 
         $body = [
             'packageToken' => $bookingData['packageToken'],
@@ -671,14 +671,14 @@ class IrixApiService extends AbstractApiService
             $this->apiUrl . '/api/hotels/v1/search/results/'.$bookingData['srk'].'/hotels/'.$bookingData['hotelIndex'].'/offers/'.$bookingData['offerIndex'].'/availability?token='.$bookingData['token'], 
             $options
         );
-        $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl . '/api/hotels/v1/search/results/'.$bookingData['srk'].'/hotels/'.$bookingData['hotelIndex'].'/offers/'.$bookingData['offerIndex'].'/availability?token='.$bookingData['token'], $options, $resp->getContent(false), $resp->getStatusCode());
+        $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl . '/api/hotels/v1/search/results/'.$bookingData['srk'].'/hotels/'.$bookingData['hotelIndex'].'/offers/'.$bookingData['offerIndex'].'/availability?token='.$bookingData['token'], $options, $resp->getBody(), $resp->getStatusCode());
 
-        $respAsync = json_decode($resp->getContent(), true);
+        $respAsync = json_decode($resp->getBody(), true);
 
         $travellers = [];
         $i = 0;
         /** @var Passenger $passenger */
-        foreach ($filter->Items->first()->Passengers as $passenger) {
+        foreach ($post['args'][0]['Items'][0]['Passengers'] as $passenger) {
             $i++;
             $lead = false;
             if ($i === 1) {
@@ -687,10 +687,10 @@ class IrixApiService extends AbstractApiService
             $travellers[] = [
                 'reference' => uniqid(),
                 'type' => $passenger->Type,
-                'title' => $passenger->Gender === 'male' ? 'mr' : 'mrs',
-                'firstName' => $passenger->Firstname,
-                'lastName' => $passenger->Lastname,
-                'birthDate' => $passenger->BirthDate,
+                'title' => $passenger['Gender'] === 'male' ? 'mr' : 'mrs',
+                'firstName' => $passenger['Firstname'],
+                'lastName' => $passenger['Lastname'],
+                'birthDate' => $passenger['BirthDate'],
                 'lead' => $lead
             ];
         }
@@ -715,9 +715,9 @@ class IrixApiService extends AbstractApiService
             $this->apiUrl . '/api/hotels/v1/search/results/'.$bookingData['srk'].'/hotels/'.$bookingData['hotelIndex'].'/offers/'.$bookingData['offerIndex'].'/book?token='.$bookingData['token'], 
             $options
         );
-        $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl . '/api/hotels/v1/search/results/'.$bookingData['srk'].'/hotels/'.$bookingData['hotelIndex'].'/offers/'.$bookingData['offerIndex'].'/book?token='.$bookingData['token'], $options, $resp->getContent(false), $resp->getStatusCode());
+        $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl . '/api/hotels/v1/search/results/'.$bookingData['srk'].'/hotels/'.$bookingData['hotelIndex'].'/offers/'.$bookingData['offerIndex'].'/book?token='.$bookingData['token'], $options, $resp->getBody(), $resp->getStatusCode());
 
-        $respAsync = json_decode($resp->getContent(), true);
+        $respAsync = json_decode($resp->getBody(), true);
 
         //dd($respAsync);
 

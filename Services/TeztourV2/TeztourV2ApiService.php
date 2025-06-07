@@ -21,7 +21,7 @@ use App\Entities\Availability\TransportMerch;
 use App\Entities\Availability\TransportMerchCategory;
 use App\Entities\Availability\TransportMerchLocation;
 use App\Entities\AvailabilityDates\AvailabilityDates;
-use App\Entities\AvailabilityDates\AvailabilityDatesCollection;
+use App\Entities\AvailabilityDates\array;
 use App\Entities\AvailabilityDates\DateNight;
 use App\Entities\AvailabilityDates\DateNightCollection;
 use App\Entities\AvailabilityDates\TransportCity;
@@ -47,11 +47,11 @@ use App\Filters\CitiesFilter;
 use App\Filters\HotelDetailsFilter;
 use App\Filters\HotelsFilter;
 use App\Filters\Passenger;
-use App\Support\Collections\Custom\AvailabilityCollection;
-use App\Support\Collections\Custom\CityCollection;
-use App\Support\Collections\Custom\CountryCollection;
-use App\Support\Collections\Custom\HotelCollection;
-use App\Support\Collections\Custom\RegionCollection;
+use App\Support\Collections\Custom\array;
+use App\Support\Collections\Custom\array;
+use App\Support\Collections\Custom\array;
+use App\Support\Collections\Custom\[];
+use App\Support\Collections\Custom\[];
 use App\Support\Http\SimpleAsync\HttpClient;
 use App\Support\Log;
 use DateTime;
@@ -154,7 +154,7 @@ class TeztourV2ApiService extends AbstractApiService
 		$client = HttpClient::create();
 		
 		$request = $client->request(HttpClient::METHOD_GET, $useUrl);
-		$data = $request->getContent();
+		$data = $request->getBody();
 		$this->showRequest(HttpClient::METHOD_GET, $useUrl, [], $data, $request->getStatusCode());
 
 		$this->cachedData["aviaFlights"][$useUrl] = $data;
@@ -187,7 +187,7 @@ class TeztourV2ApiService extends AbstractApiService
 		return $ret;
 	}
 
-	public function apiGetCountries(): CountryCollection
+	public function apiGetCountries(): array
 	{
 		Validator::make()
 			->validateUsernameAndPassword($this->post);
@@ -198,7 +198,7 @@ class TeztourV2ApiService extends AbstractApiService
 
 		$countriesMapping = CountryCodeMap::getCountryCodeMap();
 		
-		$countries = new CountryCollection();
+		$countries = [];
 		foreach ($countriesXml->item as $countryItem) {
 	
 			$country = new Country();
@@ -231,7 +231,7 @@ class TeztourV2ApiService extends AbstractApiService
 		$this->getXml('stayTypes');
 	}
 
-	public function apiGetRegions(): RegionCollection
+	public function apiGetRegions(): []
 	{
 		Validator::make()
 			->validateUsernameAndPassword($this->post);
@@ -239,7 +239,7 @@ class TeztourV2ApiService extends AbstractApiService
 		$regionsXml = $this->getXml('regions');
 		$countries = $this->apiGetCountries();
 
-		$regions = new RegionCollection();
+		$regions = [];
 		foreach ($regionsXml->item as $regionData)
 		{
 			$region = new Region();
@@ -261,7 +261,7 @@ class TeztourV2ApiService extends AbstractApiService
 	}
 
 
-	public function apiGetCities(CitiesFilter $params = null): CityCollection
+	public function apiGetCities(CitiesFilter $params = null): array
 	{
 		Validator::make()
 			->validateUsernameAndPassword($this->post);
@@ -269,7 +269,7 @@ class TeztourV2ApiService extends AbstractApiService
 		$regions = $this->apiGetRegions();
 		$citiesXml = $this->getXml('cities');
 		
-		$cities = new CityCollection();
+		$cities = [];
 		foreach ($citiesXml->item as $cityData) {
 			$city = new City();
 			$city->Id = (string)$cityData->id;
@@ -288,12 +288,12 @@ class TeztourV2ApiService extends AbstractApiService
 		return $cities;
 	}
 	
-	public function apiGetHotels(?HotelsFilter $filter = null): HotelCollection
+	public function apiGetHotels(?HotelsFilter $filter = null): []
 	{
 		$cities = $this->apiGetCities();
 		$hotelsXml = $this->getXml('hotels');
 	
-		$hotels = new HotelCollection();
+		$hotels = [];
 		foreach ($hotelsXml->item as $hotelData) {
 	
 			$cityId = '';
@@ -323,9 +323,9 @@ class TeztourV2ApiService extends AbstractApiService
 		return $hotels;
 	}
 
-	public function apiGetOffers(AvailabilityFilter $filter): AvailabilityCollection
+	public function apiGetOffers(AvailabilityFilter $filter): array
 	{
-		$availabilities = new AvailabilityCollection();
+		$availabilities = [];
         if ($filter->serviceTypes->first() === AvailabilityFilter::SERVICE_TYPE_HOTEL) {
             $availabilities = $this->getIndividualOffers($filter);
         } else if ($filter->serviceTypes->first() === AvailabilityFilter::SERVICE_TYPE_CHARTER) {
@@ -404,7 +404,7 @@ class TeztourV2ApiService extends AbstractApiService
 			$returnDates[$flightDepartureData['departureAirport']][$flightDepartureData['arrivalAirport']][$flightDepartureData['departureDatetime']] = $flightDepartureData;
 		}
 
-		$transports = new AvailabilityDatesCollection();
+		$transports = [];
 		$transportType = 'plane';
 
 		$extraCityIds = [];
@@ -496,9 +496,9 @@ class TeztourV2ApiService extends AbstractApiService
 		return $transports;
 	}
 
-	public function apiGetAvailabilityDates(AvailabilityDatesFilter $filter): AvailabilityDatesCollection
+	public function apiGetAvailabilityDates(AvailabilityDatesFilter $filter): array
 	{
-		$ret = new AvailabilityDatesCollection();
+		$ret = [];
 		if ($filter->type === AvailabilityFilter::SERVICE_TYPE_CHARTER) {
 			$ret = $this->getChartersAvailabilityDates();
 		}
@@ -516,7 +516,7 @@ class TeztourV2ApiService extends AbstractApiService
 		// get hotel
 		$hotel = $offer->Hotel;
 
-		$passengers = $filter->Items->first()->Passengers;
+		$passengers = $post['args'][0]['Items'][0]['Passengers'];
 
 		$bookingDataJson = $offer->Offer_bookingDataJson;
 
@@ -583,14 +583,14 @@ class TeztourV2ApiService extends AbstractApiService
 		$count = 1;
 		/** @var Passenger $passenger */
 		foreach ($passengers as $passenger) {
-			$passengerBirtDate = date('d.m.Y', strtotime($passenger->BirthDate));
-			if ($passenger->IsAdult) {
-				if ($passenger->Gender == 'male')
+			$passengerBirtDate = date('d.m.Y', strtotime($passenger['BirthDate']));
+			if ($passenger['IsAdult']) {
+				if ($passenger['Gender'] == 'male')
 					$genderId = $gendersFromFile['MR.']['Id'];
-				else if ($passenger->Gender == 'female')
+				else if ($passenger['Gender'] == 'female')
 					$genderId = $gendersFromFile['MRS.']['Id'];
 			} else {
-				$birthDate = $passenger->BirthDate;
+				$birthDate = $passenger['BirthDate'];
 			
 				$birthDT = new DateTime($birthDate);
 				$age = $checkInDT->diff($birthDT)->y;
@@ -603,8 +603,8 @@ class TeztourV2ApiService extends AbstractApiService
 			}
 			$passengersXml .= '<Tourist>
 					<touristId>' . $count . '</touristId>
-					<surname>' . $passenger->Lastname . '</surname>
-					<name>' . $passenger->Firstname . '</name>
+					<surname>' . $passenger['Lastname'] . '</surname>
+					<name>' . $passenger['Firstname'] . '</name>
 					<gender>' . $genderId . '</gender>
 					<birthday>' . $passengerBirtDate . '</birthday>
 				</Tourist>';
@@ -664,7 +664,7 @@ class TeztourV2ApiService extends AbstractApiService
 
 		$client = HttpClient::create();
 		$req = $client->request(HttpClient::METHOD_GET,$authorizationUrl);
-		$data = $req->getContent(false);
+		$data = $req->getBody();
 		$this->showRequest(HttpClient::METHOD_GET,$authorizationUrl, [], $data, $req->getStatusCode());
 		
 		return $data;
@@ -683,7 +683,7 @@ class TeztourV2ApiService extends AbstractApiService
 
 		$client = HttpClient::create();
 		$req = $client->request(HttpClient::METHOD_POST, $calculateBookingUrl, $options);
-		$content = $req->getContent(false);
+		$content = $req->getBody();
 		$this->showRequest(HttpClient::METHOD_POST, $calculateBookingUrl, $options, $content, 0);
 		
 		return $content;
@@ -702,7 +702,7 @@ class TeztourV2ApiService extends AbstractApiService
 
 		$client = HttpClient::create();
 		$req = $client->request(HttpClient::METHOD_POST, $bookingUrl, $options);
-		$content = $req->getContent(false);
+		$content = $req->getBody();
 		$this->showRequest(HttpClient::METHOD_POST, $bookingUrl, $options, $content, 0);
 		
 		return $content;
@@ -736,7 +736,7 @@ class TeztourV2ApiService extends AbstractApiService
 
 				$client = HttpClient::create();
 				$response = $client->request(HttpClient::METHOD_POST, $this->apiUrl, $options);
-				$xmlString = $response->getContent(false);
+				$xmlString = $response->getBody();
 
 				$this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $options, $xmlString, $response->getStatusCode());
 
@@ -1000,9 +1000,9 @@ class TeztourV2ApiService extends AbstractApiService
 				$params['tourId'] = (int) $filter->regionId;
 			}
 
-			for ($i = 0; $i < $filter->rooms->first()->children; $i++) {
+			for ($i = 0; $i < $post['args'][0]['rooms'][0]['children']; $i++) {
 				$childPos = $i + 1;
-				$childAge = $filter->rooms->first()->childrenAges->get($i);
+				$childAge = $post['args'][0]['rooms'][0]['childrenAges']->get($i);
 				$params["birthday" . $childPos] = date("d.m.Y", strtotime("- " . $childAge . " years"));
 			}
 
@@ -1020,8 +1020,8 @@ class TeztourV2ApiService extends AbstractApiService
 			
 			$request = $client->request(HttpClient::METHOD_GET, $url);
 			
-			$this->showRequest(HttpClient::METHOD_GET, $url, [], $request->getContent(false), $request->getStatusCode());
-			$offersResp = $request->getContent();
+			$this->showRequest(HttpClient::METHOD_GET, $url, [], $request->getBody(), $request->getStatusCode());
+			$offersResp = $request->getBody();
 
 			// get the next category if error
 			$offersXml = simplexml_load_string($offersResp);
@@ -1055,7 +1055,7 @@ class TeztourV2ApiService extends AbstractApiService
 			$minPrice = (float) $lastOffer->price->total;
 		}
 
-		$hotels = new AvailabilityCollection();
+		$hotels = [];
 		
 		foreach ($allOffersXml as $offersXml) {
 			foreach ($offersXml as $offerXmlItem) {
@@ -1086,8 +1086,8 @@ class TeztourV2ApiService extends AbstractApiService
 				$price = (float) $offerXmlItem->price->total;
 
 				$offerCode = $hotel->Id . '~' . $roomId . '~' . $mealId . '~' . $offerCheckIn . '~' . $checkOut . '~' . $price . '~' 
-					. $filter->rooms->first()->adults . ($filter->rooms->first()->childrenAges ? '~' 
-					. implode('|', $filter->rooms->first()->childrenAges->toArray()) : '');
+					. $filter->rooms->first()->adults . ($post['args'][0]['rooms'][0]['childrenAges'] ? '~' 
+					. implode('|', $post['args'][0]['rooms'][0]['childrenAges']->toArray()) : '');
 
 				$offer->Code = $offerCode;
 
@@ -1262,9 +1262,9 @@ class TeztourV2ApiService extends AbstractApiService
 					'hotelInStop' => true, // also hotels with unavailable rooms	
 				];
 
-				for ($i = 0; $i < $filter->rooms->first()->children; $i++) {
+				for ($i = 0; $i < $post['args'][0]['rooms'][0]['children']; $i++) {
 					$childPos = $i + 1;
-					$childAge = $filter->rooms->first()->childrenAges->get($i);
+					$childAge = $post['args'][0]['rooms'][0]['childrenAges']->get($i);
 					$params["birthday" . $childPos] = date("d.m.Y", strtotime("- " . $childAge . " years"));
 				}
 
@@ -1312,8 +1312,8 @@ class TeztourV2ApiService extends AbstractApiService
 				$url = $requestObj[1];
 				$minPrice = $requestObj[2];
 
-				$this->showRequest(HttpClient::METHOD_GET, $url, [], $request->getContent(false), $request->getStatusCode());
-				$offersResp = $request->getContent();
+				$this->showRequest(HttpClient::METHOD_GET, $url, [], $request->getBody(), $request->getStatusCode());
+				$offersResp = $request->getBody();
 
 				$offersXml = simplexml_load_string($offersResp);
 
@@ -1338,9 +1338,9 @@ class TeztourV2ApiService extends AbstractApiService
 					'hotelInStop' => true, // also hotels with unavailable rooms	
 				];
 
-				for ($i = 0; $i < $filter->rooms->first()->children; $i++) {
+				for ($i = 0; $i < $post['args'][0]['rooms'][0]['children']; $i++) {
 					$childPos = $i + 1;
-					$childAge = $filter->rooms->first()->childrenAges->get($i);
+					$childAge = $post['args'][0]['rooms'][0]['childrenAges']->get($i);
 					$params["birthday" . $childPos] = date("d.m.Y", strtotime("- " . $childAge . " years"));
 				}
 
@@ -1406,7 +1406,7 @@ class TeztourV2ApiService extends AbstractApiService
 			}
 		}
 
-		$hotels = new AvailabilityCollection();
+		$hotels = [];
 
 		$airportsMappedData = $this->getAirportsFromFile();
 		$airportsByRegion = $this->getAiportsByRegion();
@@ -1477,8 +1477,8 @@ class TeztourV2ApiService extends AbstractApiService
 				$price = (float) $offerXmlItem->price->total;
 
 				$offerCode = $hotel->Id . '~' . $roomId . '~' . $mealId . '~' . $offerCheckIn . '~' . $offerDays . '~' . $price . '~' 
-					. $filter->rooms->first()->adults . (!empty($filter->rooms->first()->childrenAges->toArray()) ? '~' 
-					. implode('|', $filter->rooms->first()->childrenAges->toArray()) : '');
+					. $filter->rooms->first()->adults . (!empty($post['args'][0]['rooms'][0]['childrenAges']->toArray()) ? '~' 
+					. implode('|', $post['args'][0]['rooms'][0]['childrenAges']->toArray()) : '');
 
 				$offer->Code = $offerCode;
 
@@ -1759,8 +1759,8 @@ class TeztourV2ApiService extends AbstractApiService
 
 			$client = HttpClient::create();
 			$resp = $client->request(HttpClient::METHOD_GET, $url, []);
-			$this->showRequest(HttpClient::METHOD_POST, $url, [], $resp->getContent(), $resp->getStatusCode());
-			$data = $resp->getContent();
+			$this->showRequest(HttpClient::METHOD_POST, $url, [], $resp->getBody(), $resp->getStatusCode());
+			$data = $resp->getBody();
 			
 			$randbsXml = @simplexml_load_string($data);
 
@@ -1872,8 +1872,8 @@ class TeztourV2ApiService extends AbstractApiService
 
 			$client = HttpClient::create();
 			$resp = $client->request(HttpClient::METHOD_GET, $url, []);
-			$this->showRequest(HttpClient::METHOD_POST, $url, [], $resp->getContent(), $resp->getStatusCode());
-			$hotelClassesResp = $resp->getContent();
+			$this->showRequest(HttpClient::METHOD_POST, $url, [], $resp->getBody(), $resp->getStatusCode());
+			$hotelClassesResp = $resp->getBody();
 			
 			$hotelClassesXml = @simplexml_load_string($hotelClassesResp);
 			if (isset($hotelClassesXml->hotelClasses->hotelClass) && count($hotelClassesXml->hotelClasses->hotelClass) > 0) {
@@ -1960,7 +1960,7 @@ class TeztourV2ApiService extends AbstractApiService
 
 			$client = HttpClient::create();
 			$response = $client->request(HttpClient::METHOD_POST, $this->apiUrl, $options);
-			$xmlString = $response->getContent();
+			$xmlString = $response->getBody();
 			$this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $options, $xmlString, $response->getStatusCode());
 
 			$xmlCountries = simplexml_load_string($xmlString)->DataSet->Body->Tari;
@@ -1973,7 +1973,7 @@ class TeztourV2ApiService extends AbstractApiService
 				$options['body'] = http_build_query($body);
 
 				$response = $client->request(HttpClient::METHOD_POST, $this->apiUrl, $options);
-				$xmlString = $response->getContent();
+				$xmlString = $response->getBody();
 				$this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $options, $xmlString, $response->getStatusCode());
 
 				$xmlStatiuni = simplexml_load_string($xmlString)->DataSet->Body->Statiuni;
@@ -1984,7 +1984,7 @@ class TeztourV2ApiService extends AbstractApiService
 					$options['body'] = http_build_query($body);
 
 					$response = $client->request(HttpClient::METHOD_POST, $this->apiUrl, $options);
-					$xmlString = $response->getContent();
+					$xmlString = $response->getBody();
 					$this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $options, $xmlString, $response->getStatusCode());
 
 					$xmlHoteluri = simplexml_load_string($xmlString)->DataSet->Body->Hoteluri;
@@ -2023,7 +2023,7 @@ class TeztourV2ApiService extends AbstractApiService
 		$client = HttpClient::create();
 
 		$responseObj = $client->request(HttpClient::METHOD_GET, $url);
-		$content = $responseObj->getContent();
+		$content = $responseObj->getBody();
 
 		$this->showRequest(HttpClient::METHOD_GET, $url, [], $content, $responseObj->getStatusCode());
 
@@ -2113,8 +2113,8 @@ class TeztourV2ApiService extends AbstractApiService
 		$client = HttpClient::create();
 		$response = $client->request(HttpClient::METHOD_POST, $this->apiUrl, $options);
 
-		$this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $options, $response->getContent(false), $response->getStatusCode());
-		$xmlString = $response->getContent();
+		$this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $options, $response->getBody(), $response->getStatusCode());
+		$xmlString = $response->getBody();
 		$xmlDetails = simplexml_load_string($xmlString);
 	
 		$hotelXml = $xmlDetails->DataSet->Body->Hoteluri->Hotel;

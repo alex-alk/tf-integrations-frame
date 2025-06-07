@@ -1,4 +1,4 @@
-<?php $scripts['countries'] = 'countries.js' ?>
+<?php $scripts[] = 'countries.js' ?>
 
 <?php require __DIR__ . '/../common/head.php' ?>
 
@@ -6,7 +6,7 @@
     <?php require __DIR__ . '/../common/header.php' ?>
     <div class="container-fluid" style="padding-top: 20px;">
         <div class="row flex-xl-nowrap">
-            <div style="padding-top: 20px;">
+            <div class="col-xl-2" style="padding-top: 20px;">
                 <?php require __DIR__ . '/../common/menu.php' ?>
             </div>
             <main class="col-md-9 col-xl-8 py-md-3 pl-md-5 bd-content" role="main">

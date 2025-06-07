@@ -31,7 +31,7 @@ class OneTourismoApiService extends AbstractApiService
         return $countries;
     }
 
-    // public function apiGetCities(?CitiesFilter $params = null): CityCollection
+    // public function apiGetCities(?CitiesFilter $params = null): array
     // {
 
     //     $options['headers'] = [
@@ -48,7 +48,7 @@ class OneTourismoApiService extends AbstractApiService
     //         throw new Exception('filos: empty city list');
     //     }
 
-    //     $cities = new CityCollection();
+    //     $cities = [];
 
     //     $map = CountryCodeMap::getCountryCodeMap();
     //     $map = array_flip($map);
@@ -66,12 +66,12 @@ class OneTourismoApiService extends AbstractApiService
     //     return $cities;
     // }
 
-    // public function apiGetRegions(): RegionCollection
+    // public function apiGetRegions(): []
     // {
     //     Validator::make()->validateUsernameAndPassword($this->post);
 
     //     $cities = $this->apiGetCities();
-    //     $regions = new RegionCollection();
+    //     $regions = [];
 
     //     foreach ($cities as $city) {
     //         $regions->put($city->County->Id, $city->County);
@@ -80,7 +80,7 @@ class OneTourismoApiService extends AbstractApiService
     //     return $regions;
     // }
 
-    // public function apiGetOffers(AvailabilityFilter $filter): AvailabilityCollection
+    // public function apiGetOffers(AvailabilityFilter $filter): array
     // {
 
     //     Validator::make()->validateIndividualOffersFilter($filter);
@@ -112,7 +112,7 @@ class OneTourismoApiService extends AbstractApiService
     //     $content = json_decode($content, true)['results'];
     //     //dd($content);
 
-    //     $availabilities = new AvailabilityCollection();
+    //     $availabilities = [];
     //     foreach ($content as $availability) {
     //         $availabilityObj = Availability::create($availability['id'], $filter->showHotelName, $availability['name']);
 
@@ -128,7 +128,7 @@ class OneTourismoApiService extends AbstractApiService
     //                 new DateTime($filter->checkIn),
     //                 new DateTime($filter->checkOut),
     //                 $filter->rooms->first()->adults,
-    //                 $filter->rooms->first()->childrenAges->toArray(),
+    //                 $post['args'][0]['rooms'][0]['childrenAges']->toArray(),
     //                 $availability['currency'],
     //                 $room['mealPlan']['price'],
     //                 $room['mealPlan']['price'],
@@ -155,23 +155,23 @@ class OneTourismoApiService extends AbstractApiService
     //     $adults = [];
     //     $children = [];
     //     /** @var Passenger $passenger */
-    //     foreach ($filter->Items->first()->Passengers as $passenger) {
-    //         if ($passenger->IsAdult) {
+    //     foreach ($post['args'][0]['Items'][0]['Passengers'] as $passenger) {
+    //         if ($passenger['IsAdult']) {
     //             $adult = [
-    //                 'first_name' => $passenger->Firstname,
-    //                 'last_name' => $passenger->Lastname,
+    //                 'first_name' => $passenger['Firstname'],
+    //                 'last_name' => $passenger['Lastname'],
     //                 'index' => $index,
-    //                 'title' => $passenger->Gender === 'male' ? 'Mr' : 'Ms'
+    //                 'title' => $passenger['Gender'] === 'male' ? 'Mr' : 'Ms'
     //             ];
     //             $adults[] = $adult;
     //         } else {
-    //             $from = new DateTime($passenger->BirthDate);
-    //             $to = new DateTime($filter->Items->first()->Room_CheckinAfter);
+    //             $from = new DateTime($passenger['BirthDate']);
+    //             $to = new DateTime($post['args'][0]['Items'][0]['Room_CheckinAfter']);
     //             $age = $from->diff($to)->y;
 
     //             $child = [
-    //                 'first_name' => $passenger->Firstname,
-    //                 'last_name' => $passenger->Lastname,
+    //                 'first_name' => $passenger['Firstname'],
+    //                 'last_name' => $passenger['Lastname'],
     //                 'index' => $index,
     //                 'age' => $age,
     //                 'title' => 'Mr'
@@ -184,9 +184,9 @@ class OneTourismoApiService extends AbstractApiService
     //     $options['body'] = json_encode([
     //         'username' => $this->username,
     //         'password' => $this->password,
-    //         'start_date' => $filter->Items->first()->Room_CheckinAfter,
-    //         'end_date' => $filter->Items->first()->Room_CheckinBefore,
-    //         'hotelID' => $filter->Items->first()->Hotel->InTourOperatorId,
+    //         'start_date' => $post['args'][0]['Items'][0]['Room_CheckinAfter'],
+    //         'end_date' => $post['args'][0]['Items'][0]['Room_CheckinBefore'],
+    //         'hotelID' => $post['args'][0]['Items'][0]['Hotel']['InTourOperatorId'],
     //         'providerContractID' => '',
     //         'rooms' => [
     //             [
@@ -219,7 +219,7 @@ class OneTourismoApiService extends AbstractApiService
     // // hotelurile cu city de pe hotel case nu se potrivesc cu punctul 1 si 2 de mai sus
     // // hotel oras mappedlocation perfect partial(pot fi mai multe)
     // // un orase se poate potrivi cu mai multe orase?
-    // public function apiGetHotels(?HotelsFilter $filter = null): HotelCollection
+    // public function apiGetHotels(?HotelsFilter $filter = null): []
     // {
 
     //     $file = 'hotels';
@@ -808,7 +808,7 @@ class OneTourismoApiService extends AbstractApiService
     //         // $map = array_flip($map);
     //         $cities = $this->apiGetCities();
 
-    //         $hotels = new HotelCollection();
+    //         $hotels = [];
 
     //         foreach ($content as $k => $hotelResp) {
 
@@ -843,7 +843,7 @@ class OneTourismoApiService extends AbstractApiService
     //         Utils::writeToCache($this, $file, json_encode($hotels));
     //         return $hotels;
     //     } else {
-    //         return ResponseConverter::convertToCollection(json_decode($cache, true), HotelCollection::class);
+    //         return ResponseConverter::convertToCollection(json_decode($cache, true), []::class);
     //     }
     // }
 

@@ -38,9 +38,9 @@ class EuroSite extends \QStorageEntry implements \QIStorage
 
 	public static $RequestsData = [];
 
-	private static $_CacheData = array();
+	private static $_CacheData = [];
 
-	private static $_LoadedCacheData = array();
+	private static $_LoadedCacheData = [];
 
 	private static $_Facilities = [];
 
@@ -1659,12 +1659,12 @@ class EuroSite extends \QStorageEntry implements \QIStorage
 		$rooms = $data["Room"] ? $data["Room"] : null;
 
 		if (!$rooms || (count($rooms) === 0))
-			return array();
+			return [];
 
 		if (!$objs)
-			$objs = array();
+			$objs = [];
 
-		$ret = array();
+		$ret = [];
 		foreach ($rooms as $room)
 		{
 			$roomCode = $room["@attributes"] ? reset($room["@attributes"]) : null;
@@ -1692,7 +1692,7 @@ class EuroSite extends \QStorageEntry implements \QIStorage
 	private function getFee($fee, $price, $type, $currencyCode, $sellCurrencyCode, $force_percent = false, &$objs = null)
 	{
 		if (!$objs)
-			$objs = array();
+			$objs = [];
 
 		$this->loadCachedMerchCategories($objs);
 
@@ -1772,12 +1772,12 @@ class EuroSite extends \QStorageEntry implements \QIStorage
 	private function getCountriesWithServices($countries, &$objs = null)
 	{
 		if (!$countries || (count($countries) === 0))
-			return array();
+			return [];
 
 		if (!$objs)
-			$objs = array();
+			$objs = [];
 
-		$ret = array();
+		$ret = [];
 		foreach ($countries as $country)
 		{
 			if (!$country["CountryCode"])
@@ -1830,15 +1830,15 @@ class EuroSite extends \QStorageEntry implements \QIStorage
 	private function getServices($services, &$objs = null)
 	{
 		if (!$services || (count($services) === 0))
-			return array();
+			return [];
 
 		if (!$objs)
-			$objs = array();
+			$objs = [];
 
 		if (isset($services['Code']))
 			$services = array($services);
 
-		$ret = array();
+		$ret = [];
 		foreach ($services as $service)
 			$ret[] = $this->getService($service, $objs);
 		return $ret;
@@ -1852,7 +1852,7 @@ class EuroSite extends \QStorageEntry implements \QIStorage
 	private function getService($service, &$objs = null)
 	{
 		if (!$objs)
-			$objs = array();
+			$objs = [];
 
 		// load cached data
 		$this->loadCachedCurrencies($objs);

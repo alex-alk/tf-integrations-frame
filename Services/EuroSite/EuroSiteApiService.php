@@ -21,7 +21,7 @@ use App\Entities\Availability\TransportMerch;
 use App\Entities\Availability\TransportMerchCategory;
 use App\Entities\Availability\TransportMerchLocation;
 use App\Entities\AvailabilityDates\AvailabilityDates;
-use App\Entities\AvailabilityDates\AvailabilityDatesCollection;
+use App\Entities\AvailabilityDates\array;
 use App\Entities\AvailabilityDates\DateNight;
 use App\Entities\AvailabilityDates\DateNightCollection;
 use App\Entities\AvailabilityDates\TransportCity;
@@ -54,10 +54,10 @@ use App\Filters\CitiesFilter;
 use App\Filters\HotelDetailsFilter;
 use App\Filters\HotelsFilter;
 use App\Filters\Passenger;
-use App\Support\Collections\Custom\AvailabilityCollection;
-use App\Support\Collections\Custom\CityCollection;
-use App\Support\Collections\Custom\CountryCollection;
-use App\Support\Collections\Custom\HotelCollection;
+use App\Support\Collections\Custom\array;
+use App\Support\Collections\Custom\array;
+use App\Support\Collections\Custom\array;
+use App\Support\Collections\Custom\[];
 use App\Support\Collections\Custom\OfferCancelFeeCollection;
 use App\Support\Collections\StringCollection;
 use App\Support\Http\SimpleAsync\HttpClient;
@@ -117,10 +117,10 @@ class EuroSiteApiService extends AbstractApiService
                 break;
             }
         }
-        $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $options, $response->getContent(false), $response->getStatusCode());
+        $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $options, $response->getBody(), $response->getStatusCode());
 
         try {
-            $responseXml = simplexml_load_string($response->getContent())->ResponseDetails;
+            $responseXml = simplexml_load_string($response->getBody())->ResponseDetails;
         } catch(Exception $e) {
             return false;
         }
@@ -131,7 +131,7 @@ class EuroSiteApiService extends AbstractApiService
         return false;
     }
 
-    public function apiGetCountries(): CountryCollection
+    public function apiGetCountries(): array
     {
         $file = 'countries';
 
@@ -176,9 +176,9 @@ class EuroSiteApiService extends AbstractApiService
                     break;
                 }
             }
-            $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $options, $response->getContent(false), $response->getStatusCode());
+            $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $options, $response->getBody(), $response->getStatusCode());
 
-            $responseXml = simplexml_load_string($response->getContent())->ResponseDetails;
+            $responseXml = simplexml_load_string($response->getBody())->ResponseDetails;
 
             if (!empty($responseXml->Errors->Error)) {
                 throw new Exception(json_encode($responseXml->Errors->Error));
@@ -186,19 +186,19 @@ class EuroSiteApiService extends AbstractApiService
 
             $response = $responseXml->getCountryResponse->Country;
 
-            $countries = new CountryCollection();
+            $countries = [];
             foreach ($response as $value) {
                 $country = Country::create($value->CountryId, $value->CountryCode, $value->CountryName);
                 $countries->put($country->Id, $country);
             }
             Utils::writeToCache($this, $file, json_encode($countries));
         } else {
-            $countries = ResponseConverter::convertToCollection(json_decode($json, true), CountryCollection::class);
+            $countries = ResponseConverter::convertToCollection(json_decode($json, true), array::class);
         }
         return $countries;
     }
 
-    public function apiGetCities(?CitiesFilter $params = null): CityCollection
+    public function apiGetCities(?CitiesFilter $params = null): array
     {
         Validator::make()->validateUsernameAndPassword($this->post);
         $file = 'cities';
@@ -244,9 +244,9 @@ class EuroSiteApiService extends AbstractApiService
             }
 
             $countries = $this->apiGetCountries();
-            $cities = new CityCollection();
+            $cities = [];
 
-            $responseXml = simplexml_load_string($response->getContent())->ResponseDetails;
+            $responseXml = simplexml_load_string($response->getBody())->ResponseDetails;
 
             if (!empty($responseXml->Errors->Error)) {
                 throw new Exception(json_encode($responseXml->Errors->Error));
@@ -263,12 +263,12 @@ class EuroSiteApiService extends AbstractApiService
             }
             Utils::writeToCache($this, $file, json_encode($cities));
         } else {
-            $cities = ResponseConverter::convertToCollection(json_decode($citiesJson, true), CityCollection::class);
+            $cities = ResponseConverter::convertToCollection(json_decode($citiesJson, true), array::class);
         }
         return $cities;
     }
 
-    public function apiGetHotels(?HotelsFilter $filter = null): HotelCollection
+    public function apiGetHotels(?HotelsFilter $filter = null): []
     {
         Validator::make()->validateUsernameAndPassword($this->post);
 
@@ -276,7 +276,7 @@ class EuroSiteApiService extends AbstractApiService
 
         if ($json === null || !empty($filter->CityId)) {
 
-            $hotels = new HotelCollection();
+            $hotels = [];
             $cities = $this->apiGetCities();
 
             $options['headers'] = [
@@ -338,7 +338,7 @@ class EuroSiteApiService extends AbstractApiService
                     $options = ['body' => $requestXml];
     
                     $responseObj = $httpClient->request(HttpClient::METHOD_POST, $this->apiUrl, $options);
-                    $responseObj->getContent(false);
+                    $responseObj->getBody();
                     $responses[] = [$responseObj, $options, $city];
                 }
             }
@@ -348,9 +348,9 @@ class EuroSiteApiService extends AbstractApiService
                 $options = $responseArr[1];
                 $city = $responseArr[2];
 
-                $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $options, $responseObj->getContent(false), $responseObj->getStatusCode());
+                $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $options, $responseObj->getBody(), $responseObj->getStatusCode());
 
-                $response = simplexml_load_string($responseObj->getContent(false))->ResponseDetails;
+                $response = simplexml_load_string($responseObj->getBody())->ResponseDetails;
 
                 if (!empty($response->Errors->Error)) {
                     throw new Exception(json_encode($response->Errors->Error));
@@ -394,7 +394,7 @@ class EuroSiteApiService extends AbstractApiService
             }
         } else {
             $arr = json_decode($json, true);
-            $hotels = ResponseConverter::convertToCollection($arr, HotelCollection::class);
+            $hotels = ResponseConverter::convertToCollection($arr, []::class);
         }
         return $hotels;
     }
@@ -455,9 +455,9 @@ class EuroSiteApiService extends AbstractApiService
 
         $httpClient = HttpClient::create();
         $responseObj = $httpClient->request(HttpClient::METHOD_POST, $this->apiUrl, $options);
-        $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $options, $responseObj->getContent(false), $responseObj->getStatusCode());
+        $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $options, $responseObj->getBody(), $responseObj->getStatusCode());
 
-        $responseXml = simplexml_load_string($responseObj->getContent())->ResponseDetails;
+        $responseXml = simplexml_load_string($responseObj->getBody())->ResponseDetails;
 
         if (!empty($responseXml->Errors->Error)) {
             throw new Exception(json_encode($responseXml->Errors->Error));
@@ -552,9 +552,9 @@ class EuroSiteApiService extends AbstractApiService
         $options = ['body' => $requestXml];
         $response = $client->request(HttpClient::METHOD_POST, $this->apiUrl, $options);
 
-        $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $options, $response->getContent(), $response->getStatusCode());
+        $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $options, $response->getBody(), $response->getStatusCode());
 
-        $responseXml = simplexml_load_string($response->getContent())->ResponseDetails;
+        $responseXml = simplexml_load_string($response->getBody())->ResponseDetails;
 
         if (!empty($responseXml->Errors->Error)) {
             throw new Exception(json_encode($responseXml->Errors->Error));
@@ -614,7 +614,7 @@ class EuroSiteApiService extends AbstractApiService
         foreach ($responses as $responseArr){
             $response = $responseArr[0];
             
-            $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $options, $response->getContent(), $response->getStatusCode());
+            $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $options, $response->getBody(), $response->getStatusCode());
             // $tries = 1;
             // while ($response->getStatusCode() !== 200) {
             //     sleep(5);
@@ -625,7 +625,7 @@ class EuroSiteApiService extends AbstractApiService
             //     }
             // }
     
-            $responseXml = simplexml_load_string($response->getContent())->ResponseDetails;
+            $responseXml = simplexml_load_string($response->getBody())->ResponseDetails;
     
             // if (!empty($responseXml->Errors->Error)) {
             //     throw new Exception(json_encode($responseXml->Errors->Error));
@@ -639,8 +639,8 @@ class EuroSiteApiService extends AbstractApiService
             $tour->Id = $circuit->CircuitId;
             $tour->Title = $circuit->Name;
 
-            $destinations = new CityCollection();
-            $destinationCountries = new CountryCollection();
+            $destinations = [];
+            $destinationCountries = [];
 
             foreach ($circuit->Destinations->CircuitDestination as $dest) {
                 $city = $cities->get((string) $dest->CityCode);
@@ -696,7 +696,7 @@ class EuroSiteApiService extends AbstractApiService
         return $tours;
     }
 
-    private function getHotelOffers(AvailabilityFilter $filter): AvailabilityCollection
+    private function getHotelOffers(AvailabilityFilter $filter): array
     {
         EuroSiteValidator::make()
             ->validateAllCredentials($this->post)
@@ -707,7 +707,7 @@ class EuroSiteApiService extends AbstractApiService
         if (empty($filter->checkOut)) {
             throw new Exception("checkOut is mandatory");
         }
-        $ages = $filter->rooms->first()->childrenAges;
+        $ages = $post['args'][0]['rooms'][0]['childrenAges'];
 
         $time = (new DateTime())->format('Y-m-d\TH:i:s');
 
@@ -716,8 +716,8 @@ class EuroSiteApiService extends AbstractApiService
             '[NoAdults]' => $filter->rooms->first()->adults,
         ];
 
-        if ((int) $filter->rooms->first()->children > 0) {
-            $room['[NoChildren]'] = $filter->rooms->first()->children ?? 0;
+        if ((int) $post['args'][0]['rooms'][0]['children'] > 0) {
+            $room['[NoChildren]'] = $post['args'][0]['rooms'][0]['children'] ?? 0;
 
             $children = [];
             foreach ($ages as $age) {
@@ -778,15 +778,15 @@ class EuroSiteApiService extends AbstractApiService
         $client = HttpClient::create();
 
         $responseObj = $client->request(HttpClient::METHOD_POST, $this->apiUrl, $options);
-        $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $options, $responseObj->getContent(false), $responseObj->getStatusCode());
+        $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $options, $responseObj->getBody(), $responseObj->getStatusCode());
 
-        $responseXml = simplexml_load_string($responseObj->getContent())->ResponseDetails->getHotelPriceResponse;
+        $responseXml = simplexml_load_string($responseObj->getBody())->ResponseDetails->getHotelPriceResponse;
 
         if (!empty($responseXml->Errors->Error)) {
             throw new Exception(json_encode($responseXml->Errors->Error));
         }
 
-        $availabilities = new AvailabilityCollection();
+        $availabilities = [];
 
         if (isset($responseXml->Hotel)) {
             foreach ($responseXml->Hotel as $hotel) {
@@ -932,7 +932,7 @@ class EuroSiteApiService extends AbstractApiService
         return $availabilities;
     }
 
-    private function getTourOffers(AvailabilityFilter $filter): AvailabilityCollection
+    private function getTourOffers(AvailabilityFilter $filter): array
     {
         EuroSiteValidator::make()
             ->validateAllCredentials($this->post)
@@ -941,16 +941,16 @@ class EuroSiteApiService extends AbstractApiService
         $cities = $this->apiGetCities();
         //$hotels = $this->getHotels();
 
-        $ages = $filter->rooms->first()->childrenAges;
-        $availabilities = new AvailabilityCollection();
+        $ages = $post['args'][0]['rooms'][0]['childrenAges'];
+        $availabilities = [];
 
         $room = [
             '[Code]' => 'DB',
             '[NoAdults]' => $filter->rooms->first()->adults,
         ];
 
-        if ((int) $filter->rooms->first()->children > 0) {
-            $room['[NoChildren]'] = $filter->rooms->first()->children ?? 0;
+        if ((int) $post['args'][0]['rooms'][0]['children'] > 0) {
+            $room['[NoChildren]'] = $post['args'][0]['rooms'][0]['children'] ?? 0;
 
             $children = [];
             foreach ($ages as $age) {
@@ -1001,7 +1001,7 @@ class EuroSiteApiService extends AbstractApiService
 
         $response = $client->request(HttpClient::METHOD_POST, $this->apiUrl, $options);
 
-        $responseXml = simplexml_load_string($response->getContent())->ResponseDetails;
+        $responseXml = simplexml_load_string($response->getBody())->ResponseDetails;
 
         if (!empty($responseXml->Errors->Error)) {
             throw new Exception(json_encode($responseXml->Errors->Error));
@@ -1218,7 +1218,7 @@ class EuroSiteApiService extends AbstractApiService
         return $availabilities;
     }
 
-    private function getCharterOffers(AvailabilityFilter $filter): AvailabilityCollection
+    private function getCharterOffers(AvailabilityFilter $filter): array
     {
         EuroSiteValidator::make()
             ->validateAllCredentials($this->post)
@@ -1227,7 +1227,7 @@ class EuroSiteApiService extends AbstractApiService
         $cities = $this->apiGetCities();
         $countries = $this->apiGetCountries();
 
-        $ages = $filter->rooms->first()->childrenAges;
+        $ages = $post['args'][0]['rooms'][0]['childrenAges'];
 
         $time = (new DateTime())->format('Y-m-d\TH:i:s');
 
@@ -1238,8 +1238,8 @@ class EuroSiteApiService extends AbstractApiService
             '[NoAdults]' => $filter->rooms->first()->adults,
         ];
 
-        if ((int) $filter->rooms->first()->children > 0) {
-            $room['[NoChildren]'] = $filter->rooms->first()->children ?? 0;
+        if ((int) $post['args'][0]['rooms'][0]['children'] > 0) {
+            $room['[NoChildren]'] = $post['args'][0]['rooms'][0]['children'] ?? 0;
 
             $children = [];
             foreach ($ages as $age) {
@@ -1303,15 +1303,15 @@ class EuroSiteApiService extends AbstractApiService
         $client = HttpClient::create();
 
         $responseObj = $client->request(HttpClient::METHOD_POST, $this->apiUrl, $options);
-        $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $options, $responseObj->getContent(), $responseObj->getStatusCode());
+        $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $options, $responseObj->getBody(), $responseObj->getStatusCode());
 
-        $responseXml = simplexml_load_string($responseObj->getContent())->ResponseDetails->getPackageNVPriceResponse;
+        $responseXml = simplexml_load_string($responseObj->getBody())->ResponseDetails->getPackageNVPriceResponse;
 
         if (!empty($responseXml->Errors->Error)) {
             throw new Exception(json_encode($responseXml->Errors->Error));
         }
 
-        $availabilities = new AvailabilityCollection();
+        $availabilities = [];
 
         if (isset($responseXml->Hotel)) {
             foreach ($responseXml->Hotel as $hotel) {
@@ -1516,7 +1516,7 @@ class EuroSiteApiService extends AbstractApiService
         return $availabilities;
     }
 
-    private function getCharterAvailabilityDates(): AvailabilityDatesCollection
+    private function getCharterAvailabilityDates(): array
     {
         $cities = $this->apiGetCities();
 
@@ -1558,9 +1558,9 @@ class EuroSiteApiService extends AbstractApiService
                 break;
             }
         }
-        $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $options, $response->getContent(), $response->getStatusCode());
+        $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $options, $response->getBody(), $response->getStatusCode());
 
-        $responseXml = simplexml_load_string($response->getContent())->ResponseDetails;
+        $responseXml = simplexml_load_string($response->getBody())->ResponseDetails;
 
         if (!empty($responseXml->Errors->Error)) {
             throw new Exception(json_encode($responseXml->Errors->Error));
@@ -1568,7 +1568,7 @@ class EuroSiteApiService extends AbstractApiService
 
         $destCountries = $responseXml->getPackageNVRoutesResponse->Country;
 
-        $availabilityDatesCollection = new AvailabilityDatesCollection();
+        $availabilityDatesCollection = [];
 
         foreach ($destCountries as $destCountry) {
             foreach ($destCountry->Destinations->Destination as $destination) {
@@ -1668,9 +1668,9 @@ class EuroSiteApiService extends AbstractApiService
             }
         }
 
-        $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $options, $response->getContent(), $response->getStatusCode());
+        $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $options, $response->getBody(), $response->getStatusCode());
 
-        $responseXml = simplexml_load_string($response->getContent())->ResponseDetails;
+        $responseXml = simplexml_load_string($response->getBody())->ResponseDetails;
 
         if (!empty($responseXml->Errors->Error)) {
             throw new Exception(json_encode($responseXml->Errors->Error));
@@ -1745,7 +1745,7 @@ class EuroSiteApiService extends AbstractApiService
         return $availabilityDatesCollection;
     }
 
-    private function getTourAvailabilityDates(): AvailabilityDatesCollection
+    private function getTourAvailabilityDates(): array
     {
         // get destinations
         $cities = $this->apiGetCities();
@@ -1776,7 +1776,7 @@ class EuroSiteApiService extends AbstractApiService
         
         $response = $client->request(HttpClient::METHOD_POST, $this->apiUrl, $options);
 
-        $responseXml = simplexml_load_string($response->getContent())->ResponseDetails;
+        $responseXml = simplexml_load_string($response->getBody())->ResponseDetails;
 
         if (!empty($responseXml->Errors->Error)) {
             throw new Exception(json_encode($responseXml->Errors->Error));
@@ -1784,7 +1784,7 @@ class EuroSiteApiService extends AbstractApiService
 
         $responseDestinations = $responseXml->CircuitSearchCityResponse->Country;
 
-        $availabilityDatesCollection = new AvailabilityDatesCollection();
+        $availabilityDatesCollection = [];
 
         foreach ($responseDestinations as $country) {
             foreach ($country->Cities as $citiesResp) {
@@ -1830,9 +1830,9 @@ class EuroSiteApiService extends AbstractApiService
                     ];
 
                     $response = $client->request(HttpClient::METHOD_POST, $this->apiUrl, $options);
-                    $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $options, $response->getContent(), $response->getStatusCode());
+                    $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $options, $response->getBody(), $response->getStatusCode());
 
-                    $responseXml = simplexml_load_string($response->getContent())->ResponseDetails;
+                    $responseXml = simplexml_load_string($response->getBody())->ResponseDetails;
             
                     if (!empty($responseXml->Errors->Error)) {
                         throw new Exception(json_encode($responseXml->Errors->Error));
@@ -1914,7 +1914,7 @@ class EuroSiteApiService extends AbstractApiService
         return $availabilityDatesCollection;
     }
 
-    public function apiGetAvailabilityDates(AvailabilityDatesFilter $filter): AvailabilityDatesCollection
+    public function apiGetAvailabilityDates(AvailabilityDatesFilter $filter): array
     {
         Validator::make()->validateUsernameAndPassword($this->post);
 
@@ -1929,7 +1929,7 @@ class EuroSiteApiService extends AbstractApiService
         return $availabilityDatesCollection;
     }
 
-    public function apiGetOffers(AvailabilityFilter $filter): AvailabilityCollection
+    public function apiGetOffers(AvailabilityFilter $filter): array
     {
         EuroSiteValidator::make()
             ->validateUsernameAndPassword($this->post)
@@ -1955,7 +1955,7 @@ class EuroSiteApiService extends AbstractApiService
         $time = (new DateTime())->format('Y-m-d\TH:i:s');
 
         $passengers = [];
-        $passengersReq = $filter->Items->first()->Passengers;
+        $passengersReq = $post['args'][0]['Items'][0]['Passengers'];
         /** @var Passenger $passengerReq */
         foreach ($passengersReq as $passengerReq) {
             if ($passengerReq->Firstname !== '') {
@@ -2004,17 +2004,17 @@ class EuroSiteApiService extends AbstractApiService
                                     'BookingClient' => 'TravelFuse',
                                     'CountryCode' => $filter->Items->first()->Hotel->Country_Code,
                                     'CityCode' => $filter->Items->first()->Hotel->City_Code,
-                                    'ProductCode' => $filter->Items->first()->Hotel->InTourOperatorId,
+                                    'ProductCode' => $post['args'][0]['Items'][0]['Hotel']['InTourOperatorId'],
                                     'Language' => 'RO',
                                     'PeriodOfStay' => [
-                                        'CheckIn' => $filter->Items->first()->Room_CheckinAfter,
-                                        'CheckOut' => $filter->Items->first()->Room_CheckinBefore
+                                        'CheckIn' => $post['args'][0]['Items'][0]['Room_CheckinAfter'],
+                                        'CheckOut' => $post['args'][0]['Items'][0]['Room_CheckinBefore']
                                     ],
                                     'VariantId' => $filter->Items->first()->Offer_InitialData,
                                     'Rooms' => [
                                         'Room' => [
                                             '[Code]' => $filter->Items->first()->Room_Type_InTourOperatorId,
-                                            '[NoAdults]' => $filter->Params->Adults->first(),
+                                            '[NoAdults]' => $post['args'][0]['Params']['Adults'][0],
                                             '[NoChildren]' => (int) $filter->Params->Children->first(),
                                             'PaxNames' => $passengers
                                         ]
@@ -2038,7 +2038,7 @@ class EuroSiteApiService extends AbstractApiService
         $client = HttpClient::create();
 
         $response = $client->request(HttpClient::METHOD_POST, $this->apiUrl, $options);
-        $content = $response->getContent();
+        $content = $response->getBody();
 
         $responseXml = simplexml_load_string($content)->ResponseDetails;
 
@@ -2072,13 +2072,13 @@ class EuroSiteApiService extends AbstractApiService
             ->validateOfferCancelFeesFilter($filter);
 
         $hotels = $this->apiGetHotels();
-        $hotel = $hotels->get($filter->Hotel->InTourOperatorId);
+        $hotel = $hotels->get($post['args'][0]['Hotel']['InTourOperatorId']);
 
         $time = (new DateTime())->format('Y-m-d\TH:i:s');
         $passengers = [];
 
-        $adults = $filter->Rooms->first()->adults;
-        $childrenAges = $filter->Rooms->first()->childrenAges;
+        $adults = $post['args'][0]['rooms'][0]['adults'];
+        $childrenAges = $post['args'][0]['rooms'][0]['childrenAges'];
 
         for ($i = 0; $i < $adults; $i++) {
             $passengers[] = [
@@ -2103,7 +2103,7 @@ class EuroSiteApiService extends AbstractApiService
             }
         }
 
-        $bookingDataArr = json_decode($filter->OriginalOffer->bookingDataJson, true);
+        $bookingDataArr = json_decode($post['args'][0]['OriginalOffer']['bookingDataJson'], true);
 
         $data = [
             'Request' => [
@@ -2124,16 +2124,16 @@ class EuroSiteApiService extends AbstractApiService
                                     'HotelItem' => [
                                         'CountryCode' => $hotel->Address->City->Country->Code,
                                         'CityCode' => $hotel->Address->City->Id,
-                                        'ProductCode' => $filter->Hotel->InTourOperatorId,
+                                        'ProductCode' => $post['args'][0]['Hotel']['InTourOperatorId'],
                                         'PeriodOfStay' => [
-                                            'CheckIn' => $filter->CheckIn,
-                                            'CheckOut' => $filter->CheckOut
+                                            'CheckIn' => $post['args'][0]['CheckIn'],
+                                            'CheckOut' => $post['args'][0]['CheckOut']
                                         ],
                                         'VariantId' => $bookingDataArr['VariantId'] ?? null,
                                         'Rooms' => [
                                             [
                                                 'Room' => [
-                                                    '[Code]' => $filter->OriginalOffer->Rooms->first()->Id,
+                                                    '[Code]' => $post['args'][0]['OriginalOffer']['Rooms'][0]['Id'],
                                                     '[NoAdults]' => $adults,
                                                     'PaxNames' => $passengers
                                                 ]
@@ -2159,9 +2159,9 @@ class EuroSiteApiService extends AbstractApiService
 
         $response = $client->request(HttpClient::METHOD_POST, $this->apiUrl, $options);
 
-        $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $options, $response->getContent(false), $response->getStatusCode());
+        $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $options, $response->getBody(), $response->getStatusCode());
 
-        $responseXml = simplexml_load_string($response->getContent())->ResponseDetails;
+        $responseXml = simplexml_load_string($response->getBody())->ResponseDetails;
 
         if (!empty($responseXml->Errors->Error)) {
             throw new Exception(json_encode($responseXml->Errors->Error));

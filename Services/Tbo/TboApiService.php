@@ -24,10 +24,10 @@ use App\Filters\HotelDetailsFilter;
 use App\Filters\HotelsFilter;
 use App\Filters\Passenger;
 use App\Filters\PaymentPlansFilter;
-use App\Support\Collections\Custom\AvailabilityCollection;
-use App\Support\Collections\Custom\CityCollection;
-use App\Support\Collections\Custom\CountryCollection;
-use App\Support\Collections\Custom\HotelCollection;
+use App\Support\Collections\Custom\array;
+use App\Support\Collections\Custom\array;
+use App\Support\Collections\Custom\array;
+use App\Support\Collections\Custom\[];
 use App\Support\Collections\Custom\OfferCancelFeeCollection;
 use App\Support\Collections\Custom\OfferPaymentPolicyCollection;
 use App\Support\Http\SimpleAsync\HttpClient;
@@ -45,9 +45,9 @@ class TboApiService extends AbstractApiService
 
     const TBO_TEST = 'locahost-tbo';
 
-    public function apiGetCountries(): CountryCollection
+    public function apiGetCountries(): array
     {
-        $countries = new CountryCollection();
+        $countries = [];
 
         $client = HttpClient::create();
 
@@ -56,9 +56,9 @@ class TboApiService extends AbstractApiService
         ];
 
         $resp = $client->request(HttpClient::METHOD_GET, $this->apiUrl . '/CountryList', $options);
-        $this->showRequest(HttpClient::METHOD_GET, $this->apiUrl . '/CountryList', $options, $resp->getContent(false), $resp->getStatusCode());
+        $this->showRequest(HttpClient::METHOD_GET, $this->apiUrl . '/CountryList', $options, $resp->getBody(), $resp->getStatusCode());
 
-        $countriesResp = json_decode($resp->getContent(), true)['CountryList'];
+        $countriesResp = json_decode($resp->getBody(), true)['CountryList'];
         foreach ($countriesResp as $countryResp) {
             $country = Country::create($countryResp['Code'], $countryResp['Code'], $countryResp['Name']);
             $countries->add($country);
@@ -67,7 +67,7 @@ class TboApiService extends AbstractApiService
         return $countries;
     }
 
-    public function apiGetCities(?CitiesFilter $filter = null): CityCollection
+    public function apiGetCities(?CitiesFilter $filter = null): array
     {
         $file = 'cities';
 
@@ -75,7 +75,7 @@ class TboApiService extends AbstractApiService
 
         if ($json === null || $this->skipTopCache || $this->renewTopCache) {
 
-            $cities = new CityCollection();
+            $cities = [];
 
             $client = HttpClient::create();
 
@@ -91,9 +91,9 @@ class TboApiService extends AbstractApiService
 
                 $resp = $client->request(HttpClient::METHOD_POST, $this->apiUrl . '/CityList', $options);
 
-                $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl . '/CityList', $options, $resp->getContent(), $resp->getStatusCode());
+                $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl . '/CityList', $options, $resp->getBody(), $resp->getStatusCode());
 
-                $citiesResp = json_decode($resp->getContent(), true)['CityList'];
+                $citiesResp = json_decode($resp->getBody(), true)['CityList'];
         
                 foreach ($citiesResp as $cityResp) {
                     $city = City::create($cityResp['Code'], $cityResp['Name'], $country);
@@ -104,7 +104,7 @@ class TboApiService extends AbstractApiService
                 Utils::writeToCache($this->handle, $file, json_encode($cities));
             }
         } else {
-            $cities = ResponseConverter::convertToCollection(json_decode($json, true), CityCollection::class);
+            $cities = ResponseConverter::convertToCollection(json_decode($json, true), array::class);
         }
 
         return $cities;
@@ -112,7 +112,7 @@ class TboApiService extends AbstractApiService
 
     // todo: de facut lista la fel ca la karpaten
     // 
-    public function apiGetHotels(?HotelsFilter $filter = null): HotelCollection
+    public function apiGetHotels(?HotelsFilter $filter = null): []
     {
         if (empty($filter->CityId)) {
             throw new Exception('CityId is required');
@@ -121,7 +121,7 @@ class TboApiService extends AbstractApiService
         $file = 'city-' . $filter->CityId . '-hotels';
 
         $json = Utils::getFromCache($this, $file);
-        $hotels = new HotelCollection();
+        $hotels = [];
 
         if ($json === null) {
             $cities = $this->apiGetCities();
@@ -136,9 +136,9 @@ class TboApiService extends AbstractApiService
             $options['body'] = json_encode(['CityCode' => $filter->CityId, 'IsDetailedResponse' => true]);
     
             $resp = $client->request(HttpClient::METHOD_POST, $this->apiUrl . '/TBOHotelCodeList', $options);
-            $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl . '/TBOHotelCodeList', $options, $resp->getContent(false), $resp->getStatusCode());
+            $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl . '/TBOHotelCodeList', $options, $resp->getBody(), $resp->getStatusCode());
     
-            $hotelRespJson = json_decode($resp->getContent(), true);
+            $hotelRespJson = json_decode($resp->getBody(), true);
     
             if (!empty($hotelRespJson['Hotels'])) {
 
@@ -183,7 +183,7 @@ class TboApiService extends AbstractApiService
             }
             Utils::writeToCache($this, $file, json_encode($hotels));
         } else {
-            $hotels = ResponseConverter::convertToCollection(json_decode($json, true), HotelCollection::class);
+            $hotels = ResponseConverter::convertToCollection(json_decode($json, true), []::class);
         }
 
         return $hotels;
@@ -212,9 +212,9 @@ class TboApiService extends AbstractApiService
                 $options['body'] = json_encode(['Hotelcodes' => $hotelCodesStr]);
 
                 $resp = $client->request(HttpClient::METHOD_POST, $this->apiUrl . '/HotelDetails', $options);
-                $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl . '/HotelDetails', $options, $resp->getContent(), $resp->getStatusCode());
+                $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl . '/HotelDetails', $options, $resp->getBody(), $resp->getStatusCode());
 
-                $respArr = json_decode($resp->getContent(), true);
+                $respArr = json_decode($resp->getBody(), true);
         
                 if (!isset($respArr['HotelDetails'])) {
                     Log::warning($this->handle .': no details for ' . json_encode($filters['Hotels']));
@@ -284,9 +284,9 @@ class TboApiService extends AbstractApiService
 
         $resp = $client->request(HttpClient::METHOD_POST, $this->apiUrl . '/HotelDetails', $options);
 
-        $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl . '/HotelDetails', $options, $resp->getContent(), $resp->getStatusCode());
+        $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl . '/HotelDetails', $options, $resp->getBody(), $resp->getStatusCode());
 
-        $respArr = json_decode($resp->getContent(), true);
+        $respArr = json_decode($resp->getBody(), true);
 
         if (!isset($respArr['HotelDetails'])) {
             Log::warning($this->handle .': no details for ' . json_encode($filter));
@@ -322,19 +322,19 @@ class TboApiService extends AbstractApiService
         return $hotel;
     }
 
-    public function apiGetOffers(AvailabilityFilter $filter): AvailabilityCollection
+    public function apiGetOffers(AvailabilityFilter $filter): array
     {
         Validator::make()
             ->validateUsernameAndPassword($this->post)
             ->validateIndividualOffersFilter($filter);
         
-        $availabilities = new AvailabilityCollection();
+        $availabilities = [];
 
         if ($filter->rooms->first()->adults > 6) {
             return $availabilities;
         }
-        if (!empty($filter->rooms->first()->children)) {
-            if ($filter->rooms->first()->children > 4) {
+        if (!empty($post['args'][0]['rooms'][0]['children'])) {
+            if ($post['args'][0]['rooms'][0]['children'] > 4) {
                 return $availabilities;
             }
         }
@@ -360,9 +360,9 @@ class TboApiService extends AbstractApiService
             ]
         ];
 
-        if (!empty($filter->rooms->first()->children)) {
-            $body['PaxRooms'][0]['Children'] = $filter->rooms->first()->children;
-            $body['PaxRooms'][0]['ChildrenAges'] = $filter->rooms->first()->childrenAges->toArray();
+        if (!empty($post['args'][0]['rooms'][0]['children'])) {
+            $body['PaxRooms'][0]['Children'] = $post['args'][0]['rooms'][0]['children'];
+            $body['PaxRooms'][0]['ChildrenAges'] = $post['args'][0]['rooms'][0]['childrenAges']->toArray();
         }
 
         $responses = [];
@@ -403,8 +403,8 @@ class TboApiService extends AbstractApiService
             $resp = $response[0];
             $options = $response[1];
         
-            $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl . '/Search', $options, $resp->getContent(), $resp->getStatusCode());
-            $c = json_decode($resp->getContent(), true);
+            $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl . '/Search', $options, $resp->getBody(), $resp->getStatusCode());
+            $c = json_decode($resp->getBody(), true);
             if (empty($c['HotelResult'])) {
                 continue;
             }
@@ -436,7 +436,7 @@ class TboApiService extends AbstractApiService
 
                     $adults = $filter->rooms->first()->adults;
 
-                    $childrenAges = $filter->rooms->first()->childrenAges ? $filter->rooms->first()->childrenAges->toArray() : null;
+                    $childrenAges = $post['args'][0]['rooms'][0]['childrenAges'] ? $post['args'][0]['rooms'][0]['childrenAges']->toArray() : null;
 
                     $priceNet = $offerResp['TotalFare'];
                     
@@ -573,7 +573,7 @@ class TboApiService extends AbstractApiService
             ->validateUsernameAndPassword($this->post)
             ->validateOfferPaymentPlansFilter($filter);
 
-        $bookingArr = json_decode($filter->OriginalOffer->bookingDataJson, true);
+        $bookingArr = json_decode($post['args'][0]['OriginalOffer']['bookingDataJson'], true);
         $bookingCode = $bookingArr['BookingCode'];
 
         $client = HttpClient::create();
@@ -592,9 +592,9 @@ class TboApiService extends AbstractApiService
 
         $resp = $client->request(HttpClient::METHOD_POST, $this->apiUrl . '/PreBook', $options);
 
-        $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl . '/PreBook', $options, $resp->getContent(), $resp->getStatusCode());
+        $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl . '/PreBook', $options, $resp->getBody(), $resp->getStatusCode());
         
-        $preBook = json_decode($resp->getContent(), true)['HotelResult'][0];
+        $preBook = json_decode($resp->getBody(), true)['HotelResult'][0];
 
         $cpFromApi = $preBook['Rooms'][0]['CancelPolicies'];
 
@@ -630,13 +630,13 @@ class TboApiService extends AbstractApiService
             $cancellationFee->DateStart = (new DateTime($cancelPolResp['FromDate']))->format('Y-m-d');
             
             // todo: next date - 1 if exists or checkin
-            $endDate = $filter->CheckIn;
+            $endDate = $post['args'][0]['CheckIn'];
 
             if (isset($offerResp['CancelPolicies'][$i + 1])) {
 
                 $endDate = (new DateTime($offerResp['CancelPolicies'][$i + 1]['FromDate']))->modify('-1 day')->format('Y-m-d');
             } else {
-                $endDate = (new DateTime($filter->CheckIn))->format('Y-m-d');
+                $endDate = (new DateTime($post['args'][0]['CheckIn']))->format('Y-m-d');
             }
 
             $cancellationFee->DateEnd = $endDate;
@@ -683,7 +683,7 @@ class TboApiService extends AbstractApiService
     {
         TboValidator::make()->validateOfferCancelFeesFilter($filter);
 
-        $bookingArr = json_decode($filter->OriginalOffer->bookingDataJson, true);
+        $bookingArr = json_decode($post['args'][0]['OriginalOffer']['bookingDataJson'], true);
         $bookingCode = $bookingArr['BookingCode'];
 
         $client = HttpClient::create();
@@ -702,9 +702,9 @@ class TboApiService extends AbstractApiService
 
         $resp = $client->request(HttpClient::METHOD_POST, $this->apiUrl . '/PreBook', $options);
 
-        $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl . '/PreBook', $options, $resp->getContent(), $resp->getStatusCode());
+        $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl . '/PreBook', $options, $resp->getBody(), $resp->getStatusCode());
         
-        $preBook = json_decode($resp->getContent(), true)['HotelResult'][0];
+        $preBook = json_decode($resp->getBody(), true)['HotelResult'][0];
 
         $cpFromApi = $preBook['Rooms'][0]['CancelPolicies'];
 
@@ -735,7 +735,7 @@ class TboApiService extends AbstractApiService
             $cancellationFee->DateStart = (new DateTime($cancelPolResp['FromDate']))->format('Y-m-d');
             
             // todo: next date - 1 if exists or checkin
-            $endDate = $filter->CheckIn;
+            $endDate = $post['args'][0]['CheckIn'];
 
             if (isset($offerResp['CancelPolicies'][$i + 1])) {
 
@@ -796,16 +796,16 @@ class TboApiService extends AbstractApiService
         $client = HttpClient::create();
 
         $body = [
-            'BookingCode' => json_decode($filter->OriginalOffer->bookingDataJson, true)['BookingCode']
+            'BookingCode' => json_decode($post['args'][0]['OriginalOffer']['bookingDataJson'], true)['BookingCode']
         ];
 
         $options['body'] = json_encode($body);
 
         $resp = $client->request(HttpClient::METHOD_POST, $this->apiUrl . '/PreBook', $options);
 
-        $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl . '/PreBook', $options, $resp->getContent(), $resp->getStatusCode());
+        $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl . '/PreBook', $options, $resp->getBody(), $resp->getStatusCode());
         
-        $preBook = json_decode($resp->getContent(), true)['HotelResult'][0];
+        $preBook = json_decode($resp->getBody(), true)['HotelResult'][0];
 
         $price = $preBook['Rooms'][0]['TotalFare'];
 
@@ -855,7 +855,7 @@ class TboApiService extends AbstractApiService
 
         $client = HttpClient::create();
 
-        $bookingArr = json_decode($filter->Items->first()->Offer_bookingDataJson, true);
+        $bookingArr = json_decode($post['args'][0]['Items'][0]['Offer_bookingDataJson'], true);
         $bookingCode = $bookingArr['BookingCode'];
 
         $body = [
@@ -867,9 +867,9 @@ class TboApiService extends AbstractApiService
 
         $resp = $client->request(HttpClient::METHOD_POST, $this->apiUrl . '/PreBook', $options);
 
-        $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl . '/PreBook', $options, $resp->getContent(), $resp->getStatusCode());
+        $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl . '/PreBook', $options, $resp->getBody(), $resp->getStatusCode());
         
-        $preBook = json_decode($resp->getContent(), true)['HotelResult'][0];
+        $preBook = json_decode($resp->getBody(), true)['HotelResult'][0];
 
         $prebookPrice = $preBook['Rooms'][0]['TotalFare'];
 
@@ -878,35 +878,35 @@ class TboApiService extends AbstractApiService
 
         // compare prices
         // if ($originalOfferPrice != $prebookPrice) {
-        //     return [$booking, 'Prices do not match!Offer price: '.$originalOfferPrice.', Prebook response: ' . $resp->getContent(false)];
+        //     return [$booking, 'Prices do not match!Offer price: '.$originalOfferPrice.', Prebook response: ' . $resp->getBody()];
         // }
         //dump(json_encode($preBook['Rooms'][0]['CancelPolicies']));
 
         // compare cancel policies
         // if (json_encode($bookingArr['CancelPolicies']) !== json_encode($preBook['Rooms'][0]['CancelPolicies'])) {
-        //     return [$booking, 'Cancellation policies do not match! Offer cp:'. json_encode($bookingArr['CancelPolicies']) .', Prebook response: ' . $resp->getContent(false)];
+        //     return [$booking, 'Cancellation policies do not match! Offer cp:'. json_encode($bookingArr['CancelPolicies']) .', Prebook response: ' . $resp->getBody()];
         // }
 
         $names = [];
         /** @var Passenger $passenger */
-        foreach ($filter->Items->first()->Passengers as $passenger) {
+        foreach ($post['args'][0]['Items'][0]['Passengers'] as $passenger) {
 
-            if (!ctype_alpha($passenger->Firstname)) {
-                return [$booking, 'Firstname '.$passenger->Firstname.' has special characters!'];
+            if (!ctype_alpha($passenger['Firstname'])) {
+                return [$booking, 'Firstname '.$passenger['Firstname'].' has special characters!'];
             }
-            if (!ctype_alpha($passenger->Lastname)) {
-                return [$booking, 'Lastname '.$passenger->Lastname.' has special characters!'];
+            if (!ctype_alpha($passenger['Lastname'])) {
+                return [$booking, 'Lastname '.$passenger['Lastname'].' has special characters!'];
             }
-            if (strlen($passenger->Firstname) < 3 || strlen($passenger->Firstname) > 25) {
-                return [$booking, 'Firstname '.$passenger->Firstname.' has less than 3 or more than 25 characters!'];
+            if (strlen($passenger['Firstname']) < 3 || strlen($passenger['Firstname']) > 25) {
+                return [$booking, 'Firstname '.$passenger['Firstname'].' has less than 3 or more than 25 characters!'];
             }
-            if (strlen($passenger->Lastname) < 3 || strlen($passenger->Lastname) > 25) {
-                return [$booking, 'Lastname '.$passenger->Lastname.' has less than 3 or more than 25 characters!'];
+            if (strlen($passenger['Lastname']) < 3 || strlen($passenger['Lastname']) > 25) {
+                return [$booking, 'Lastname '.$passenger['Lastname'].' has less than 3 or more than 25 characters!'];
             }
             $names[] = [
-                'Title' => $passenger->Gender ? ($passenger->Gender === 'male' ? 'Mr' : 'Ms') : 'Mr',
-                'FirstName' => $passenger->Firstname,
-                'LastName' => $passenger->Lastname,
+                'Title' => $passenger['Gender'] ? ($passenger['Gender'] === 'male' ? 'Mr' : 'Ms') : 'Mr',
+                'FirstName' => $passenger['Firstname'],
+                'LastName' => $passenger['Lastname'],
                 'Type' => ucfirst($passenger->Type)
             ];
         }
@@ -930,9 +930,9 @@ class TboApiService extends AbstractApiService
 
         $resp = $client->request(HttpClient::METHOD_POST, $this->apiUrl . '/Book', $options);
 
-        $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl . '/Book', $options, $resp->getContent(false), $resp->getStatusCode());
+        $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl . '/Book', $options, $resp->getBody(), $resp->getStatusCode());
 
-        $bookingResponseArr = json_decode($resp->getContent(false), true);
+        $bookingResponseArr = json_decode($resp->getBody(), true);
 
         if (!isset($bookingResponseArr['ConfirmationNumber'])) {
             // get booking details
@@ -949,15 +949,15 @@ class TboApiService extends AbstractApiService
             $options['body'] = json_encode($body);
     
             $resp = $client->request(HttpClient::METHOD_POST, $this->apiUrl . '/BookingDetail', $options);
-            $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl . '/BookingDetail', $options, $resp->getContent(false), $resp->getStatusCode());
+            $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl . '/BookingDetail', $options, $resp->getBody(), $resp->getStatusCode());
 
-            $bookingDetailResponseArr = json_decode($resp->getContent(false), true);
+            $bookingDetailResponseArr = json_decode($resp->getBody(), true);
 
             $booking->Id = $bookingDetailResponseArr['BookingDetail']['ConfirmationNumber'];
         } else {
             $booking->Id = $bookingResponseArr['ConfirmationNumber'];
         }
 
-        return [$booking, $resp->getContent(false)];
+        return [$booking, $resp->getBody()];
     }
 }

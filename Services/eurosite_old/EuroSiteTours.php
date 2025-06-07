@@ -35,7 +35,7 @@ trait EuroSiteTours
 				ob_start();
 			
 			if (!$params)
-				$params = array();
+				$params = [];
 			$transport = $params["Transport"];
 			if ($this->TourOperatorRecord->ApiContext)
 				$params["TourOpCode"] = $this->TourOperatorRecord->ApiContext;
@@ -68,7 +68,7 @@ trait EuroSiteTours
 			$params = $initialParams;
 			$tours = $data["Circuit"] ? $data["Circuit"] : null;
 			if (!$tours || (count($tours) === 0))
-				return array();
+				return [];
 			if (isset($tours["TourOpCode"]))
 				$tours = array($tours);
 
@@ -911,7 +911,7 @@ trait EuroSiteTours
 		if (!$params)
 		{
 			// populate here with some defaultss
-			$params = array();
+			$params = [];
 		}
 
 		$data = static::GetResponseData($this->doRequest("CircuitSearchServiceRequest", $params), "CircuitSearchServiceResponse");
@@ -930,7 +930,7 @@ trait EuroSiteTours
 		if (!$params)
 		{
 			// populate here with some defaultss
-			$params = array();
+			$params = [];
 		}
 
 		$data = static::GetResponseData($this->doRequest("CircuitSearchServicePriceRequest", $params), "CircuitSearchServicePriceResponse");
@@ -953,7 +953,7 @@ trait EuroSiteTours
 		if (!$params)
 		{
 			// populate here with some defaultss
-			$params = array();
+			$params = [];
 		}
 		
 		$currencyCode = $params["CurrencyCode"];
@@ -966,10 +966,10 @@ trait EuroSiteTours
 		$fees = $data["Service"] ? $data["Service"] : null;
 
 		if (!$fees || (count($fees) === 0))
-			return array();
+			return [];
 
 		if (!$objs)
-			$objs = array();
+			$objs = [];
 
 		if (isset($fees["CurrencyCode"]))
 			$fees = array($fees);

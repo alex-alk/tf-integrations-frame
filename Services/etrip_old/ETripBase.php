@@ -2059,7 +2059,7 @@ trait ETripBase
 			throw new \Exception("Undefined currency [{$currencyCode}]!");
 		}
 
-		$rooms_list = array();
+		$rooms_list = [];
 		if ($p->HotelInfo && $p->HotelInfo->Rooms)
 			$rooms_list = $this->getRoomsList($p->HotelInfo->Rooms);
 		$room = $rooms_list[0];

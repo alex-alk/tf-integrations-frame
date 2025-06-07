@@ -30,10 +30,10 @@ use App\Filters\CitiesFilter;
 use App\Filters\HotelDetailsFilter;
 use App\Filters\HotelsFilter;
 use App\Support\Collections\Collection;
-use App\Support\Collections\Custom\AvailabilityCollection;
-use App\Support\Collections\Custom\CityCollection;
-use App\Support\Collections\Custom\CountryCollection;
-use App\Support\Collections\Custom\HotelCollection;
+use App\Support\Collections\Custom\array;
+use App\Support\Collections\Custom\array;
+use App\Support\Collections\Custom\array;
+use App\Support\Collections\Custom\[];
 use App\Support\Collections\Custom\OfferCancelFeeCollection;
 use App\Support\Http\SimpleAsync\HttpClient;
 use App\Support\Http\SimpleAsync\Response\ResponseInterface;
@@ -50,18 +50,18 @@ class AlladynHotelsApiService extends AbstractApiService
         parent::__construct();
     }
 
-    public function apiGetCountries(): CountryCollection
+    public function apiGetCountries(): array
     {
         $url = $this->apiUrl . '/v2/references/countries';
         $responseObj = $this->request($url);
 
-        $response = json_decode($responseObj->getContent(), true);
+        $response = json_decode($responseObj->getBody(), true);
 
         if (!empty($response['error'])) {
             throw new Exception(json_encode($response['error']));
         }
 
-        $countries = new CountryCollection();
+        $countries = [];
         foreach ($response as $v) {
             $country = new Country();
             $country->Id = $v['id'];
@@ -77,11 +77,11 @@ class AlladynHotelsApiService extends AbstractApiService
         return $countries;
     }
 
-    public function apiGetCities(CitiesFilter $params = null): CityCollection
+    public function apiGetCities(CitiesFilter $params = null): array
     {
         $countries = $this->apiGetCountries();
 
-        $cities = new CityCollection();
+        $cities = [];
 
         foreach ($countries as $countryResponse) {
 
@@ -90,7 +90,7 @@ class AlladynHotelsApiService extends AbstractApiService
             try {
                 $responseObj = $this->request($url);
 
-                $citiesFromCountry = json_decode($responseObj->getContent(), true);
+                $citiesFromCountry = json_decode($responseObj->getBody(), true);
 
                 if (!empty($citiesFromCountry['error'])) {
                     throw new Exception(json_encode($citiesFromCountry['error']));
@@ -120,7 +120,7 @@ class AlladynHotelsApiService extends AbstractApiService
 
         $responseObj = $this->request($url);
 
-        $response = json_decode($responseObj->getContent(), true);
+        $response = json_decode($responseObj->getBody(), true);
 
         if (!empty($response['error'])) {
             throw new Exception(json_encode($response['error']));
@@ -173,9 +173,9 @@ class AlladynHotelsApiService extends AbstractApiService
         return $details;
     }
 
-    public function apiGetOffers(AvailabilityFilter $filter): AvailabilityCollection
+    public function apiGetOffers(AvailabilityFilter $filter): array
     {
-        $response = new AvailabilityCollection();
+        $response = [];
         return $response;
 
         Validator::make()->validateAvailabilityFilter($filter);
@@ -202,7 +202,7 @@ class AlladynHotelsApiService extends AbstractApiService
         $urlCurrency = $this->apiUrl . "/v1/references/currencies";
 
         $currencyResponseObj = $this->request($urlCurrency);
-        $responseCurrencyArr = json_decode($currencyResponseObj->getContent(), true);
+        $responseCurrencyArr = json_decode($currencyResponseObj->getBody(), true);
 
         if (!empty($responseCurrencyArr['error'])) {
             throw new Exception(json_encode($responseCurrencyArr['error']));
@@ -218,7 +218,7 @@ class AlladynHotelsApiService extends AbstractApiService
                 .'&adults='.$adults.'&countryId='.$countryId.$childrenAges.'&regions='.$cityId.$hotel;
 
         $responseHotelsObj = $this->request($url);
-        $responseHotels = json_decode($responseHotelsObj->getContent(), true);
+        $responseHotels = json_decode($responseHotelsObj->getBody(), true);
 
         if (!empty($responseHotels['error'])) {
             throw new Exception(json_encode($responseHotels['error']));
@@ -373,7 +373,7 @@ class AlladynHotelsApiService extends AbstractApiService
 
         $preBookingObj = $this->request($url);
 
-        $preBooking = json_decode($preBookingObj->getContent(), true);
+        $preBooking = json_decode($preBookingObj->getBody(), true);
 
         if (!empty($preBooking['error'])) {
             throw new Exception(json_encode($preBooking['error']));
@@ -381,14 +381,14 @@ class AlladynHotelsApiService extends AbstractApiService
 
         // booking
         $tourists = [];
-        foreach ($filter->Items->get(0)->Passengers as $passenger) {
-            if (!empty($passenger->Firstname)) {
+        foreach ($post['args'][0]['Items'][0]['Passengers'] as $passenger) {
+            if (!empty($passenger['Firstname'])) {
                 $tourists[] = [
-                    'prefix' => $passenger->Gender == 2 ? 'Mrs' : 'Mr',
-                    'name' => $passenger->Firstname,
-                    'lastname' => $passenger->Lastname,
-                    'birthdate' => $passenger->BirthDate,
-                    'isAdult' => $passenger->IsAdult
+                    'prefix' => $passenger['Gender'] == 2 ? 'Mrs' : 'Mr',
+                    'name' => $passenger['Firstname'],
+                    'lastname' => $passenger['Lastname'],
+                    'birthdate' => $passenger['BirthDate'],
+                    'isAdult' => $passenger['IsAdult']
                 ];
             }
         }
@@ -406,7 +406,7 @@ class AlladynHotelsApiService extends AbstractApiService
 
         $bookingObj = $this->request($urlBooking, 'POST', $options);
 
-        $booking = json_decode($bookingObj->getContent(), true);
+        $booking = json_decode($bookingObj->getBody(), true);
 
         if (!empty($booking['error'])) {
             throw new Exception(json_encode($booking['error']));
@@ -424,13 +424,13 @@ class AlladynHotelsApiService extends AbstractApiService
         return [$response, json_encode($booking)];
     }
 
-    public function apiGetHotels(?HotelsFilter $filter = null): HotelCollection
+    public function apiGetHotels(?HotelsFilter $filter = null): []
     {
         set_time_limit(1800);
         $countries = $this->apiGetCountries();
         $cities = $this->apiGetCities();
         
-        $hotels = new HotelCollection();
+        $hotels = [];
 
         foreach ($countries as $countryResponse) {
         
@@ -438,7 +438,7 @@ class AlladynHotelsApiService extends AbstractApiService
 
             $responseObj = $this->request($url);
             
-            $response = json_decode($responseObj->getContent(), true);
+            $response = json_decode($responseObj->getBody(), true);
             
             if (!empty($response['error']['message'])) {
                 if ($response['error']['message'] === 'No results were found') {

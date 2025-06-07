@@ -14,32 +14,32 @@ class OdeonValidator extends Validator
     public function validateBookHotelFilter(BookHotelFilter $filter): self
     {
         parent::validateBookHotelFilter($filter);
-        if (empty($filter->Items->first()->Hotel->InTourOperatorId)) {
+        if (empty($post['args'][0]['Items'][0]['Hotel']['InTourOperatorId'])) {
             throw new Exception('args[0][Items][0][Hotel][InTourOperatorId] is mandatory');
         }
         
-        if (empty($filter->Items->first()->Board_Def_InTourOperatorId)) {
+        if (empty($post['args'][0]['Items'][0]['Board_Def_InTourOperatorId'])) {
             throw new Exception('args[0][Items][0][Board_Def_InTourOperatorId] is mandatory');
         }
         
-        if (empty($filter->Items->first()->Room_Type_InTourOperatorId)) {
+        if (empty($post['args'][0]['Items'][0]['Room_Type_InTourOperatorId']) {
             throw new Exception('args[0][Items][0][Room_Type_InTourOperatorId] is mandatory');
         }
         //todo: departure city?
-        // if (empty($filter->Items->first()->Room_Type_InTourOperatorId)) {
+        // if (empty($post['args'][0]['Items'][0]['Room_Type_InTourOperatorId']) {
         //     throw new Exception('args[0][Items][0][Room_Type_InTourOperatorId]');
         // }
 
-        if (empty($filter->Items->first()->Room_CheckinAfter)) {
+        if (empty($post['args'][0]['Items'][0]['Room_CheckinAfter'])) {
             throw new Exception('args[0][Items][0][Room_CheckinAfter] is mandatory');
         }
 
         // todo: nights
-        // if (empty($filter->Items->first()->Room_CheckinAfter)) {
+        // if (empty($post['args'][0]['Items'][0]['Room_CheckinAfter'])) {
         //     throw new Exception('args[0][Items][0][Room_CheckinAfter] is mandatory');
         // }
 
-        if (empty($filter->Params->Adults->first())) {
+        if (empty($post['args'][0]['Params']['Adults'][0])) {
             throw new Exception('args[0][Params][Adults][0] is mandatory');
         }
         if (empty($filter->Items->get(0)->Offer_Days)) {

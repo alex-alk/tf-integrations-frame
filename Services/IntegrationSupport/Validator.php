@@ -110,12 +110,12 @@ class Validator
     //     }
 
     //     if ((int) $filter->rooms->get(0)->children > 0 
-    //         && count($filter->rooms->first()->childrenAges) !== (int) $filter->rooms->get(0)->children) {
+    //         && count($post['args'][0]['rooms'][0]['childrenAges']) !== (int) $filter->rooms->get(0)->children) {
     //             throw new Exception('childrenAges count is not correct');
     //     }
 
     //     if ((int) $filter->rooms->get(0)->children > 0) {
-    //         foreach ($filter->rooms->first()->childrenAges as $age) {
+    //         foreach ($post['args'][0]['rooms'][0]['childrenAges'] as $age) {
     //             if ($age === null) {
     //                 throw new Exception('age cannot be null');
     //             }
@@ -189,40 +189,41 @@ class Validator
     //     return $this;
     // }
 
-    // public function validateBookHotelFilter(BookHotelFilter $filter): self
-    // {
-    //     if (count($filter->Items->get(0)->Passengers) === 0) {
-    //         throw new Exception('No passengers!');
-    //     }
-    //     if (!($filter->Items->get(0)->Passengers->get(0)->Gender ==='male' || 
-    //         $filter->Items->get(0)->Passengers->get(0)->Gender === 'female')
-    //     ) {
-    //         throw new Exception('Passenger gender is invalid');
-    //     }
+    public function validateBookHotelFilter(array $post): self
+    {
+        if (count($post['args'][0]['Items'][0]['Passengers']) === 0) {
+            throw new Exception('No passengers!');
+        }
 
-    //     if(!(is_bool($filter->Items->get(0)->Passengers->get(0)->IsAdult) || 
-    //         is_numeric($filter->Items->get(0)->Passengers->get(0)->IsAdult))
-    //     ) {
-    //         throw new Exception('IsAdult must be boolean or numeric');
-    //     }
+        if (!($post['args'][0]['Items'][0]['Passengers'][0]['Gender'] ==='male' || 
+            $post['args'][0]['Items'][0]['Passengers'][0]['Gender'] === 'female')
+        ) {
+            throw new Exception('Passenger gender is invalid');
+        }
 
-    //     if (empty($filter->Items->get(0)->Passengers->get(0)->Firstname)) {
-    //         throw new Exception('Passenger Firstname is mandatory');
-    //     }
+        if(!(is_bool($post['args'][0]['Items'][0]['Passengers'][0]['IsAdult']) || 
+            is_numeric($post['args'][0]['Items'][0]['Passengers'][0]['IsAdult']))
+        ) {
+            throw new Exception('IsAdult must be boolean or numeric');
+        }
 
-    //     if (empty($filter->Items->get(0)->Passengers->get(0)->Lastname)) {
-    //         throw new Exception('Passenger Lastname is mandatory');
-    //     }
+        if (empty($post['args'][0]['Items'][0]['Passengers'][0]['Firstname'])) {
+            throw new Exception('Passenger Firstname is mandatory');
+        }
 
-    //     if (empty($filter->Items->get(0)->Passengers->get(0)->BirthDate)) {
-    //         throw new Exception('Passenger BirthDate is mandatory');
-    //     }
+        if (empty($post['args'][0]['Items'][0]['Passengers'][0]['Lastname'])) {
+            throw new Exception('Passenger Lastname is mandatory');
+        }
+
+        if (empty($post['args'][0]['Items'][0]['Passengers'][0]['BirthDate'])) {
+            throw new Exception('Passenger BirthDate is mandatory');
+        }
         
-    //     if (strlen($filter->Items->get(0)->Passengers->get(0)->IsAdult) < 1) {
-    //         throw new Exception('Passenger IsAdult is mandatory');
-    //     }
-    //     return $this;
-    // }
+        if (strlen($post['args'][0]['Items'][0]['Passengers'][0]['IsAdult']) < 1) {
+            throw new Exception('Passenger IsAdult is mandatory');
+        }
+        return $this;
+    }
     
     // public function validateHotelDetailsFilter(HotelDetailsFilter $filter): void
     // {
@@ -236,10 +237,10 @@ class Validator
     //     return $this;
     // }
 
-    // public function validateOfferCancelFeesFilter(CancellationFeeFilter $filter): self
-    // {
-    //     return $this;
-    // }
+    public function validateOfferCancelFeesFilter(array $post): self
+    {
+        return $this;
+    }
 
     public static function make(): Validator
     {

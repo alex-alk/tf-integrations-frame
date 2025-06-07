@@ -22,7 +22,7 @@ use App\Entities\Availability\TransportMerch;
 use App\Entities\Availability\TransportMerchCategory;
 use App\Entities\Availability\TransportMerchLocation;
 use App\Entities\AvailabilityDates\AvailabilityDates;
-use App\Entities\AvailabilityDates\AvailabilityDatesCollection;
+use App\Entities\AvailabilityDates\array;
 use App\Entities\AvailabilityDates\DateNight;
 use App\Entities\AvailabilityDates\DateNightCollection;
 use App\Entities\AvailabilityDates\TransportCity;
@@ -52,13 +52,13 @@ use App\Filters\CitiesFilter;
 use App\Filters\HotelDetailsFilter;
 use App\Filters\HotelsFilter;
 use App\Filters\PaymentPlansFilter;
-use App\Support\Collections\Custom\AvailabilityCollection;
-use App\Support\Collections\Custom\CityCollection;
-use App\Support\Collections\Custom\CountryCollection;
-use App\Support\Collections\Custom\HotelCollection;
+use App\Support\Collections\Custom\array;
+use App\Support\Collections\Custom\array;
+use App\Support\Collections\Custom\array;
+use App\Support\Collections\Custom\[];
 use App\Support\Collections\Custom\OfferCancelFeeCollection;
 use App\Support\Collections\Custom\OfferPaymentPolicyCollection;
-use App\Support\Collections\Custom\RegionCollection;
+use App\Support\Collections\Custom\[];
 use App\Support\Collections\StringCollection;
 use App\Support\Http\SimpleAsync\HttpClient;
 use App\Support\Http\SimpleAsync\HttpClient2;
@@ -123,7 +123,7 @@ class TravelioApiService extends AbstractApiService
         $options['headers'] = ['Content-Type' => 'application/json'];
 
         $responseObj = $httpClient->request(HttpClient::METHOD_POST, $this->apiUrl, $options);
-        $content = $responseObj->getContent(false);
+        $content = $responseObj->getBody();
         $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $options, $content, $responseObj->getStatusCode());
 
         $search = json_decode($content, true);
@@ -134,7 +134,7 @@ class TravelioApiService extends AbstractApiService
     }
 
     /*
-    private function getAvailabilityDates(AvailabilityDatesFilter $filter): AvailabilityDatesCollection
+    private function getAvailabilityDates(AvailabilityDatesFilter $filter): array
     {
 
         $file = 'availability-'.$filter->type;
@@ -144,7 +144,7 @@ class TravelioApiService extends AbstractApiService
 
             $cities = $this->apiGetCities();
 
-            $availabilityDatesCollection = new AvailabilityDatesCollection();
+            $availabilityDatesCollection = [];
 
             $requestArr = [
                 'root' => [
@@ -180,9 +180,9 @@ class TravelioApiService extends AbstractApiService
                     break;
                 }
                 $responseObj = $httpClient->request(HttpClient::METHOD_POST, $this->apiUrl, $options);
-                $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $options, $responseObj->getContent(), $responseObj->getStatusCode());
+                $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $options, $responseObj->getBody(), $responseObj->getStatusCode());
 
-                $respStr = $responseObj->getContent();
+                $respStr = $responseObj->getBody();
                 if ($respStr === 'stream timeout') {
                     $i++;
                     continue;
@@ -202,7 +202,7 @@ class TravelioApiService extends AbstractApiService
             if ($getFromOldCache) {
                 $json = Utils::getFromCache($this->handle, $file, true);
                 $availArr = json_decode($json, true);
-                $availabilityDatesCollection = ResponseConverter::convertToAvailabilityDatesCollection($availArr);
+                $availabilityDatesCollection = ResponseConverter::convertToarray($availArr);
             } else {
 
                 $departures = $resp->GetDepartures->Departure;
@@ -381,7 +381,7 @@ class TravelioApiService extends AbstractApiService
             }
         } else {
             $availArr = json_decode($json, true);
-            $availabilityDatesCollection = ResponseConverter::convertToAvailabilityDatesCollection($availArr);
+            $availabilityDatesCollection = ResponseConverter::convertToarray($availArr);
         }
 
         if (!empty($filter->countryId)) {
@@ -393,7 +393,7 @@ class TravelioApiService extends AbstractApiService
     }
     */
 
-    private function apiGetAvailabilityDatesRaport(AvailabilityDatesFilter $filter): AvailabilityDatesCollection
+    private function apiGetAvailabilityDatesRaport(AvailabilityDatesFilter $filter): array
     {
         $departures =  $this->apiGetAvailabilityDatesFromDepartures($filter);
         $packages = $this->apiGetAvailabilityDatesFromPackages($filter);
@@ -641,14 +641,14 @@ class TravelioApiService extends AbstractApiService
         return $ad;
     }
 
-    public function apiGetAvailabilityDates(AvailabilityDatesFilter $filter): AvailabilityDatesCollection
+    public function apiGetAvailabilityDates(AvailabilityDatesFilter $filter): array
     {
         $adCities = $this->apiGetAvailabilityDatesFromPackages($filter);
 
         $regionMapExists = Utils::cachedFileExists($this, 'region-map-transports');
 
         // group by region
-        $ad = new AvailabilityDatesCollection();
+        $ad = [];
         $regionMap = [];
 
         // compare transports
@@ -719,7 +719,7 @@ class TravelioApiService extends AbstractApiService
         return $ad;
     }
 
-    private function apiGetAvailabilityDatesFromPackages(AvailabilityDatesFilter $filter): AvailabilityDatesCollection
+    private function apiGetAvailabilityDatesFromPackages(AvailabilityDatesFilter $filter): array
     {
         $file = 'availability-dates-'.$filter->type.'-packages';
 
@@ -762,7 +762,7 @@ class TravelioApiService extends AbstractApiService
 
                     $responseObj = $httpClientAsync->request(HttpClient::METHOD_POST, $this->apiUrl, $options);
 
-                    $content = $responseObj->getContent(false);
+                    $content = $responseObj->getBody();
                     $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $options, $content, $responseObj->getStatusCode());
 
                     $responseData = simplexml_load_string($content);
@@ -782,7 +782,7 @@ class TravelioApiService extends AbstractApiService
                 $packagesCountry = json_decode($packagesCountryJson, true); 
             }
 
-            $availabilityDatesCollection = new AvailabilityDatesCollection();
+            $availabilityDatesCollection = [];
 
             $ids = [];
             $idsCached = [];
@@ -848,7 +848,7 @@ class TravelioApiService extends AbstractApiService
 
                 if ($i % 100 === 0) {
                     foreach ($reqs as $req) {
-                        $content = $req[0]->getContent();
+                        $content = $req[0]->getBody();
                         $responseData = simplexml_load_string($content);
                         
                         $packageDetails = $responseData->GetPackageDetails;
@@ -869,7 +869,7 @@ class TravelioApiService extends AbstractApiService
                             sleep(10);
                             $client = HttpClient2::create();
                             $contentResp = $client->request(HttpClient::METHOD_POST, $this->apiUrl, $req[1]);
-                            $content = $contentResp->getContent();
+                            $content = $contentResp->getBody();
                             //Log::debug(substr($content, 0, 300));
                             $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $options, $content, $contentResp->getStatusCode());
 
@@ -885,7 +885,7 @@ class TravelioApiService extends AbstractApiService
                             } else {
                                 // if not in cache, return old av cache
                                 $jsonOld = Utils::getFromCache($this, $file, true);
-                                return ResponseConverter::convertToAvailabilityDatesCollection(json_decode($jsonOld, true));
+                                return ResponseConverter::convertToarray(json_decode($jsonOld, true));
                             } 
                         }
                         Utils::writeToCache($this, $req[2], $content);
@@ -904,7 +904,7 @@ class TravelioApiService extends AbstractApiService
             
             Utils::writeToCache($this, $file, json_encode($availabilityDatesCollection));
         } else {
-            $availabilityDatesCollection = ResponseConverter::convertToAvailabilityDatesCollection(json_decode($json, true));
+            $availabilityDatesCollection = ResponseConverter::convertToarray(json_decode($json, true));
         }
         
         return $availabilityDatesCollection;
@@ -978,14 +978,14 @@ class TravelioApiService extends AbstractApiService
         return true;
     }
 
-    private function apiGetAvailabilityDatesFromDepartures(AvailabilityDatesFilter $filter): AvailabilityDatesCollection
+    private function apiGetAvailabilityDatesFromDepartures(AvailabilityDatesFilter $filter): array
     {
         Validator::make()
             ->validateUsernameAndPassword($this->post);
 
         $cities = $this->apiGetCities();
 
-        $availabilityDatesCollection = new AvailabilityDatesCollection();
+        $availabilityDatesCollection = [];
 
         $file = 'availability-'.$filter->type;
 
@@ -1030,9 +1030,9 @@ class TravelioApiService extends AbstractApiService
                     break;
                 }
                 $responseObj = $httpClient->request(HttpClient::METHOD_POST, $this->apiUrl, $options);
-                $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $options, $responseObj->getContent(), $responseObj->getStatusCode());
+                $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $options, $responseObj->getBody(), $responseObj->getStatusCode());
 
-                $respStr = $responseObj->getContent();
+                $respStr = $responseObj->getBody();
                 if ($respStr === 'stream timeout') {
                     $i++;
                     continue;
@@ -1228,11 +1228,11 @@ class TravelioApiService extends AbstractApiService
 
     }
 
-    public function apiGetAvailabilityDatesTest(AvailabilityDatesFilter $filter): AvailabilityDatesCollection
+    public function apiGetAvailabilityDatesTest(AvailabilityDatesFilter $filter): array
     {
         $cities = $this->apiGetCities();
 
-        $availabilityDatesCollection = new AvailabilityDatesCollection();
+        $availabilityDatesCollection = [];
 
         $file = 'availability-'.$filter->type;
 
@@ -1277,9 +1277,9 @@ class TravelioApiService extends AbstractApiService
                     break;
                 }
                 $responseObj = $httpClient->request(HttpClient::METHOD_POST, $this->apiUrl, $options);
-                $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $options, $responseObj->getContent(), $responseObj->getStatusCode());
+                $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $options, $responseObj->getBody(), $responseObj->getStatusCode());
 
-                $respStr = $responseObj->getContent();
+                $respStr = $responseObj->getBody();
                 if ($respStr === 'stream timeout') {
                     $i++;
                     continue;
@@ -1382,7 +1382,7 @@ $aa = [];
 
     }
 
-    public function apiGetCountries(): CountryCollection
+    public function apiGetCountries(): array
     {
         Validator::make()
             ->validateUsernameAndPassword($this->post);
@@ -1412,13 +1412,13 @@ $aa = [];
             $httpClient = HttpClient::create();
 
             $responseObj = $httpClient->request(HttpClient::METHOD_POST, $this->apiUrl, $options);
-            $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $options, $responseObj->getContent(), $responseObj->getStatusCode());
-            $responseData = simplexml_load_string($responseObj->getContent());
+            $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $options, $responseObj->getBody(), $responseObj->getStatusCode());
+            $responseData = simplexml_load_string($responseObj->getBody());
         
 
             $countriesResponse = $responseData->GetCountriesList->CountriesList->Country;
 
-            $countries = new CountryCollection();
+            $countries = [];
             foreach ($countriesResponse as $value) {
                 $country = new Country();
                 $country->Id = $value->ID;
@@ -1435,7 +1435,7 @@ $aa = [];
             Utils::writeToCache($this, $file, json_encode($countries));
 
         } else {
-            $countries = ResponseConverter::convertToCollection(json_decode($countriesJson, true), CountryCollection::class);
+            $countries = ResponseConverter::convertToCollection(json_decode($countriesJson, true), array::class);
         }
         return $countries;
     }
@@ -1457,8 +1457,8 @@ $aa = [];
         $client = HttpClient::create();
 
         $responseObj = $client->request($this->apiUrl, HttpClient::METHOD_POST, $optionsLogin);
-        $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $optionsLogin, $responseObj->getContent(), $responseObj->getStatusCode());
-        $response = json_decode($responseObj->getContent(), true);
+        $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $optionsLogin, $responseObj->getBody(), $responseObj->getStatusCode());
+        $response = json_decode($responseObj->getBody(), true);
 
         if ($response['Error']) {
             throw new Exception($response['Details']);
@@ -1467,7 +1467,7 @@ $aa = [];
         return $response['Token'];
     }
 
-    public function apiGetCities(CitiesFilter $params = null): CityCollection
+    public function apiGetCities(CitiesFilter $params = null): array
     {
         Validator::make()
             ->validateUsernameAndPassword($this->post);
@@ -1479,7 +1479,7 @@ $aa = [];
 
             $regions = $this->apiGetRegions();
             $countries = $this->apiGetCountries();
-            $cities = new CityCollection();
+            $cities = [];
 
             $httpClient = HttpClient::create();
 
@@ -1533,7 +1533,7 @@ $aa = [];
             }
     
             foreach ($responses as $resp) {
-                $content = $resp[0]->getContent();
+                $content = $resp[0]->getBody();
                 $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $resp[1], $content, $resp[0]->getStatusCode());
                 
                 $responseData = simplexml_load_string($content);
@@ -1606,7 +1606,7 @@ $aa = [];
             }
  
             foreach ($responses as $resp) {
-                $content = $resp[0]->getContent();
+                $content = $resp[0]->getBody();
                 $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $resp[1], $content, $resp[0]->getStatusCode());
                 
                 $responseData = simplexml_load_string($content);
@@ -1637,13 +1637,13 @@ $aa = [];
             Utils::writeToCache($this, $file, $data);
         } else {
             $citiesArray = json_decode($citiesJson, true);
-            $cities = ResponseConverter::convertToCollection($citiesArray, CityCollection::class);
+            $cities = ResponseConverter::convertToCollection($citiesArray, array::class);
         }
 
         return $cities;
     }
 
-    public function apiGetRegions(): RegionCollection
+    public function apiGetRegions(): []
     {
         Validator::make()
             ->validateUsernameAndPassword($this->post);
@@ -1653,7 +1653,7 @@ $aa = [];
 
         if ($regionsJson === null) {
             $countries = $this->apiGetCountries();
-            $regions = new RegionCollection();
+            $regions = [];
 
             $httpClient = HttpClient::create();
 
@@ -1683,7 +1683,7 @@ $aa = [];
             }
             
             foreach ($responses as $resp) {
-                $content = $resp[0]->getContent();
+                $content = $resp[0]->getBody();
                 $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $resp[1], $content, $resp[0]->getStatusCode());
 
                 $responseData = simplexml_load_string($content);
@@ -1712,13 +1712,13 @@ $aa = [];
             Utils::writeToCache($this, $file, $data);
         } else {
             $regArray = json_decode($regionsJson, true);
-            $regions = ResponseConverter::convertToCollection($regArray, RegionCollection::class);
+            $regions = ResponseConverter::convertToCollection($regArray, []::class);
         }
         
         return $regions;
     }
 
-    public function apiGetHotels(?HotelsFilter $filter = null): HotelCollection
+    public function apiGetHotels(?HotelsFilter $filter = null): []
     {
         Validator::make()
             ->validateUsernameAndPassword($this->post);
@@ -1726,7 +1726,7 @@ $aa = [];
 
         if ($json === null || !empty($filter->CountryId)) {
 
-            $hotels = new HotelCollection();
+            $hotels = [];
             $countries = $this->apiGetCountries();
 
             $cities = $this->apiGetCities();
@@ -1785,8 +1785,8 @@ $aa = [];
 
             $regionMap = [];
             foreach ($responses as $resp) {
-                $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $resp[1], $resp[0]->getContent(), $resp[0]->getStatusCode());
-                $responseData = simplexml_load_string($resp[0]->getContent());
+                $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $resp[1], $resp[0]->getBody(), $resp[0]->getStatusCode());
+                $responseData = simplexml_load_string($resp[0]->getBody());
         
                 $responseList = $responseData->GetHotelsList->HotelsList;
                 
@@ -1829,7 +1829,7 @@ $aa = [];
             }
         } else {
             $arr = json_decode($json, true);
-            $hotels = ResponseConverter::convertToCollection($arr, HotelCollection::class);
+            $hotels = ResponseConverter::convertToCollection($arr, []::class);
         }
         
         return $hotels;
@@ -1837,12 +1837,12 @@ $aa = [];
 
     /*
     // this can be used to get hotel details with the hotel list
-    public function getHotels(?HotelsFilter $filter = null): HotelCollection
+    public function getHotels(?HotelsFilter $filter = null): []
     {
         set_time_limit(6000);
         Validator::make()->validateUsernameAndPassword($this->post);
         $json = Utils::getFromCache($this->handle, 'hotels-list');
-        $tempHotels = new HotelCollection();
+        $tempHotels = [];
         if ($json === null || !empty($filter->countryId)) {
 
             $countries = $this->apiGetCountries();
@@ -1904,8 +1904,8 @@ $aa = [];
             }
 
             foreach ($responses as $resp) {
-                $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $resp[1], $resp[0]->getContent(), $resp[0]->getStatusCode());
-                $responseData = simplexml_load_string($resp[0]->getContent());
+                $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $resp[1], $resp[0]->getBody(), $resp[0]->getStatusCode());
+                $responseData = simplexml_load_string($resp[0]->getBody());
         
                 $responseList = $responseData->GetHotelsList->HotelsList;
                 
@@ -1941,13 +1941,13 @@ $aa = [];
             }
         } else {
             $arr = json_decode($json, true);
-            $tempHotels = ResponseConverter::convertToCollection($arr, HotelCollection::class);
+            $tempHotels = ResponseConverter::convertToCollection($arr, []::class);
         }
 
         Log::debug('=================================================');
         $json = Utils::getFromCache($this->handle, 'hotels');
         if ($json === null || !empty($filter->countryId)) {
-            $hotels = new HotelCollection();
+            $hotels = [];
             $cities = $this->getCities();
             
 
@@ -1988,8 +1988,8 @@ $aa = [];
                     $j = 0;
                     foreach ($responses as $responseArr) {$j++;
                         $responseObj = $responseArr[0];
-                        if (!simplexml_load_string($responseObj->getContent())) dump($responseObj->getContent());
-                        $response = simplexml_load_string($responseObj->getContent())->GetHotelDetails;
+                        if (!simplexml_load_string($responseObj->getBody())) dump($responseObj->getBody());
+                        $response = simplexml_load_string($responseObj->getBody())->GetHotelDetails;
                         Log::debug($j);
 
                         // Content ImageGallery Items
@@ -2055,7 +2055,7 @@ $aa = [];
             }
         } else {
             $arr = json_decode($json, true);
-            $hotels = ResponseConverter::convertToCollection($arr, HotelCollection::class);
+            $hotels = ResponseConverter::convertToCollection($arr, []::class);
         }
         
         $data = [];
@@ -2121,8 +2121,8 @@ $aa = [];
                     foreach ($requests as $request) {
                         $responseObj = $request[0];
                         $options = $request[1];
-                        $response = simplexml_load_string($responseObj->getContent())->GetHotelDetails;
-                        $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $options, $responseObj->getContent(), $responseObj->getStatusCode());
+                        $response = simplexml_load_string($responseObj->getBody())->GetHotelDetails;
+                        $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $options, $responseObj->getBody(), $responseObj->getStatusCode());
 
                         if (!empty($response->Error)) {
                             continue;
@@ -2242,8 +2242,8 @@ $aa = [];
         ]);
 
         $responseObj = $httpClientAsync->request(HttpClient::METHOD_POST, $this->apiUrl, $options);
-        $response = simplexml_load_string($responseObj->getContent())->GetHotelDetails;
-        $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $options, $responseObj->getContent(), $responseObj->getStatusCode());
+        $response = simplexml_load_string($responseObj->getBody())->GetHotelDetails;
+        $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $options, $responseObj->getBody(), $responseObj->getStatusCode());
 
         // Content ImageGallery Items
         $items = new HotelImageGalleryItemCollection();
@@ -2294,13 +2294,13 @@ $aa = [];
 
     // la getCharterOffers: de facut sa trimit request pe fiecare oras de sub zona respectiva un fel de config
     // orasul sa fie in datele de plecare din  toate transporturile
-    private function getHotelOffers(AvailabilityFilter $filter): AvailabilityCollection
+    private function getHotelOffers(AvailabilityFilter $filter): array
     {
         TravelioValidator::make()
             ->validateUsernameAndPassword($this->post)
             ->validateAvailabilityFilter($filter);
 
-        $availabilityCollection = new AvailabilityCollection();
+        $availabilityCollection = [];
 
         $cities = [];
         $region = null;
@@ -2341,7 +2341,7 @@ $aa = [];
                             'Rooms' => [
                                 'Room' => [
                                     'Adults' => $filter->rooms->first()->adults,
-                                    'Children' => $filter->rooms->first()->children
+                                    'Children' => $post['args'][0]['rooms'][0]['children']
                                 ]
                             ],
                             'HotelID' => $filter->hotelId
@@ -2349,8 +2349,8 @@ $aa = [];
                     ]
                 ];
         
-                $ages = $filter->rooms->first()->childrenAges;
-                if ($filter->rooms->first()->children > 0) {
+                $ages = $post['args'][0]['rooms'][0]['childrenAges'];
+                if ($post['args'][0]['rooms'][0]['children'] > 0) {
                     foreach ($ages as $age) {
                         if ($age !== '') {
                             $requestArr['root']['main']['Rooms']['Room']['ChildrenAges'][] = ['ChildAge' => $age];
@@ -2383,7 +2383,7 @@ $aa = [];
                         'Rooms' => [
                             'Room' => [
                                 'Adults' => $filter->rooms->first()->adults,
-                                'Children' => $filter->rooms->first()->children
+                                'Children' => $post['args'][0]['rooms'][0]['children']
                             ]
                         ],
                         'HotelID' => $filter->hotelId
@@ -2391,8 +2391,8 @@ $aa = [];
                 ]
             ];
     
-            $ages = $filter->rooms->first()->childrenAges;
-            if ($filter->rooms->first()->children > 0) {
+            $ages = $post['args'][0]['rooms'][0]['childrenAges'];
+            if ($post['args'][0]['rooms'][0]['children'] > 0) {
                 foreach ($ages as $age) {
                     if ($age !== '') {
                         $requestArr['root']['main']['Rooms']['Room']['ChildrenAges'][] = ['ChildAge' => $age];
@@ -2412,8 +2412,8 @@ $aa = [];
             $responseObj = $request[0];
             $options = $request[1];
 
-            $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $options, $responseObj->getContent(), $responseObj->getStatusCode());
-            $responseData = simplexml_load_string($responseObj->getContent());
+            $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $options, $responseObj->getBody(), $responseObj->getStatusCode());
+            $responseData = simplexml_load_string($responseObj->getBody());
 
             $offerResponses = $responseData->SearchAvailableHotels->HotelsList;
 
@@ -2472,13 +2472,13 @@ $aa = [];
         return $availabilityCollection;
     }
 
-    private function getCharterOrTourOffers(AvailabilityFilter $filter): AvailabilityCollection
+    private function getCharterOrTourOffers(AvailabilityFilter $filter): array
     {
         TravelioValidator::make()
             ->validateUsernameAndPassword($this->post)
             ->validateCharterOffersFilter($filter);
 
-        $availabilityCollection = new AvailabilityCollection();
+        $availabilityCollection = [];
 
         $httpClient = HttpClient::create();
         $cities = $this->apiGetCities();
@@ -2514,7 +2514,7 @@ $aa = [];
                         'Rooms' => [
                             'Room' => [
                                 'Adults' => $filter->rooms->first()->adults,
-                                'Children' => $filter->rooms->first()->children
+                                'Children' => $post['args'][0]['rooms'][0]['children']
                             ]
                         ],
                         'HotelID' => $hotelId
@@ -2532,9 +2532,9 @@ $aa = [];
                 $requestArr['root']['main']['MultipleFlights'] = 1;
             }
     
-            $ages = $filter->rooms->first()->childrenAges;
-            if ($filter->rooms->first()->children > 0) {   
-                $requestArr['root']['main']['Rooms']['Room']['ChildrenAges']['ChildAge'] = $filter->rooms->first()->childrenAges->toArray();
+            $ages = $post['args'][0]['rooms'][0]['childrenAges'];
+            if ($post['args'][0]['rooms'][0]['children'] > 0) {   
+                $requestArr['root']['main']['Rooms']['Room']['ChildrenAges']['ChildAge'] = $post['args'][0]['rooms'][0]['childrenAges']->toArray();
             }
     
             $requestJson = json_encode($requestArr);
@@ -2543,7 +2543,7 @@ $aa = [];
             $options['headers'] = ['Content-Type' => 'application/json'];
     
             $responseObj = $httpClient->request(HttpClient::METHOD_POST, $this->apiUrl, $options);
-            $content = $responseObj->getContent(false);
+            $content = $responseObj->getBody();
             $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $options, $content, $responseObj->getStatusCode());
     
             $searchId = json_decode($content, true)['searchId'];
@@ -2567,7 +2567,7 @@ $aa = [];
             $options['headers'] = ['Content-Type' => 'application/json'];
     
             $responseObj = $httpClient->request(HttpClient::METHOD_POST, $this->apiUrl, $options);
-            $content = $responseObj->getContent(false);
+            $content = $responseObj->getBody();
             $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $options, $content, $responseObj->getStatusCode());
             $response = json_decode($content, true);
             $results[] = $response;
@@ -2586,7 +2586,7 @@ $aa = [];
                 }
                 sleep(1);
                 $responseObj = $httpClient->request(HttpClient::METHOD_POST, $this->apiUrl, $options);
-                $content = $responseObj->getContent();
+                $content = $responseObj->getBody();
     
                 $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $options, $content, $responseObj->getStatusCode());
                 $response = json_decode($content, true);
@@ -2628,7 +2628,7 @@ $aa = [];
             $max = 50; // seconds
             $t0 = microtime(true);
 
-            $ages = $filter->rooms->first()->childrenAges;
+            $ages = $post['args'][0]['rooms'][0]['childrenAges'];
 
             $asyncSearchRequests = [];
             foreach ($citiesToSearch as $cityToSearch) {
@@ -2650,7 +2650,7 @@ $aa = [];
                             'Rooms' => [
                                 'Room' => [
                                     'Adults' => $filter->rooms->first()->adults,
-                                    'Children' => $filter->rooms->first()->children
+                                    'Children' => $post['args'][0]['rooms'][0]['children']
                                 ]
                             ],
                             'ResortID' => $cityToSearch,
@@ -2664,8 +2664,8 @@ $aa = [];
                 }
         
                 
-                if ($filter->rooms->first()->children > 0) {   
-                    $requestArr['root']['main']['Rooms']['Room']['ChildrenAges']['ChildAge'] = $filter->rooms->first()->childrenAges->toArray();
+                if ($post['args'][0]['rooms'][0]['children'] > 0) {   
+                    $requestArr['root']['main']['Rooms']['Room']['ChildrenAges']['ChildAge'] = $post['args'][0]['rooms'][0]['childrenAges']->toArray();
                 }
         
                 $requestJson = json_encode($requestArr);
@@ -2682,7 +2682,7 @@ $aa = [];
                 $responseObj = $asyncSearchRequest[0];
                 $options = $asyncSearchRequest[1];
 
-                $content = $responseObj->getContent(false);
+                $content = $responseObj->getBody();
                 $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $options, $content, $responseObj->getStatusCode());
     
                 $searchId = json_decode($content, true)['searchId'];
@@ -2740,7 +2740,7 @@ $aa = [];
                     $responseObj = $request[0];
                     $options = $request[1];
 
-                    $content = $responseObj->getContent();
+                    $content = $responseObj->getBody();
                     $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $options, $content, $responseObj->getStatusCode());
                     $response = json_decode($content, true);
 
@@ -2890,13 +2890,13 @@ $aa = [];
         return $availabilityCollection;
     }
 
-    private function getTourOffers(AvailabilityFilter $filter): AvailabilityCollection
+    private function getTourOffers(AvailabilityFilter $filter): array
     {
         TravelioValidator::make()
             ->validateUsernameAndPassword($this->post)
             ->validateCharterOffersFilter($filter);
 
-        $availabilityCollection = new AvailabilityCollection();
+        $availabilityCollection = [];
 
         $httpClient = HttpClient::create();
         $cities = $this->apiGetCities();
@@ -2924,7 +2924,7 @@ $aa = [];
                     'Rooms' => [
                         'Room' => [
                             'Adults' => $filter->rooms->first()->adults,
-                            'Children' => $filter->rooms->first()->children
+                            'Children' => $post['args'][0]['rooms'][0]['children']
                         ]
                     ],
                     'HotelID' => $filter->hotelId,
@@ -2933,8 +2933,8 @@ $aa = [];
             ]
         ];
 
-        $ages = $filter->rooms->first()->childrenAges;
-        if ($filter->rooms->first()->children > 0) {
+        $ages = $post['args'][0]['rooms'][0]['childrenAges'];
+        if ($post['args'][0]['rooms'][0]['children'] > 0) {
             foreach ($ages as $age) {
                 if ($age !== '') {
                     $requestArr['root']['main']['Rooms']['Room']['ChildrenAges'][] = ['ChildrenAge' => $age];
@@ -2948,7 +2948,7 @@ $aa = [];
         $options['headers'] = ['Content-Type' => 'application/json'];
 
         $responseObj = $httpClient->request(HttpClient::METHOD_POST, $this->apiUrl, $options);
-        $content = $responseObj->getContent();
+        $content = $responseObj->getBody();
         $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $options, $content, $responseObj->getStatusCode());
 
         $searchId = json_decode($content, true)['searchId'];
@@ -2973,7 +2973,7 @@ $aa = [];
         $options['headers'] = ['Content-Type' => 'application/json'];
 
         $responseObj = $httpClient->request(HttpClient::METHOD_POST, $this->apiUrl, $options);
-        $content = $responseObj->getContent(false);
+        $content = $responseObj->getBody();
         $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $options, $content, $responseObj->getStatusCode());
         $response = json_decode($content, true);
         $results[] = $response;
@@ -2987,7 +2987,7 @@ $aa = [];
             }
             sleep(1);
             $responseObj = $httpClient->request(HttpClient::METHOD_POST, $this->apiUrl, $options);
-            $content = $responseObj->getContent();
+            $content = $responseObj->getBody();
 
             $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $options, $content, $responseObj->getStatusCode());
             $response = json_decode($content, true);
@@ -3212,7 +3212,7 @@ $aa = [];
 
                     $responseObj = $httpClientAsync->request(HttpClient::METHOD_POST, $this->apiUrl, $options);
 
-                    $content = $responseObj->getContent(false);
+                    $content = $responseObj->getBody();
 
                     $packagesCountry[] = [$content, $options];
                 }
@@ -3225,7 +3225,7 @@ $aa = [];
 
             foreach($packagesCountry as $packagesArr) {
                 
-                //$this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $packagesArr[1], $packagesArr[0]->getContent(), $packagesArr[0]->getStatusCode());
+                //$this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $packagesArr[1], $packagesArr[0]->getBody(), $packagesArr[0]->getStatusCode());
                 $content = $packagesArr[0];
                 
                 $responseData = simplexml_load_string($content);
@@ -3267,7 +3267,7 @@ $aa = [];
                     $reqs[] = $httpClientAsync->request(HttpClient::METHOD_POST, $this->apiUrl, $options);
                 }
                 // foreach ($reqs as $r) {
-                //     $r->getContent();
+                //     $r->getBody();
                 //     dump(count($reqs));die;
                 // }
                 //$r = $this->curl_fetch_multi_2($asyncRequestsPerCountry);
@@ -3280,7 +3280,7 @@ $aa = [];
 
                 foreach ($reqs as $requestsPerCountry) {
                     
-                    $responseData = simplexml_load_string($requestsPerCountry->getContent());
+                    $responseData = simplexml_load_string($requestsPerCountry->getBody());
 
                     $packageDetails = $responseData->GetPackageDetails;
                     if ((int) $packageDetails->Circuit !== 1) {
@@ -3298,8 +3298,8 @@ $aa = [];
                         $tour->Id = $packageDetails->ID . '|' . $packageDepartureDate->Nights . '|' .$packageDetails->HotelID;
                         $tour->Title = $packageDetails->Name;
     
-                        $destinations = new CityCollection();
-                        $destinationCountries = new CountryCollection();
+                        $destinations = [];
+                        $destinationCountries = [];
                         $resortId = $packageDetails->ResortID;
                         $destinationCity = $cities->get($resortId);
                         $destinations->add($destinationCity);
@@ -3472,11 +3472,11 @@ $aa = [];
         return $ret;
     }
 
-    public function apiGetOffers(AvailabilityFilter $filter): AvailabilityCollection
+    public function apiGetOffers(AvailabilityFilter $filter): array
     {
         
         // todo: de verificat daca vin conditii de plata/anulare
-        $availabilityCollection = new AvailabilityCollection();
+        $availabilityCollection = [];
 
         $checkInDt = (new DateTime($filter->checkIn))->setTime(0, 0);
         $today = (new DateTime())->setTime(0, 0);
@@ -3509,7 +3509,7 @@ $aa = [];
             $payment->Currency = $currency;
 
             $percent = ((float)$policy->Percent) / 100;
-            $payment->Amount = $percent * (float) $filter->SuppliedPrice;
+            $payment->Amount = $percent * (float) $post['args'][0]['SuppliedPrice'];
 
             $payment->PayAfter = date('Y-m-d');
             $payment->PayUntil = (string) $policy->To;
@@ -3536,7 +3536,7 @@ $aa = [];
             $currency->Code = $policy->Currency;
             $payment->Currency = $currency;
 
-            $payment->Price = $percent * (float) $filter->SuppliedPrice;
+            $payment->Price = $percent * (float) $post['args'][0]['SuppliedPrice'];
 
             $payment->DateStart = (string) $policy->From;
             $payment->DateEnd = (string) $policy->To;
@@ -3568,9 +3568,9 @@ $aa = [];
         $requestXml = Utils::arrayToXmlString($requestArr);
         $options['body'] = $requestXml;
         $responseObj = $httpClient->request(HttpClient::METHOD_POST, $this->apiUrl, $options);
-        $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $options, $responseObj->getContent(), $responseObj->getStatusCode());
+        $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $options, $responseObj->getBody(), $responseObj->getStatusCode());
     
-        $responseData = simplexml_load_string($responseObj->getContent());
+        $responseData = simplexml_load_string($responseObj->getBody());
         return $responseData;
     }
 
@@ -3583,19 +3583,19 @@ $aa = [];
 
         $httpClient = HttpClient::create();
 
-        foreach ($filter->Items->first()->Passengers as $key => $passenger) {
-            if (!empty($passenger->Firstname)) {
-                $passengerTitle = (($passenger->IsAdult) ? 'ADT' : 'CHD');
+        foreach ($post['args'][0]['Items'][0]['Passengers'] as $key => $passenger) {
+            if (!empty($passenger['Firstname'])) {
+                $passengerTitle = (($passenger['IsAdult']) ? 'ADT' : 'CHD');
                 
                 $touristsData[] = [
                     'turist' =>
                     [
                         'nr' => ($key + 1),
                         'titlu' => $passengerTitle,
-                        'nume' => $passenger->Lastname,
-                        'prenume' => $passenger->Firstname,
-                        'data_nasterii' => $passenger->BirthDate,
-                        'sex' => $passenger->Gender === 'male' ? 'M' : 'F',
+                        'nume' => $passenger['Lastname'],
+                        'prenume' => $passenger['Firstname'],
+                        'data_nasterii' => $passenger['BirthDate'],
+                        'sex' => $passenger['Gender'] === 'male' ? 'M' : 'F',
                         'email' => $filter->AgencyDetails->Email
                     ]
                 ];
@@ -3605,7 +3605,7 @@ $aa = [];
 			'item' => [
 				'room_info' => [
 					'id_camera' => $filter->Items->first()->Room_Type_InTourOperatorId,
-					'id_pensiune' => $filter->Items->first()->Board_Def_InTourOperatorId
+					'id_pensiune' => $post['args'][0]['Items'][0]['Board_Def_InTourOperatorId']
 				],
 				$touristsData
 			]
@@ -3615,7 +3615,7 @@ $aa = [];
         
         $titular = $touristsData[0]['turist'];
 
-        $bookingDataArr = json_decode($filter->Items->first()->Offer_bookingDataJson, true);
+        $bookingDataArr = json_decode($post['args'][0]['Items'][0]['Offer_bookingDataJson'], true);
 
         $requestArr = [
             'root' => [
@@ -3631,10 +3631,10 @@ $aa = [];
                     'titular' => $titular,
                     'id_hotel' => $bookingDataArr['id_hotel'],
                     'id_pachet' => $filter->Items->first()->Offer_packageId,
-                    'data_start' => $filter->Items->first()->Room_CheckinAfter,
-                    'data_sfarsit' => $filter->Items->first()->Room_CheckinBefore,
+                    'data_start' => $post['args'][0]['Items'][0]['Room_CheckinAfter'],
+                    'data_sfarsit' => $post['args'][0]['Items'][0]['Room_CheckinBefore'],
                     'nr_camere' => 1,
-                    'numar_turisti' => count($filter->Items->first()->Passengers),
+                    'numar_turisti' => count($post['args'][0]['Items'][0]['Passengers']),
                     'camera' => $roomData,
                 ]
             ]
@@ -3649,18 +3649,18 @@ $aa = [];
         $options['body'] = $requestXml;
         
         $responseObj = $httpClient->request(HttpClient::METHOD_POST, $this->apiUrl, $options);
-        $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $options, $responseObj->getContent(), $responseObj->getStatusCode());
-        $responseData = json_decode($responseObj->getContent(), true);
+        $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $options, $responseObj->getBody(), $responseObj->getStatusCode());
+        $responseData = json_decode($responseObj->getBody(), true);
 
         if (!empty($responseData['error'])) {
             throw new Exception($responseData['error']);
         }
 
-        $responseData = new SimpleXMLElement($responseObj->getContent());
+        $responseData = new SimpleXMLElement($responseObj->getBody());
 
 		$order = new Booking();
         $order->Id = $responseData->Reservation->reservationID;
 		
-		return [$order, $responseObj->getContent()];
+		return [$order, $responseObj->getBody()];
     }
 }

@@ -19,7 +19,7 @@ trait TOInterface_Util
 			$obj = (array) $obj;
 		if (is_array($obj))
 		{
-			$new = array();
+			$new = [];
 			foreach($obj as $key => $val) 
 				$new[$key] = $this->simpleObjToArr($val);
 		}

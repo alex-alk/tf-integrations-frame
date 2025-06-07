@@ -32,7 +32,7 @@ class SolvexApi
 	public function initApi()
 	{
 		//$this->debug = 1;
-		//$params = $this->debug ? ['trace' => 1] : array();
+		//$params = $this->debug ? ['trace' => 1] : [];
 		$params = ['trace' => 1];
 		$params["login"] = ($this->ApiUsername__ ?: $this->ApiUsername);
 		$params["password"] = ($this->ApiPassword__ ?: $this->ApiPassword);
@@ -351,7 +351,7 @@ class SolvexApi
 	 * Returns a list of all hotels in the Solvex system
 	 * No input
 	 * 
-	 * @return array()
+	 * @return []
 	 * @throws \Exception
 	 */
 	public function getHotels(int $cityId, int $county = null, int $country = null)
@@ -453,15 +453,15 @@ class SolvexApi
 	public function MakeReservation($params, $solvexInstance)
 	{
 		$hotel_params = $this->preparseFromEurositeParams($params);
-		$new_params = array();
+		$new_params = [];
 		
 		$new_params["ResultIndex"] = (int)$params["IndexOffer"];
-		$new_params["PaxInfo"] = array();
+		$new_params["PaxInfo"] = [];
 		if ($hotel_params["Rooms"]["Room"]["PaxNames"])
 		{
 			foreach ($hotel_params["Rooms"]["Room"]["PaxNames"] as $pname)
 			{
-				$person = array();
+				$person = [];
 				$names = explode(" ", $pname["PaxName"][0][0]);
 				$person["Title"] = ($pname["PaxName"]["TGender"] == "B") ? "Mr" : "Mrs";
 				$person["FirstName"] = $names[0];
@@ -487,7 +487,7 @@ class SolvexApi
 	
 	public function preparseFromEurositeParams($params, $index = 0)
 	{
-		$ret = array();
+		$ret = [];
 		
 		$items = $params["BookingItems"][$index]["BookingItem"]["HotelItem"]  ? 
 					$params["BookingItems"][$index]["BookingItem"]["HotelItem"] :  

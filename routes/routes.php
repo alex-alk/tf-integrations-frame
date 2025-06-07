@@ -15,6 +15,10 @@ $routes->get('/regions', [IntegrationController::class, 'regions']);
 $routes->get('/cities', [IntegrationController::class, 'cities']);
 $routes->get('/hotels', [IntegrationController::class, 'hotels']);
 $routes->get('/offers', [IntegrationController::class, 'offers']);
+$routes->get('/cancel-fees', [IntegrationController::class, 'cancelFees']);
+$routes->get('/payment-plans', [IntegrationController::class, 'paymentPlans']);
+$routes->get('/test-connection', [IntegrationController::class, 'testConnection']);
+$routes->get('/book', [IntegrationController::class, 'book']);
 
 // -------------------------------------------------
 

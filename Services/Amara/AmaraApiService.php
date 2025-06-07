@@ -26,21 +26,21 @@ class AmaraApiService extends AbstractApiService
         $bookingParams['roomCombinationId'] = $filter->Items->get(0)->Offer_roomCombinationId;
 
         $passengers = [];
-        $passengersRequest = $filter->Items->get(0)->Passengers;
+        $passengersRequest = $post['args'][0]['Items'][0]['Passengers'];
         foreach ($passengersRequest as $passenger) {
-            if (!empty($passenger->Firstname)) {
-                $age = (new DateTime())->diff(new DateTime($passenger->BirthDate))->y;
+            if (!empty($passenger['Firstname'])) {
+                $age = (new DateTime())->diff(new DateTime($passenger['BirthDate']))->y;
                 $isInfant = $age < 2 ? 1 : 0;
 
-                $isMale = $passenger->Gender === 'male' ? 1 : 0;
-                $isAdult = isset($passenger->IsAdult) && $passenger->IsAdult === true ? 1 : 0;
+                $isMale = $passenger['Gender'] === 'male' ? 1 : 0;
+                $isAdult = isset($passenger['IsAdult']) && $passenger['IsAdult'] === true ? 1 : 0;
                 $passengerArr = [
-                    'BirthDate' => $passenger->BirthDate,
-                    'FirstName' => $passenger->Firstname,
+                    'BirthDate' => $passenger['BirthDate'],
+                    'FirstName' => $passenger['Firstname'],
                     'IsAdult' => $isAdult,
                     'IsInfant' => $isInfant,
                     'IsMale' => $isMale,
-                    'LastName' => $passenger->Lastname
+                    'LastName' => $passenger['Lastname']
                 ];
                 $passengers[] = $passengerArr;
             }
@@ -59,8 +59,8 @@ class AmaraApiService extends AbstractApiService
             'Content-Type' => 'application/soap+xml;charset=UTF-8'
         ];
         $responseObj = $client->request(HttpClient::METHOD_POST, $url, $options);
-        $this->showRequest(HttpClient::METHOD_POST, $url, $options, $responseObj->getContent(), $responseObj->getStatusCode());
-        $content = $responseObj->getContent();
+        $this->showRequest(HttpClient::METHOD_POST, $url, $options, $responseObj->getBody(), $responseObj->getStatusCode());
+        $content = $responseObj->getBody();
 
         $responseValidator = $this->getXmlBody($content);
 
@@ -75,8 +75,8 @@ class AmaraApiService extends AbstractApiService
         $options['body'] = $this->makeRequestBody($url, 'MakeReservation', $bookingParams);
 
         $responseObj = $client->request(HttpClient::METHOD_POST, $url, $options);
-        $this->showRequest(HttpClient::METHOD_POST, $url, $options, $responseObj->getContent(), $responseObj->getStatusCode());
-        $content = $responseObj->getContent();
+        $this->showRequest(HttpClient::METHOD_POST, $url, $options, $responseObj->getBody(), $responseObj->getStatusCode());
+        $content = $responseObj->getBody();
 
         $response = $this->getXmlBody($content);
 
@@ -228,11 +228,11 @@ class AmaraApiService extends AbstractApiService
         return $response;
     }
 
-    public function apiGetCountries(): CountryCollection
+    public function apiGetCountries(): array
     {
         $cities = $this->apiGetCities();
 
-        $countries = new CountryCollection();
+        $countries = [];
 
         /** @var City $city */
         foreach ($cities as $city) {
@@ -242,7 +242,7 @@ class AmaraApiService extends AbstractApiService
         return $countries;
     }
 
-    public function apiGetCities(CitiesFilter $params = null): CityCollection
+    public function apiGetCities(CitiesFilter $params = null): array
     {
         $response = $this->getRoutesInfoXml();
 
@@ -252,7 +252,7 @@ class AmaraApiService extends AbstractApiService
             ->Routes->children(self::c)
             ->RouteInfo;
     
-        $cities = new CityCollection();
+        $cities = [];
 
         $romania = new Country();
         $romania->Id = 'RO';
@@ -289,7 +289,7 @@ class AmaraApiService extends AbstractApiService
         return $cities;
     }
 
-    public function apiGetHotels(?HotelsFilter $filter = null): HotelCollection
+    public function apiGetHotels(?HotelsFilter $filter = null): []
     {
         $response = $this->getRoutesInfoXml();
 
@@ -299,7 +299,7 @@ class AmaraApiService extends AbstractApiService
             ->DestinationHotels->children(self::c)
             ->DestinationHotelsInfo;
 
-        $hotelCollection = new HotelCollection();
+        $hotelCollection = [];
         $url = $this->apiUrl . '/Offer.svc?singleWsdl';
 
         $cities = $this->apiGetCities();
@@ -350,8 +350,8 @@ class AmaraApiService extends AbstractApiService
                                 $options['body'] = $this->makeRequestBody($url, 'DownloadPictureByUnificationCode', $params);
 
                                 $responseObj = $client->request(HttpClient::METHOD_POST, $url, $options);
-                                $this->showRequest(HttpClient::METHOD_POST, $url, $options, $responseObj->getContent(), $responseObj->getStatusCode());
-                                $content = $responseObj->getContent();
+                                $this->showRequest(HttpClient::METHOD_POST, $url, $options, $responseObj->getBody(), $responseObj->getStatusCode());
+                                $content = $responseObj->getBody();
 
                                 $response = $this->getXmlBody($content);
 
@@ -431,11 +431,11 @@ class AmaraApiService extends AbstractApiService
     }
     */
 
-    public function apiGetAvailabilityDates(AvailabilityDatesFilter $filter): AvailabilityDatesCollection
+    public function apiGetAvailabilityDates(AvailabilityDatesFilter $filter): array
     {
         AmaraValidator::make()->validateAllCredentials($this->post);
 
-        $availabilityDatesCollection = new AvailabilityDatesCollection();
+        $availabilityDatesCollection = [];
 
         $cities = $this->apiGetCities();
 
@@ -554,8 +554,8 @@ class AmaraApiService extends AbstractApiService
         ];
 
         $responseObj = $client->request(HttpClient::METHOD_POST, $url, $options);
-        $this->showRequest(HttpClient::METHOD_POST, $url, $options, $responseObj->getContent(), $responseObj->getStatusCode());
-        $content = $responseObj->getContent();
+        $this->showRequest(HttpClient::METHOD_POST, $url, $options, $responseObj->getBody(), $responseObj->getStatusCode());
+        $content = $responseObj->getBody();
 
         $responseSearch = $this->getXmlBody($content);
         if (!$responseSearch) {
@@ -591,8 +591,8 @@ class AmaraApiService extends AbstractApiService
             ];
 
             $responseObj = $client->request(HttpClient::METHOD_POST, $url, $options);
-            $this->showRequest(HttpClient::METHOD_POST, $url, $options, $responseObj->getContent(), $responseObj->getStatusCode());
-            $content = $responseObj->getContent();
+            $this->showRequest(HttpClient::METHOD_POST, $url, $options, $responseObj->getBody(), $responseObj->getStatusCode());
+            $content = $responseObj->getBody();
 
             $response = $this->getXmlBody($content);
 
@@ -684,7 +684,7 @@ class AmaraApiService extends AbstractApiService
         $this->showRequest(HttpClient::METHOD_POST, $url, ['body' => $requestBody], $responseBody, 0);
     }*/
 
-    public function apiGetOffers(AvailabilityFilter $filter): AvailabilityCollection
+    public function apiGetOffers(AvailabilityFilter $filter): array
     {
         Validator::make()->validateAllCredentials($this->post);
         AmaraValidator::make()->validateAvailabilityFilter($filter);
@@ -729,7 +729,7 @@ class AmaraApiService extends AbstractApiService
             }
         }
 
-        $availabilityCollection = new AvailabilityCollection();
+        $availabilityCollection = [];
 
         if ($route === null) {
             // flight not found
@@ -746,8 +746,8 @@ class AmaraApiService extends AbstractApiService
 
         $client = HttpClient::create();
         $responseObj = $client->request(HttpClient::METHOD_POST, $url, $options);
-        $this->showRequest(HttpClient::METHOD_POST, $url, $options, $responseObj->getContent(), $responseObj->getStatusCode());
-        $content = $responseObj->getContent();
+        $this->showRequest(HttpClient::METHOD_POST, $url, $options, $responseObj->getBody(), $responseObj->getStatusCode());
+        $content = $responseObj->getBody();
 
         $responseSearch = $this->getXmlBody($content);
 

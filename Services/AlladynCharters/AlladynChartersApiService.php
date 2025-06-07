@@ -24,7 +24,7 @@ use App\Entities\Availability\TransportMerch;
 use App\Entities\Availability\TransportMerchCategory;
 use App\Entities\Availability\TransportMerchLocation;
 use App\Entities\AvailabilityDates\AvailabilityDates;
-use App\Entities\AvailabilityDates\AvailabilityDatesCollection;
+use App\Entities\AvailabilityDates\array;
 use App\Entities\AvailabilityDates\DateNight;
 use App\Entities\AvailabilityDates\DateNightCollection;
 use App\Entities\AvailabilityDates\TransportCity;
@@ -49,11 +49,11 @@ use App\Filters\BookHotelFilter;
 use App\Filters\CitiesFilter;
 use App\Filters\HotelDetailsFilter;
 use App\Filters\HotelsFilter;
-use App\Support\Collections\Custom\AvailabilityCollection;
-use App\Support\Collections\Custom\CityCollection;
-use App\Support\Collections\Custom\CountryCollection;
-use App\Support\Collections\Custom\HotelCollection;
-use App\Support\Collections\Custom\RegionCollection;
+use App\Support\Collections\Custom\array;
+use App\Support\Collections\Custom\array;
+use App\Support\Collections\Custom\array;
+use App\Support\Collections\Custom\[];
+use App\Support\Collections\Custom\[];
 use App\Support\Http\SimpleAsync\HttpClient;
 use App\Support\Http\SimpleAsync\Response\ResponseInterface;
 use App\Support\Log;
@@ -99,13 +99,13 @@ class AlladynChartersApiService extends AbstractApiService
 
         // checking Api-Key
         $url = $this->apiUrl . '/v2/tours/depcities';
-        $response = json_decode($this->request($url)->getContent(), true);
+        $response = json_decode($this->request($url)->getBody(), true);
 
         if ($response !== null && empty($response['error'])) {
             foreach ($response as $departureCity) {
                 if ($departureCity['country'] === 'Romania') {
                     $urlDestCountries = $this->apiUrl . '/v2/tours/arrcountries?cityId='.$departureCity['id'];
-                    $respBody = $this->request($urlDestCountries)->getContent();
+                    $respBody = $this->request($urlDestCountries)->getBody();
                     $responseDestCountries = json_decode($respBody, true);
                     if ($responseDestCountries !== null && count($responseDestCountries) > 0) {
                         foreach ($responseDestCountries as $destinationCountry) {
@@ -113,13 +113,13 @@ class AlladynChartersApiService extends AbstractApiService
                             // getting hotels
                             $urlHotelList = $this->apiUrl . '/v2/tours/list?countryId='. $destinationCountry['id'] .'&cityId='.$departureCity['id'];
     
-                            $hotelList = json_decode($this->request($urlHotelList)->getContent(), true)['hotels'];
+                            $hotelList = json_decode($this->request($urlHotelList)->getBody(), true)['hotels'];
 
                             if ($hotelList !== null && count($hotelList) > 0) {
                                 $id = $hotelList[0]['hotelId'];
                                 $url = $this->apiUrl . '/v2/tours/content?hotelId='. $id . '&locale=ro';
                                 $responseObj = $this->request($url);
-                                $hotel = json_decode($responseObj->getContent(false), true);
+                                $hotel = json_decode($responseObj->getBody(), true);
                                 if (isset($hotel['success']) && $hotel['success'] === true) {
                                     $apiKeyOk = true;
                                 }
@@ -155,7 +155,7 @@ class AlladynChartersApiService extends AbstractApiService
                 'Content-Type: application/x-www-form-urlencoded',
             ]
         ]);
-        $xml = $response->getContent();
+        $xml = $response->getBody();
         if ($this->isXml($xml)) {
             $filesXml = simplexml_load_string($xml);
             if (empty($filesXml->DataSet->Body->Erori->Eroare)) {
@@ -167,7 +167,7 @@ class AlladynChartersApiService extends AbstractApiService
         $username = env('ALLADYN_BOOKING_USERNAME');
         $password = env('ALLADYN_BOOKING_PASSWORD');
         $url = $this->apiUrl . '/v2/xmlgate/auth?j_login='.$username.'&j_passwd='.$password;
-        $response = $this->request($url)->getContent();
+        $response = $this->request($url)->getBody();
 
         if ($this->isXml($response)) {
             $xml = new SimpleXMLElement($response);
@@ -198,7 +198,7 @@ class AlladynChartersApiService extends AbstractApiService
         return false !== $doc && empty($errors);
     }
 
-    public function apiGetCountries(): CountryCollection
+    public function apiGetCountries(): array
     {
         // Validator::make()->validateUsernameAndPassword($this->post);
         $file = 'countries';
@@ -206,16 +206,16 @@ class AlladynChartersApiService extends AbstractApiService
         if ($countriesJson === null) {
 
             $url = $this->apiUrl . '/v2/tours/depcities';
-            $response = json_decode($this->request($url)->getContent(), true);
+            $response = json_decode($this->request($url)->getBody(), true);
 
             if (!empty($response['error'])) {
                 throw new Exception(json_encode($response['error']));
             }
             
-            $countries = new CountryCollection();
+            $countries = [];
             foreach ($response as $departureCity) {
                 $urlDestCountries = $this->apiUrl . '/v2/tours/arrcountries?cityId='.$departureCity['id'];
-                $responseDestCountries = json_decode($this->request($urlDestCountries)->getContent(), true);
+                $responseDestCountries = json_decode($this->request($urlDestCountries)->getBody(), true);
 
                 if (!empty($responseDestCountries['error'])) {
                     continue;
@@ -245,13 +245,13 @@ class AlladynChartersApiService extends AbstractApiService
             Utils::writeToCache($this->handle, $file, $data, 7);
         } else {
             $countriesArray = json_decode($countriesJson, true);
-            $countries = ResponseConverter::convertToCollection($countriesArray, CountryCollection::class);
+            $countries = ResponseConverter::convertToCollection($countriesArray, array::class);
         }
 
         return $countries;
     }
 
-    public function apiGetCities(CitiesFilter $params = null): CityCollection
+    public function apiGetCities(CitiesFilter $params = null): array
     {
         Validator::make()->validateUsernameAndPassword($this->post);
         $file = 'cities';
@@ -260,7 +260,7 @@ class AlladynChartersApiService extends AbstractApiService
         if ($citiesJson === null) {
 
             $url = $this->apiUrl. '/v2/tours/depcities';
-            $response = json_decode($this->request($url)->getContent(), true);
+            $response = json_decode($this->request($url)->getBody(), true);
 
             if (!empty($response['error'])) {
                 throw new Exception(json_encode($response['error']));
@@ -270,7 +270,7 @@ class AlladynChartersApiService extends AbstractApiService
             $regions = $this->getRegionsById();
             $countries = $this->apiGetCountries();
 
-            $cities = new CityCollection();
+            $cities = [];
 
             foreach ($response as $departureCity) {
                 if ($departureCity['country'] === 'Romania') {
@@ -343,17 +343,17 @@ class AlladynChartersApiService extends AbstractApiService
             Utils::writeToCache($this->handle, $file, $data, 7);
         } else {
             $citiesArray = json_decode($citiesJson, true);
-            $cities = ResponseConverter::convertToCollection($citiesArray, CityCollection::class);
+            $cities = ResponseConverter::convertToCollection($citiesArray, array::class);
         }
 
         return $cities;
     }
 
-    public function apiGetRegions(): RegionCollection
+    public function apiGetRegions(): []
     {
         Validator::make()->validateUsernameAndPassword($this->post);
         $cities = $this->apiGetCities();
-        $regions = new RegionCollection();
+        $regions = [];
 
         foreach ($cities as $cityResponse) {
             $region = new Region();
@@ -376,7 +376,7 @@ class AlladynChartersApiService extends AbstractApiService
 
         $responseObj = $this->request($url);
 
-        $response = json_decode($responseObj->getContent(), true)['hotel'];
+        $response = json_decode($responseObj->getBody(), true)['hotel'];
         $countries = $this->apiGetCountries();
 
         if (!empty($response['error'])) {
@@ -470,9 +470,9 @@ class AlladynChartersApiService extends AbstractApiService
         return $flights;
     }
 
-    public function apiGetOffers(AvailabilityFilter $filter): AvailabilityCollection
+    public function apiGetOffers(AvailabilityFilter $filter): array
     {
-        $response = new AvailabilityCollection();
+        $response = [];
         return $response;
 
         $destinationCityId  = empty($filter->cityId) ? $filter->regionId : $filter->cityId;
@@ -559,7 +559,7 @@ class AlladynChartersApiService extends AbstractApiService
             }
             
             $responseObj = $this->request($url);
-            $responseArr = json_decode($responseObj->getContent(), true);
+            $responseArr = json_decode($responseObj->getBody(), true);
             
             if (isset($responseArr['error']) && $responseArr['error']['message'] === 'No results were found') {
                 //Log::debug('Result set nr ' . $i . ' returned in  '. $time .'s for '. $url . '.' . 'Has more: false');
@@ -657,8 +657,8 @@ class AlladynChartersApiService extends AbstractApiService
                     $checkOut . '~' . 
                     $offer->Net . '~' . 
                     $filter->rooms->first()->adults . '~' . 
-                    $filter->rooms->first()->children . '~' .
-                    ($filter->rooms->first()->childrenAges ? implode('|', $filter->rooms->first()->childrenAges->toArray()) : '');
+                    $post['args'][0]['rooms'][0]['children'] . '~' .
+                    ($post['args'][0]['rooms'][0]['childrenAges'] ? implode('|', $post['args'][0]['rooms'][0]['childrenAges']->toArray()) : '');
                 
                 // MealItem
                 $mealItem->Merch = $boardMerch;
@@ -815,7 +815,7 @@ class AlladynChartersApiService extends AbstractApiService
 
         if ($xmlString === null) {
             $url = $this->getFiles()['flightDepartures'];
-            $xmlString = $this->request($url)->getContent();
+            $xmlString = $this->request($url)->getBody();
             Utils::writeToCache($this->handle, $file, $xmlString, 7);
         }
        
@@ -830,7 +830,7 @@ class AlladynChartersApiService extends AbstractApiService
         $xmlString = Utils::getFromCache($this->handle, $file);
         if ($xmlString === null) {
             $url = $this->getFiles()['airports'];
-            $xmlString = $this->request($url)->getContent();
+            $xmlString = $this->request($url)->getBody();
             Utils::writeToCache($this->handle, $file, $xmlString, 7);
         }
         
@@ -855,7 +855,7 @@ class AlladynChartersApiService extends AbstractApiService
 
     private function getData(string $url): SimpleXMLElement
     {
-        $data = $this->request($url)->getContent();
+        $data = $this->request($url)->getBody();
         $datasXml = new SimpleXMLElement($data);
         return $datasXml;
     }
@@ -866,7 +866,7 @@ class AlladynChartersApiService extends AbstractApiService
         $json = Utils::getFromCache($this->handle, $file);
         if ($json === null) {
             $url = $this->apiUrl . '/v2/tours/pansions?countryId='.$arrivalCountryId.'&cityId='.$departureCityId;
-            $json = $this->request($url)->getContent();
+            $json = $this->request($url)->getBody();
             Utils::writeToCache($this->handle, $file, $json, 7);
         }
 
@@ -906,7 +906,7 @@ class AlladynChartersApiService extends AbstractApiService
         $url = '';
         if ($json === null) {
             $url = $this->apiUrl . '/v2/tours/hotelclasses?countryId='.$arrivalCountryId.'&cityId='.$departureCityId;
-            $json = $this->request($url)->getContent();
+            $json = $this->request($url)->getBody();
             Utils::writeToCache($this->handle, $file, $json, 7);
         }
 
@@ -1049,7 +1049,7 @@ class AlladynChartersApiService extends AbstractApiService
         $json = Utils::getFromCache($this->handle, $file);
         if ($json === null) {
             $url = $this->apiUrl . '/v2/tours/accommodations';
-            $json = $this->request($url)->getContent();
+            $json = $this->request($url)->getBody();
             Utils::writeToCache($this->handle, $file, $json, 7);
         }
 
@@ -1086,7 +1086,7 @@ class AlladynChartersApiService extends AbstractApiService
                     'Content-Type: application/x-www-form-urlencoded',
                 ]
             ]);
-            $xml = $response->getContent();
+            $xml = $response->getBody();
             Utils::writeToCache($this->handle, $file, $xml, 7);
         }
         if ($this->services === null) {
@@ -1111,7 +1111,7 @@ class AlladynChartersApiService extends AbstractApiService
         $username = env('ALLADYN_BOOKING_USERNAME');
         $password = env('ALLADYN_BOOKING_PASSWORD');
         $url = $this->apiUrl . '/v2/xmlgate/auth?j_login='.$username.'&j_passwd='.$password;
-        $response = $this->request($url)->getContent();
+        $response = $this->request($url)->getBody();
         $xml = new SimpleXMLElement($response);
         
         return $xml->sessionId;
@@ -1148,20 +1148,20 @@ class AlladynChartersApiService extends AbstractApiService
         
         $query = '?' . http_build_query($params);
 
-        $responseString = $this->request($url . $query)->getContent();
+        $responseString = $this->request($url . $query)->getBody();
         $responseXml = new SimpleXMLElement($responseString);
 
         // get passengers
-        $passengers = $filter->Items->first()->Passengers;
+        $passengers = $post['args'][0]['Items'][0]['Passengers'];
         
         $i = 0;
         foreach($passengers as $passenger) {
-            if (!empty($passenger->Firstname)) {
-                $responseXml->Tourist[$i]->name = $passenger->Firstname;
-                $responseXml->Tourist[$i]->surname = $passenger->Lastname;
-                $date = new DateTime($passenger->BirthDate);
+            if (!empty($passenger['Firstname'])) {
+                $responseXml->Tourist[$i]->name = $passenger['Firstname'];
+                $responseXml->Tourist[$i]->surname = $passenger['Lastname'];
+                $date = new DateTime($passenger['BirthDate']);
                 $responseXml->Tourist[$i]->birthday = $date->format('d.m.Y');
-                $responseXml->Tourist[$i]->sex = $passenger->Gender;
+                $responseXml->Tourist[$i]->sex = $passenger['Gender'];
                 $responseXml->Tourist[$i]->nationality = self::ROMANIA_ID;
                 $i++;
             }
@@ -1194,7 +1194,7 @@ class AlladynChartersApiService extends AbstractApiService
         // booking
         $responseStringBook = $this->request($urlBooking, 'POST', [
             'body' => $xmlString
-        ])->getContent();
+        ])->getBody();
 
         $responseXmlBooking = new SimpleXMLElement($responseStringBook);
 
@@ -1209,10 +1209,10 @@ class AlladynChartersApiService extends AbstractApiService
         return [$response, $responseStringBook];
     }
 
-    public function apiGetHotels(?HotelsFilter $filter = null): HotelCollection
+    public function apiGetHotels(?HotelsFilter $filter = null): []
     {
         //Validator::make()->validateUsernameAndPassword($this->post);
-        $hotels = new HotelCollection();
+        $hotels = [];
         $countries = $this->apiGetCountries();
 
         // get from cache
@@ -1299,7 +1299,7 @@ class AlladynChartersApiService extends AbstractApiService
         if ($hotelsDetailsCache === null) {// creating cache
 
             $url = $this->apiUrl . '/v2/tours/depcities';
-            $response = json_decode($this->request($url)->getContent(), true);
+            $response = json_decode($this->request($url)->getBody(), true);
 
             if ($response === null) {
                 throw new Exception('Empty cities response');
@@ -1313,7 +1313,7 @@ class AlladynChartersApiService extends AbstractApiService
             foreach ($response as $departureCity) {
                 if ($departureCity['country'] === 'Romania') {
                     $urlDestCountries = $this->apiUrl . '/v2/tours/arrcountries?cityId='.$departureCity['id'];
-                    $respBody = $this->request($urlDestCountries)->getContent();
+                    $respBody = $this->request($urlDestCountries)->getBody();
                     $responseDestCountries = json_decode($respBody, true);
                     
                     if (!empty($responseDestCountries['error'])) {
@@ -1332,7 +1332,7 @@ class AlladynChartersApiService extends AbstractApiService
                         // getting hotels
                         $urlHotelList = $this->apiUrl . '/v2/tours/list?countryId='.$country->Id.'&cityId='.$departureCity['id'];
 
-                        $hotelList = json_decode($this->request($urlHotelList)->getContent(), true)['hotels'];
+                        $hotelList = json_decode($this->request($urlHotelList)->getBody(), true)['hotels'];
 
                         foreach ($hotelList as $hotelResponse) {
                             $filteredHotelList[$hotelResponse['hotelId']] = $hotelResponse;
@@ -1379,11 +1379,11 @@ class AlladynChartersApiService extends AbstractApiService
     }
 
 
-    public function apiGetAvailabilityDates(AvailabilityDatesFilter $filter): AvailabilityDatesCollection
+    public function apiGetAvailabilityDates(AvailabilityDatesFilter $filter): array
     {
         $cities = $this->apiGetCities();
 
-        $transports = new AvailabilityDatesCollection();
+        $transports = [];
         if ($filter->type !== AvailabilityDatesFilter::CHARTER) {
             return $transports;
         }
@@ -1462,7 +1462,7 @@ class AlladynChartersApiService extends AbstractApiService
                 if (isset($urls[$url])) {
                     $available = $urls[$url];
                 } else {
-                    $response = json_decode($this->request($url)->getContent(), true);
+                    $response = json_decode($this->request($url)->getBody(), true);
                     if (!empty($response['error'])) {
                         throw new Exception(json_encode($response['error']));
                     }
@@ -1505,7 +1505,7 @@ class AlladynChartersApiService extends AbstractApiService
                         if (isset($urlsReturn[$urlReturn])) {
                             $availableReturn = $urlsReturn[$urlReturn];
                         } else {
-                            $responseReturn = json_decode($this->request($urlReturn)->getContent(), true);
+                            $responseReturn = json_decode($this->request($urlReturn)->getBody(), true);
         
                             if (!empty($responseReturn['error'])) {
                                 throw new Exception(json_encode($responseReturn['error']));
@@ -1565,7 +1565,7 @@ class AlladynChartersApiService extends AbstractApiService
 
         $httpClient = HttpClient::create();
         $response = $httpClient->request($method, $url, $options);
-        $this->showRequest($method, $url, $options, $response->getContent(false), $response->getStatusCode());
+        $this->showRequest($method, $url, $options, $response->getBody(), $response->getStatusCode());
 
         // if ($this->request->getPostParam('get-raw-data')) {
         //     $response->pretty();

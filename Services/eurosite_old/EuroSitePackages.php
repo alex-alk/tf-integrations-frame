@@ -18,19 +18,19 @@ trait EuroSitePackages
 		if (!$params)
 		{
 			// populate here with some defaultss
-			$params = array();
+			$params = [];
 		}
 		$data = self::GetResponseData($this->doRequest("getPackageNVRoutesRequest", $params), "getPackageNVRoutesResponse");
 
 		$countries = $data["Country"] ? $data["Country"] : null;
 
 		if (!$countries || (count($countries) === 0))
-			return array();
+			return [];
 
 		if (!$objs)
-			$objs = array();
+			$objs = [];
 
-		$ret = array();
+		$ret = [];
 		foreach ($countries as $country)
 		{
 			$countryObj = null;
@@ -190,7 +190,7 @@ trait EuroSitePackages
 	{
 		$tinit = microtime(true);
 		if (!$objs)
-			$objs = array();
+			$objs = [];
 
 		if (!$params)
 			$params = [];

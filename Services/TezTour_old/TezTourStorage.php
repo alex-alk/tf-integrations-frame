@@ -19,9 +19,9 @@ class TezTourStorage extends \QStorageEntry implements \QIStorage
 
 	public static $RequestsData = [];
 
-	private static $_CacheData = array();
+	private static $_CacheData = [];
 
-	private static $_LoadedCacheData = array();
+	private static $_LoadedCacheData = [];
 
 	private static $_Facilities = [];
 

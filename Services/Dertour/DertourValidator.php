@@ -27,19 +27,19 @@ class DertourValidator extends Validator
 
     public function validateOfferPaymentPlansFilter(PaymentPlansFilter $filter): self
     {
-        if (empty($filter->Rooms->first()->adults)) {
+        if (empty($post['args'][0]['rooms'][0]['adults'])) {
             throw new Exception('adults is mandatory');
         }
 
-        if (!isset($filter->Rooms->first()->children) || $filter->Rooms->first()->children === '') {
+        if (!isset($post['args'][0]['rooms'][0]['children']) || $post['args'][0]['rooms'][0]['children'] === '') {
             throw new Exception('children is mandatory');
         }
 
-        if (!empty($filter->Rooms->first()->children) && empty($filter->Rooms->first()->childrenAges)) {
+        if (!empty($post['args'][0]['rooms'][0]['children']) && empty($post['args'][0]['rooms'][0]['childrenAges'])) {
             throw new Exception('childrenAges is mandatory');
         }
 
-        if (empty($filter->CheckOut)) {
+        if (empty($post['args'][0]['CheckOut'])) {
             throw new Exception('CheckOut is mandatory');
         }
 

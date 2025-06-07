@@ -20,13 +20,13 @@ use App\Filters\CitiesFilter;
 use App\Filters\HotelDetailsFilter;
 use App\Filters\HotelsFilter;
 use App\Filters\Passenger;
-use App\Support\Collections\Custom\AvailabilityCollection;
-use App\Support\Collections\Custom\CityCollection;
-use App\Support\Collections\Custom\CountryCollection;
-use App\Support\Collections\Custom\HotelCollection;
+use App\Support\Collections\Custom\array;
+use App\Support\Collections\Custom\array;
+use App\Support\Collections\Custom\array;
+use App\Support\Collections\Custom\[];
 use App\Support\Collections\Custom\OfferCancelFeeCollection;
 use App\Support\Collections\Custom\OfferPaymentPolicyCollection;
-use App\Support\Collections\Custom\RegionCollection;
+use App\Support\Collections\Custom\[];
 use App\Support\Http\SimpleAsync\HttpClient;
 use DateTime;
 use IntegrationSupport\AbstractApiService;
@@ -39,23 +39,23 @@ class SanSejourApiService extends AbstractApiService
 {
     private const HANDLE_IRELES = 'ireles';
 
-    public function apiGetCountries(): CountryCollection
+    public function apiGetCountries(): array
     {
         $bulgaria = Country::create('BG', 'BG', 'Bulgaria');
 
         $turcia = Country::create('TR', 'TR', 'Turcia');
 
-        $countries = new CountryCollection();
+        $countries = [];
         $countries->put($bulgaria->Id, $bulgaria);
         $countries->put($turcia->Id, $turcia);
 
         return $countries;
     }
-    public function apiGetCities(CitiesFilter $params = null): CityCollection
+    public function apiGetCities(CitiesFilter $params = null): array
     {
         $regions = $this->apiGetRegions();
         
-        $cities = new CityCollection();
+        $cities = [];
         foreach ($regions as $region) {
 
             $city = City::create($region->Id, $region->Name, $region->Country, $region);
@@ -65,7 +65,7 @@ class SanSejourApiService extends AbstractApiService
         return $cities;
     }
 
-    public function apiGetRegions(): RegionCollection
+    public function apiGetRegions(): []
     {
         SanSejourValidator::make()
             ->validateUsernameAndPassword($this->post);
@@ -91,9 +91,9 @@ class SanSejourApiService extends AbstractApiService
         ];
         $client = HttpClient::create();
         $resp = $client->request(HttpClient::METHOD_POST, $this->apiUrl . '/Common.asmx', $options);
-        $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl . '/Common.asmx', $options, $resp->getContent(false), $resp->getStatusCode());
+        $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl . '/Common.asmx', $options, $resp->getBody(), $resp->getStatusCode());
 
-        $xml = simplexml_load_string($resp->getContent(false));
+        $xml = simplexml_load_string($resp->getBody());
         $xml = $xml->children('http://www.w3.org/2003/05/soap-envelope')
             ->Body->children('http://www.sansejour.com/')
             ->GetRegionsDSResponse
@@ -102,7 +102,7 @@ class SanSejourApiService extends AbstractApiService
 
         $countries = $this->apiGetCountries();
 
-        $regions = new RegionCollection();
+        $regions = [];
         foreach ($xml->NewDataSet->Region as $regionXml) {
             
             $country = $countries->get('BG');
@@ -141,9 +141,9 @@ class SanSejourApiService extends AbstractApiService
         ];
 
         $resp = $client->request(HttpClient::METHOD_POST, $this->apiUrl . '/Authentication.asmx', $options);
-        $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl . '/Authentication.asmx', $options, $resp->getContent(false), $resp->getStatusCode());
+        $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl . '/Authentication.asmx', $options, $resp->getBody(), $resp->getStatusCode());
 
-        $xml = simplexml_load_string($resp->getContent(false));
+        $xml = simplexml_load_string($resp->getBody());
         $token = (string) $xml->children('http://schemas.xmlsoap.org/soap/envelope/')
             ->Body->children('http://www.sansejour.com/')
             ->LoginResponse
@@ -152,7 +152,7 @@ class SanSejourApiService extends AbstractApiService
         return (string) $token;
     }
 
-    public function apiGetHotels(?HotelsFilter $filter = null): HotelCollection
+    public function apiGetHotels(?HotelsFilter $filter = null): []
     {
         $file = 'hotels';
         $json = Utils::getFromCache($this->handle, $file);
@@ -180,9 +180,9 @@ class SanSejourApiService extends AbstractApiService
             ];
             $client = HttpClient::create();
             $resp = $client->request(HttpClient::METHOD_POST, $this->apiUrl . '/Common.asmx', $options);
-            $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl . '/Common.asmx', $options, $resp->getContent(false), $resp->getStatusCode());
+            $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl . '/Common.asmx', $options, $resp->getBody(), $resp->getStatusCode());
 
-            $xml = simplexml_load_string($resp->getContent(false));
+            $xml = simplexml_load_string($resp->getBody());
             $xml = $xml->children('http://www.w3.org/2003/05/soap-envelope')
                 ->Body->children('http://www.sansejour.com/')
                 ->GetHotelListDSResponse
@@ -191,7 +191,7 @@ class SanSejourApiService extends AbstractApiService
 
             $cities = $this->apiGetCities();
 
-            $hotels = new HotelCollection();
+            $hotels = [];
             foreach ($xml->NewDataSet->Table as $hotelXml) {
                 
                 if ($hotelXml->HotelCode === null) {
@@ -206,7 +206,7 @@ class SanSejourApiService extends AbstractApiService
             }
             Utils::writeToCache($this->handle, $file, json_encode($hotels));
         } else {
-            $hotels = ResponseConverter::convertToCollection(json_decode($json, true), HotelCollection::class);
+            $hotels = ResponseConverter::convertToCollection(json_decode($json, true), []::class);
         }
 
         return $hotels;
@@ -236,9 +236,9 @@ class SanSejourApiService extends AbstractApiService
         ];
         $client = HttpClient::create();
         $resp = $client->request(HttpClient::METHOD_POST, $this->apiUrl . '/Hotel.asmx', $options);
-        $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl . '/Hotel.asmx', $options, $resp->getContent(false), $resp->getStatusCode());
+        $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl . '/Hotel.asmx', $options, $resp->getBody(), $resp->getStatusCode());
 
-        $xml = simplexml_load_string($resp->getContent(false));
+        $xml = simplexml_load_string($resp->getBody());
         $xml = $xml->children('http://www.w3.org/2003/05/soap-envelope')
             ->Body->children('http://www.sansejour.com/')
             ->GetHotelAllInformationsResponse
@@ -325,9 +325,9 @@ class SanSejourApiService extends AbstractApiService
         ];
         $client = HttpClient::create();
         $resp = $client->request(HttpClient::METHOD_POST, $this->apiUrl . '/Hotel.asmx', $options);
-        $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl . '/Hotel.asmx', $options, $resp->getContent(false), $resp->getStatusCode());
+        $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl . '/Hotel.asmx', $options, $resp->getBody(), $resp->getStatusCode());
 
-        $xml = simplexml_load_string($resp->getContent(false));
+        $xml = simplexml_load_string($resp->getBody());
         $img = $xml->children('http://www.w3.org/2003/05/soap-envelope')
             ->Body->children('http://www.sansejour.com/')
             ->GetHotelImageByIDResponse
@@ -340,11 +340,11 @@ class SanSejourApiService extends AbstractApiService
         return $img;
 	}
 
-    public function apiGetOffers(AvailabilityFilter $filter): AvailabilityCollection
+    public function apiGetOffers(AvailabilityFilter $filter): array
     {
         Validator::make()->validateUsernameAndPassword($this->post);
 
-        $availabilities = new AvailabilityCollection();
+        $availabilities = [];
         if ($filter->serviceTypes->first() !== AvailabilityFilter::SERVICE_TYPE_HOTEL) {
             return $availabilities;
         }
@@ -352,8 +352,8 @@ class SanSejourApiService extends AbstractApiService
         $token = $this->getToken();
         $adults = $filter->rooms->first()->adults;
         $childrenAges = false;
-        if (!empty($filter->rooms->first()->childrenAges)) {
-            $childrenAges = $filter->rooms->first()->childrenAges->toArray();
+        if (!empty($post['args'][0]['rooms'][0]['childrenAges'])) {
+            $childrenAges = $post['args'][0]['rooms'][0]['childrenAges']->toArray();
         }
 
 		$params = [
@@ -371,7 +371,7 @@ class SanSejourApiService extends AbstractApiService
             'RoomCriterias' => [
                 'RoomCriteria' => [
                     'Adult' => $adults,
-                    'Child' => $filter->rooms->first()->children ?: 0
+                    'Child' => $post['args'][0]['rooms'][0]['children'] ?: 0
                 ]
             ],
             'RequestDatetime' => date('Y-m-d\TH:i:s')
@@ -415,9 +415,9 @@ class SanSejourApiService extends AbstractApiService
         ];
         $client = HttpClient::create();
         $resp = $client->request(HttpClient::METHOD_POST, $this->apiUrl . '/Reservation.asmx', $options);
-        $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl . '/Reservation.asmx', $options, $resp->getContent(false), $resp->getStatusCode());
+        $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl . '/Reservation.asmx', $options, $resp->getBody(), $resp->getStatusCode());
 
-        $xml = simplexml_load_string($resp->getContent(false));
+        $xml = simplexml_load_string($resp->getBody());
         $xml = $xml->children('http://www.w3.org/2003/05/soap-envelope')
             ->Body->children('http://www.sansejour.com/')
             ->PriceSearchResponse
@@ -759,9 +759,9 @@ class SanSejourApiService extends AbstractApiService
         ];
         $client = HttpClient::create();
         $resp = $client->request(HttpClient::METHOD_POST, $this->apiUrl . '/Hotel.asmx', $options);
-        $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl . '/Hotel.asmx', $options, $resp->getContent(false), $resp->getStatusCode());
+        $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl . '/Hotel.asmx', $options, $resp->getBody(), $resp->getStatusCode());
 
-        $xml = simplexml_load_string($resp->getContent(false));
+        $xml = simplexml_load_string($resp->getBody());
         $SPOResp = $xml->children('http://www.w3.org/2003/05/soap-envelope')
             ->Body->children('http://www.sansejour.com/')
             ->GetDetailSpoResponse
@@ -780,11 +780,11 @@ class SanSejourApiService extends AbstractApiService
             ->validateBookHotelFilter($filter);
 
         $token = $this->getToken();
-		$passengers = $filter->Items->first()->Passengers;
+		$passengers = $post['args'][0]['Items'][0]['Passengers'];
 
         $offer = $filter->Items->first();
 
-        $checkInDT = new DateTime($filter->Items->first()->Room_CheckinAfter);
+        $checkInDT = new DateTime($post['args'][0]['Items'][0]['Room_CheckinAfter']);
 
         $bookingData = json_decode($offer->Offer_bookingDataJson, true);
 
@@ -797,22 +797,22 @@ class SanSejourApiService extends AbstractApiService
         /** @var Passenger $passenger */
 		foreach ($passengers as $passenger) {
 			$i++;
-            $birthDate = new DateTime($passenger->BirthDate);
+            $birthDate = new DateTime($passenger['BirthDate']);
 			$age = $checkInDT->diff($birthDate)->y;
 
 			$customerOnRoom = [];
 			$passengerData = [];
 
-			$passengerData['Title'] = $passenger->Gender === 'male' ? 'Mr' : 'Mrs';
-			$passengerData['Name'] = $passenger->Firstname . ' ' . $passenger->Lastname;
-			$passengerData['BirthDate'] = $passenger->BirthDate . 'T00:00:00';
+			$passengerData['Title'] = $passenger['Gender'] === 'male' ? 'Mr' : 'Mrs';
+			$passengerData['Name'] = $passenger['Firstname'] . ' ' . $passenger['Lastname'];
+			$passengerData['BirthDate'] = $passenger['BirthDate'] . 'T00:00:00';
 			$passengerData['Age'] = $age;
 			$passengerData['Nationalty'] = 'RO';
 			$passengerData['ApplyVisa'] = 'false';
 			$passengerData['checkApplyVisaFromNationality'] = 'false';
 			$passengerData['ID'] = $i;
 			
-			if ($passenger->IsAdult) {
+			if ($passenger['IsAdult']) {
 				$adults++;
 			} else {
 				if ($age <= 2) {
@@ -895,7 +895,7 @@ class SanSejourApiService extends AbstractApiService
         ];
         $client = HttpClient::create();
         $resp = $client->request(HttpClient::METHOD_POST, $this->apiUrl . '/Reservation.asmx', $options);
-        $content = $resp->getContent(false);
+        $content = $resp->getBody();
         $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl . '/Reservation.asmx', $options, $content, $resp->getStatusCode());
 
         $xml = simplexml_load_string($content);

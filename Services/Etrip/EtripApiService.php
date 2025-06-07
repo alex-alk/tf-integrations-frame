@@ -23,7 +23,7 @@ use App\Entities\Availability\TransportMerch;
 use App\Entities\Availability\TransportMerchCategory;
 use App\Entities\Availability\TransportMerchLocation;
 use App\Entities\AvailabilityDates\AvailabilityDates;
-use App\Entities\AvailabilityDates\AvailabilityDatesCollection;
+use App\Entities\AvailabilityDates\array;
 use App\Entities\AvailabilityDates\DateNight;
 use App\Entities\AvailabilityDates\DateNightCollection;
 use App\Entities\AvailabilityDates\TransportCity;
@@ -56,13 +56,13 @@ use App\Filters\HotelsFilter;
 use App\Filters\Passenger;
 use App\Filters\PaymentPlansFilter;
 use App\Handles;
-use App\Support\Collections\Custom\AvailabilityCollection;
-use App\Support\Collections\Custom\CityCollection;
-use App\Support\Collections\Custom\CountryCollection;
-use App\Support\Collections\Custom\HotelCollection;
+use App\Support\Collections\Custom\array;
+use App\Support\Collections\Custom\array;
+use App\Support\Collections\Custom\array;
+use App\Support\Collections\Custom\[];
 use App\Support\Collections\Custom\OfferCancelFeeCollection;
 use App\Support\Collections\Custom\OfferPaymentPolicyCollection;
-use App\Support\Collections\Custom\RegionCollection;
+use App\Support\Collections\Custom\[];
 use App\Support\Collections\StringCollection;
 use App\Support\Http\SimpleAsync\HttpClient;
 use App\TestHandles;
@@ -106,11 +106,11 @@ class EtripApiService extends AbstractApiService
             'Accept' => 'application/json'
         ];
 
-        $departure = new DateTime($filter->Items->first()->Room_CheckinAfter);
+        $departure = new DateTime($post['args'][0]['Items'][0]['Room_CheckinAfter']);
         $passengers = [];
 
         /** @var Passenger $filterPassenger */
-        foreach ($filter->Items->first()->Passengers as $filterPassenger) {
+        foreach ($post['args'][0]['Items'][0]['Passengers'] as $filterPassenger) {
             $dob = new DateTime($filterPassenger->BirthDate);
             $age = $departure->diff($dob)->y;
             
@@ -153,16 +153,16 @@ class EtripApiService extends AbstractApiService
         $options['body'] = json_encode($body);
 
         $respObj = $client->request(HttpClient::METHOD_POST, $url, $options);
-        $this->showRequest(HttpClient::METHOD_POST, $url, $options, $respObj->getContent(false), 0);
+        $this->showRequest(HttpClient::METHOD_POST, $url, $options, $respObj->getBody(), 0);
 
-        $resp = json_decode($respObj->getContent(), true);
+        $resp = json_decode($respObj->getBody(), true);
         
         $booking = new Booking();
         if ($resp !== null && isset($resp['reference'])) {
             $booking->Id = $resp['reference'];
         }
 
-        return [$booking, $respObj->getContent()];
+        return [$booking, $respObj->getBody()];
     }
 
     public function getOfferPaymentPlans(PaymentPlansFilter $filter): OfferPaymentPolicyCollection
@@ -186,14 +186,14 @@ class EtripApiService extends AbstractApiService
 
         $passengers = [];
 
-        for ($i = 1; $i <= $filter->Rooms->first()->adults; $i++) {
+        for ($i = 1; $i <= $post['args'][0]['rooms'][0]['adults']; $i++) {
             $passengers[] = [
                 'type' => 'ADT',
             ];
         }
 
-        if ($filter->Rooms->first()->children > 0) {
-            foreach ($filter->Rooms->first()->childrenAges as $age) {
+        if ($post['args'][0]['rooms'][0]['children'] > 0) {
+            foreach ($post['args'][0]['rooms'][0]['childrenAges'] as $age) {
                 $passengers[] = [
                     'type' => $age < 2 ? 'INF' : 'CHD',
                 ];
@@ -221,9 +221,9 @@ class EtripApiService extends AbstractApiService
         $options['body'] = json_encode($body);
 
         $respObj = $client->request(HttpClient::METHOD_POST, $url, $options);
-        $this->showRequest(HttpClient::METHOD_POST, $url, $options, $respObj->getContent(false), 0);
+        $this->showRequest(HttpClient::METHOD_POST, $url, $options, $respObj->getBody(), 0);
 
-        $resp = json_decode($respObj->getContent(), true);
+        $resp = json_decode($respObj->getBody(), true);
         
         $paymentPlans = new OfferPaymentPolicyCollection();
 
@@ -277,14 +277,14 @@ class EtripApiService extends AbstractApiService
 
         $passengers = [];
 
-        for ($i = 1; $i <= $filter->Rooms->first()->adults; $i++) {
+        for ($i = 1; $i <= $post['args'][0]['rooms'][0]['adults']; $i++) {
             $passengers[] = [
                 'type' => 'ADT',
             ];
         }
 
-        if ($filter->Rooms->first()->children > 0) {
-            foreach ($filter->Rooms->first()->childrenAges as $age) {
+        if ($post['args'][0]['rooms'][0]['children'] > 0) {
+            foreach ($post['args'][0]['rooms'][0]['childrenAges'] as $age) {
                 $passengers[] = [
                     'type' => $age < 2 ? 'INF' : 'CHD',
                 ];
@@ -312,9 +312,9 @@ class EtripApiService extends AbstractApiService
         $options['body'] = json_encode($body);
 
         $respObj = $client->request(HttpClient::METHOD_POST, $url, $options);
-        $this->showRequest(HttpClient::METHOD_POST, $url, $options, $respObj->getContent(false), 0);
+        $this->showRequest(HttpClient::METHOD_POST, $url, $options, $respObj->getBody(), 0);
 
-        $resp = json_decode($respObj->getContent(), true);
+        $resp = json_decode($respObj->getBody(), true);
         
         $paymentPlans = new OfferPaymentPolicyCollection();
         $cancellationFees = new OfferCancelFeeCollection();
@@ -355,7 +355,7 @@ class EtripApiService extends AbstractApiService
             if (isset($paymentPlans->toArray()[$i + 1])) {
                 $cp->DateEnd = $paymentPlans->toArray()[$i + 1]->PayAfter;
             } else {
-                $cp->DateEnd = $filter->CheckOut;
+                $cp->DateEnd = $post['args'][0]['CheckOut'];
             }
 
             $amount += (float) $paymentPlan->Amount;
@@ -368,7 +368,7 @@ class EtripApiService extends AbstractApiService
         return $cancellationFees;
     }
 
-    public function getTourAvailabilityDates(): AvailabilityDatesCollection
+    public function getTourAvailabilityDates(): array
     {
         if (in_array($this->handle, self::$handlesWithBothModes)) {
             return $this->getTourAvailabilityDatesFromTours()->combine($this->getTourAvailabilityDatesFromPackages());
@@ -379,7 +379,7 @@ class EtripApiService extends AbstractApiService
         }
     }
 
-    public function getTourAvailabilityDatesFromPackages(): AvailabilityDatesCollection
+    public function getTourAvailabilityDatesFromPackages(): array
     {
         $file = 'availability-dates-tour-from-packages';
         $availabilityDatesJson = Utils::getFromCache($this, $file);
@@ -400,14 +400,14 @@ class EtripApiService extends AbstractApiService
             ];
             
             $respObj = $client->request(HttpClient::METHOD_GET, $url, $options);
-            $respJson = $respObj->getContent();
+            $respJson = $respObj->getBody();
             // $this->showRequest(HttpClient::METHOD_GET, $url, $options, $respJson, $respObj->getStatusCode());
             
             $packages = json_decode($respJson, true);
 
             $today = new DateTime();
 
-            $availabilityDatesCollection = new AvailabilityDatesCollection();
+            $availabilityDatesCollection = [];
             foreach ($packages as $package) {
                 if ($package['packageType'] !== 'tour') {
                     continue;
@@ -519,13 +519,13 @@ class EtripApiService extends AbstractApiService
             Utils::writeToCache($this, $file, $data);
         } else {
             $ad = json_decode($availabilityDatesJson, true);
-            $availabilityDatesCollection = ResponseConverter::convertToCollection($ad, AvailabilityDatesCollection::class);
+            $availabilityDatesCollection = ResponseConverter::convertToCollection($ad, array::class);
         }
 
         return $availabilityDatesCollection;
     }
 
-    public function getTourAvailabilityDatesFromTours(): AvailabilityDatesCollection
+    public function getTourAvailabilityDatesFromTours(): array
     {
         $file = 'availability-dates-tour-from-tours';
         $availabilityDatesJson = Utils::getFromCache($this, $file);
@@ -546,14 +546,14 @@ class EtripApiService extends AbstractApiService
             ];
             
             $respObj = $client->request(HttpClient::METHOD_GET, $url, $options);
-            $respJson = $respObj->getContent();
+            $respJson = $respObj->getBody();
             // $this->showRequest(HttpClient::METHOD_GET, $url, $options, $respJson, $respObj->getStatusCode());
             
             $packages = json_decode($respJson, true);
 
             $today = new DateTime();
 
-            $availabilityDatesCollection = new AvailabilityDatesCollection();
+            $availabilityDatesCollection = [];
             foreach ($packages as $package) {
 
                 //$destination = $package['destinations'][0]['id'] . '-t';
@@ -703,13 +703,13 @@ class EtripApiService extends AbstractApiService
             Utils::writeToCache($this, $file, $data);
         } else {
             $ad = json_decode($availabilityDatesJson, true);
-            $availabilityDatesCollection = ResponseConverter::convertToCollection($ad, AvailabilityDatesCollection::class);
+            $availabilityDatesCollection = ResponseConverter::convertToCollection($ad, array::class);
         }
 
         return $availabilityDatesCollection;
     }
 
-    public function getCharterAvailabilityDates(): AvailabilityDatesCollection
+    public function getCharterAvailabilityDates(): array
     {
         $file = 'availability-dates-charter';
         $availabilityDatesJson = Utils::getFromCache($this, $file);
@@ -732,14 +732,14 @@ class EtripApiService extends AbstractApiService
             ];
             
             $respObj = $client->request(HttpClient::METHOD_GET, $url, $options);
-            $respJson = $respObj->getContent();
+            $respJson = $respObj->getBody();
             $this->showRequest(HttpClient::METHOD_GET, $url, $options, $respJson, $respObj->getStatusCode());
             
             $packages = json_decode($respJson, true);
 
             $today = new DateTime();
 
-            $availabilityDatesCollection = new AvailabilityDatesCollection();
+            $availabilityDatesCollection = [];
             foreach ($packages as $package) {
                 if ($package['packageType'] !== 'package') {
                     continue;
@@ -852,15 +852,15 @@ class EtripApiService extends AbstractApiService
             Utils::writeToCache($this, $file, $data);
         } else {
             $ad = json_decode($availabilityDatesJson, true);
-            $availabilityDatesCollection = ResponseConverter::convertToCollection($ad, AvailabilityDatesCollection::class);
+            $availabilityDatesCollection = ResponseConverter::convertToCollection($ad, array::class);
         }
 
         return $availabilityDatesCollection;
     }
 
-    public function apiGetAvailabilityDates(AvailabilityDatesFilter $filter): AvailabilityDatesCollection
+    public function apiGetAvailabilityDates(AvailabilityDatesFilter $filter): array
     {
-       $availabilityDates = new AvailabilityCollection();
+       $availabilityDates = [];
 
         if ($filter->type === AvailabilityFilter::SERVICE_TYPE_CHARTER) {
             return $this->getCharterAvailabilityDates();
@@ -890,9 +890,9 @@ class EtripApiService extends AbstractApiService
         ];
         
         $geo = $client->request(HttpClient::METHOD_GET, $url, $options);
-        $this->showRequest(HttpClient::METHOD_POST, $url, $options, $geo->getContent(false), $geo->getStatusCode());
+        $this->showRequest(HttpClient::METHOD_POST, $url, $options, $geo->getBody(), $geo->getStatusCode());
 
-        $geo = json_decode($geo->getContent(false), true);
+        $geo = json_decode($geo->getBody(), true);
 
         $conGeo = false;
         if (isset($geo['children'])) {
@@ -911,8 +911,8 @@ class EtripApiService extends AbstractApiService
             $options['body'] = json_encode($body);
             
             $respObj = $client->request(HttpClient::METHOD_POST, $url, $options);
-            $this->showRequest(HttpClient::METHOD_POST, $url, $options, $respObj->getContent(false), $respObj->getStatusCode());
-            $resp = json_decode($respObj->getContent(false), true);
+            $this->showRequest(HttpClient::METHOD_POST, $url, $options, $respObj->getBody(), $respObj->getStatusCode());
+            $resp = json_decode($respObj->getBody(), true);
             if (isset($resp['items']['description']) && $resp['items']['description'] === 'invalid agent code') {
                 $apiContextGood = false;
             }
@@ -921,7 +921,7 @@ class EtripApiService extends AbstractApiService
         return $conGeo && $apiContextGood;
     }
 
-    public function apiGetCities(?CitiesFilter $params = null): CityCollection
+    public function apiGetCities(?CitiesFilter $params = null): array
     {
         if (in_array($this->handle, self::$handlesWithBothModes) || in_array($this->handle, self::$handlesWithTourMode)) {
             return $this->getCitiesJoined();
@@ -930,7 +930,7 @@ class EtripApiService extends AbstractApiService
         }
     }
 
-    private function getCitiesFromGeography(CitiesFilter $params = null): CityCollection
+    private function getCitiesFromGeography(CitiesFilter $params = null): array
     {
         $file = 'cities';
 
@@ -952,14 +952,14 @@ class EtripApiService extends AbstractApiService
             
             $geo = $client->request(HttpClient::METHOD_GET, $url, $options);
             
-            $this->showRequest(HttpClient::METHOD_GET, $url, $options, $geo->getContent(false), $geo->getStatusCode()); 
-            $geoJson = $geo->getContent();
+            $this->showRequest(HttpClient::METHOD_GET, $url, $options, $geo->getBody(), $geo->getStatusCode()); 
+            $geoJson = $geo->getBody();
 
             $geoResponse = json_decode($geoJson, true)['children'];
             $map = CountryCodeMap::getCountryCodeMap();
 
-            $cities = new CityCollection();
-            $countries = new CountryCollection();
+            $cities = [];
+            $countries = [];
 
             foreach ($geoResponse as $continent) {
                 foreach ($continent['children'] as $countryResponse) {
@@ -1015,12 +1015,12 @@ class EtripApiService extends AbstractApiService
 
             Utils::writeToCache($this, $file, json_encode($cities));
         } else {
-            $cities = ResponseConverter::convertToCollection(json_decode($json, true), CityCollection::class);
+            $cities = ResponseConverter::convertToCollection(json_decode($json, true), array::class);
         }
         return $cities;
     }
 
-    private function getCitiesJoined(CitiesFilter $params = null): CityCollection
+    private function getCitiesJoined(CitiesFilter $params = null): array
     {
         $file = 'cities-joined';
 
@@ -1042,14 +1042,14 @@ class EtripApiService extends AbstractApiService
             
             $geo = $client->request(HttpClient::METHOD_GET, $url, $options);
             
-            $this->showRequest(HttpClient::METHOD_GET, $url, $options, $geo->getContent(false), $geo->getStatusCode()); 
-            $geoJson = $geo->getContent();
+            $this->showRequest(HttpClient::METHOD_GET, $url, $options, $geo->getBody(), $geo->getStatusCode()); 
+            $geoJson = $geo->getBody();
 
             $geoResponse = json_decode($geoJson, true)['children'];
             $map = CountryCodeMap::getCountryCodeMap();
 
-            $cities = new CityCollection();
-            $countries = new CountryCollection();
+            $cities = [];
+            $countries = [];
 
             foreach ($geoResponse as $continent) {
                 foreach ($continent['children'] as $countryResponse) {
@@ -1114,7 +1114,7 @@ class EtripApiService extends AbstractApiService
             ];
             
             $respObj = $client->request(HttpClient::METHOD_GET, $url, $options);
-            $respJson = $respObj->getContent();
+            $respJson = $respObj->getBody();
 
             $this->showRequest(HttpClient::METHOD_GET, $url, $options, $respJson, $respObj->getStatusCode());
             
@@ -1135,15 +1135,15 @@ class EtripApiService extends AbstractApiService
 
             Utils::writeToCache($this, $file, json_encode($cities));
         } else {
-            $cities = ResponseConverter::convertToCollection(json_decode($json, true), CityCollection::class);
+            $cities = ResponseConverter::convertToCollection(json_decode($json, true), array::class);
         }
         return $cities;
     }
 
-    public function apiGetRegions(): RegionCollection
+    public function apiGetRegions(): []
     {
         $cities = $this->apiGetCities();
-        $regions = new RegionCollection();
+        $regions = [];
 
         /** @var City $city */
         foreach ($cities as $city) {
@@ -1154,11 +1154,11 @@ class EtripApiService extends AbstractApiService
         return $regions;
     }
 
-    public function apiGetCountries(): CountryCollection
+    public function apiGetCountries(): array
     {   
         $cities = $this->apiGetCities();
 
-        $countries = new CountryCollection();
+        $countries = [];
         foreach ($cities as $city) {
             $countries->put($city->Country->Id, $city->Country);
         }
@@ -1166,7 +1166,7 @@ class EtripApiService extends AbstractApiService
         return $countries;
     }
 
-    public function apiGetHotels(?HotelsFilter $filter = null): HotelCollection
+    public function apiGetHotels(?HotelsFilter $filter = null): []
     {
         $getAllCities = [Handles::TUI_TRAVEL_CENTER_V2, Handles::CHRISTIAN_TOUR_V2, TestHandles::LOCALHOST_HOLIDAYOFFICE_TOUR_ONLY];
         $includedCountry = [Handles::HOLIDAYOFFICE, 147];
@@ -1210,7 +1210,7 @@ class EtripApiService extends AbstractApiService
                         ]
                     ]);
                     $respObj = $client->request(HttpClient::METHOD_POST, $url, $options);
-                    $this->showRequest(HttpClient::METHOD_POST, $url, $options, $respObj->getContent(false), $respObj->getStatusCode());
+                    $this->showRequest(HttpClient::METHOD_POST, $url, $options, $respObj->getBody(), $respObj->getStatusCode());
                     $hotelsResponseArr[] = [$respObj, $options];
                 } else {
                     $get = false;
@@ -1232,7 +1232,7 @@ class EtripApiService extends AbstractApiService
                             ]
                         ]);
                         $respObj = $client->request(HttpClient::METHOD_POST, $url, $options);
-                        $this->showRequest(HttpClient::METHOD_POST, $url, $options, $respObj->getContent(false), $respObj->getStatusCode());
+                        $this->showRequest(HttpClient::METHOD_POST, $url, $options, $respObj->getBody(), $respObj->getStatusCode());
                         $hotelsResponseArr[] = [$respObj, $options];
                     }
                 }
@@ -1248,7 +1248,7 @@ class EtripApiService extends AbstractApiService
                             ]
                         ]);
                         $respObj = $client->request(HttpClient::METHOD_POST, $url, $options);
-                        $this->showRequest(HttpClient::METHOD_POST, $url, $options, $respObj->getContent(false), $respObj->getStatusCode());
+                        $this->showRequest(HttpClient::METHOD_POST, $url, $options, $respObj->getBody(), $respObj->getStatusCode());
                         $hotelsResponseArr[] = [$respObj, $options, $cityFromList];
                         
                     }
@@ -1265,7 +1265,7 @@ class EtripApiService extends AbstractApiService
                                 ]
                             ]);
                             $respObj = $client->request(HttpClient::METHOD_POST, $url, $options);
-                            $this->showRequest(HttpClient::METHOD_POST, $url, $options, $respObj->getContent(false), $respObj->getStatusCode());
+                            $this->showRequest(HttpClient::METHOD_POST, $url, $options, $respObj->getBody(), $respObj->getStatusCode());
                             $hotelsResponseArr[] = [$respObj, $options, $city];
                             $cityIds[$cityId] = $cityId;
                         }
@@ -1279,7 +1279,7 @@ class EtripApiService extends AbstractApiService
                                 ]
                             ]);
                             $respObj = $client->request(HttpClient::METHOD_POST, $url, $options);
-                            $this->showRequest(HttpClient::METHOD_POST, $url, $options, $respObj->getContent(false), $respObj->getStatusCode());
+                            $this->showRequest(HttpClient::METHOD_POST, $url, $options, $respObj->getBody(), $respObj->getStatusCode());
                             $hotelsResponseArr[] = [$respObj, $options, $city];
                         }
                     }
@@ -1292,20 +1292,20 @@ class EtripApiService extends AbstractApiService
                                 ]
                             ]);
                             $respObj = $client->request(HttpClient::METHOD_POST, $url, $options);
-                            $this->showRequest(HttpClient::METHOD_POST, $url, $options, $respObj->getContent(false), $respObj->getStatusCode());
+                            $this->showRequest(HttpClient::METHOD_POST, $url, $options, $respObj->getBody(), $respObj->getStatusCode());
                             $hotelsResponseArr[] = [$respObj, $options, $city];
                         }
                     }
                 }
             }
 
-            $hotels = new HotelCollection();
+            $hotels = [];
 
             $data = [];
             foreach ($hotelsResponseArr as $hotelsPerCitiesResponse) {
                 $respObj = $hotelsPerCitiesResponse[0];
                 
-                $hotelsResponse = json_decode($respObj->getContent(), true);
+                $hotelsResponse = json_decode($respObj->getBody(), true);
 
                 foreach ($hotelsResponse as $hotelResponse) {
                     $hotel = new Hotel();
@@ -1403,13 +1403,13 @@ class EtripApiService extends AbstractApiService
             }
         } else {
             $hotelsArray = json_decode($countriesJson, true);
-            $hotels = ResponseConverter::convertToCollection($hotelsArray, HotelCollection::class);
+            $hotels = ResponseConverter::convertToCollection($hotelsArray, []::class);
         }
 
         return $hotels;
     }
 
-    public function getTourHotels(?HotelsFilter $filter = null): HotelCollection
+    public function getTourHotels(?HotelsFilter $filter = null): []
     {
         Validator::make()
             ->validateUsernameAndPassword($this->post);
@@ -1453,20 +1453,20 @@ class EtripApiService extends AbstractApiService
                             ]
                         ]);
                         $respObj = $client->request(HttpClient::METHOD_POST, $url, $options);
-                        $this->showRequest(HttpClient::METHOD_POST, $url, $options, $respObj->getContent(false), $respObj->getStatusCode());
+                        $this->showRequest(HttpClient::METHOD_POST, $url, $options, $respObj->getBody(), $respObj->getStatusCode());
                         $hotelsResponseArr[] = [$respObj, $options, $availabilityDate->To->City];
                         $cityIds[$cityId] = $cityId;
                     }
                 }
             }
 
-            $hotels = new HotelCollection();
+            $hotels = [];
 
             foreach ($hotelsResponseArr as $hotelsPerCitiesResponse) {
                 $respObj = $hotelsPerCitiesResponse[0];
                 $city = $hotelsPerCitiesResponse[2];
                 
-                $hotelsResponse = json_decode($respObj->getContent(), true);
+                $hotelsResponse = json_decode($respObj->getBody(), true);
 
                 foreach ($hotelsResponse as $hotelResponse) {
                     $hotel = new Hotel();
@@ -1557,19 +1557,19 @@ class EtripApiService extends AbstractApiService
             }
         } else {
             $hotelsArray = json_decode($countriesJson, true);
-            $hotels = ResponseConverter::convertToCollection($hotelsArray, HotelCollection::class);
+            $hotels = ResponseConverter::convertToCollection($hotelsArray, []::class);
         }
 
         return $hotels;
     }
 
-    private function getHotelOffers(AvailabilityFilter $filter): AvailabilityCollection
+    private function getHotelOffers(AvailabilityFilter $filter): array
     {
         EtripValidator::make()
             ->validateUsernameAndPassword($this->post)
             ->validateIndividualOffersFilter($filter);
 
-        $availabilityCollection = new AvailabilityCollection();
+        $availabilityCollection = [];
 
         $url = $this->apiUrl . '/v2/search/hotels';
         $client = HttpClient::create();
@@ -1592,8 +1592,8 @@ class EtripApiService extends AbstractApiService
         }
 
         $ages = [];
-        if ($filter->rooms->first()->children > 0) {
-            foreach ($filter->rooms->first()->childrenAges as $age) {
+        if ($post['args'][0]['rooms'][0]['children'] > 0) {
+            foreach ($post['args'][0]['rooms'][0]['childrenAges'] as $age) {
                 $ages[] = (int) $age;
             }
         }
@@ -1621,13 +1621,13 @@ class EtripApiService extends AbstractApiService
         
         $respObj = $client->request(HttpClient::METHOD_POST, $url, $options);
         
-        $this->showRequest(HttpClient::METHOD_POST, $url, $options, $respObj->getContent(false), $respObj->getStatusCode());
+        $this->showRequest(HttpClient::METHOD_POST, $url, $options, $respObj->getBody(), $respObj->getStatusCode());
         
         if ($respObj->getStatusCode() === 500) {
             return $availabilityCollection;
         }
         
-        $respJson = $respObj->getContent(false);
+        $respJson = $respObj->getBody();
 
         $headers = $respObj->getHeaders(false);
 
@@ -1669,7 +1669,7 @@ class EtripApiService extends AbstractApiService
                 $checkInDateTime,
                 $checkOutDateTime,
                 $filter->rooms->first()->adults,
-                $filter->rooms->first()->childrenAges->toArray(),
+                $post['args'][0]['rooms'][0]['childrenAges']->toArray(),
                 'EUR',
                 $responseOffer['priceInfo']['gross'] + $responseOffer['priceInfo']['tax'] - $responseOffer['priceInfo']['commission'],
                 $responseOffer['priceInfo']['gross'] + $responseOffer['priceInfo']['tax'] + $responseOffer['totalDiscount'],
@@ -1715,7 +1715,7 @@ class EtripApiService extends AbstractApiService
         return $availabilityCollection;
     }
 
-    private function getPackageOrTourOffersFromPackages(AvailabilityFilter $filter): AvailabilityCollection
+    private function getPackageOrTourOffersFromPackages(AvailabilityFilter $filter): array
     {
         $isTour = $filter->serviceTypes->first() === AvailabilityFilter::SERVICE_TYPE_TOUR;
         if ($isTour) {
@@ -1730,7 +1730,7 @@ class EtripApiService extends AbstractApiService
 
         $cities = $this->apiGetCities();
 
-        $availabilityCollection = new AvailabilityCollection();
+        $availabilityCollection = [];
 
         $url = $this->apiUrl . '/v2/search/packages';
         $client = HttpClient::create();
@@ -1753,8 +1753,8 @@ class EtripApiService extends AbstractApiService
         }
 
         $ages = [];
-        if ($filter->rooms->first()->children > 0) {
-            foreach ($filter->rooms->first()->childrenAges as $age) {
+        if ($post['args'][0]['rooms'][0]['children'] > 0) {
+            foreach ($post['args'][0]['rooms'][0]['childrenAges'] as $age) {
                 $ages[] = (int) $age;
             }
         }
@@ -1795,7 +1795,7 @@ class EtripApiService extends AbstractApiService
         $options['body'] = json_encode($body);
         
         $respObj = $client->request(HttpClient::METHOD_POST, $url, $options);
-        $respJson = $respObj->getContent(false);
+        $respJson = $respObj->getBody();
         $this->showRequest(HttpClient::METHOD_POST, $url, $options, $respJson, $respObj->getStatusCode());
 
         $headers = $respObj->getHeaders();
@@ -1948,7 +1948,7 @@ class EtripApiService extends AbstractApiService
             $offer->Code = $availability->Id . '~' . $room->Id . '~' . $mealMerch->Id . '~' 
                 . $room->CheckinAfter . '~' . $room->CheckinBefore . '~' . $offer->Gross . '~' 
                 . $filter->rooms->first()->adults 
-                . (count($filter->rooms->first()->childrenAges) > 0 ? '~' . implode('|', $filter->rooms->first()->childrenAges->toArray()) : '')
+                . (count($post['args'][0]['rooms'][0]['childrenAges']) > 0 ? '~' . implode('|', $post['args'][0]['rooms'][0]['childrenAges']->toArray()) : '')
             ;
 
             // can be also bus
@@ -2091,7 +2091,7 @@ class EtripApiService extends AbstractApiService
         return $availabilityCollection;
     }
 
-    private function getTourOffersFromTours(AvailabilityFilter $filter): AvailabilityCollection
+    private function getTourOffersFromTours(AvailabilityFilter $filter): array
     {
         EtripValidator::make()
             ->validateUsernameAndPassword($this->post)
@@ -2100,7 +2100,7 @@ class EtripApiService extends AbstractApiService
 
         $cities = $this->apiGetCities();
 
-        $availabilityCollection = new AvailabilityCollection();
+        $availabilityCollection = [];
 
         $url = $this->apiUrl . '/v2/search/tours';
         $client = HttpClient::create();
@@ -2123,8 +2123,8 @@ class EtripApiService extends AbstractApiService
         }
 
         $ages = [];
-        if ($filter->rooms->first()->children > 0) {
-            foreach ($filter->rooms->first()->childrenAges as $age) {
+        if ($post['args'][0]['rooms'][0]['children'] > 0) {
+            foreach ($post['args'][0]['rooms'][0]['childrenAges'] as $age) {
                 $ages[] = (int) $age;
             }
         }
@@ -2158,7 +2158,7 @@ class EtripApiService extends AbstractApiService
         $options['body'] = json_encode($body);
         
         $respObj = $client->request(HttpClient::METHOD_POST, $url, $options);
-        $respJson = $respObj->getContent(false);
+        $respJson = $respObj->getBody();
         $this->showRequest(HttpClient::METHOD_POST, $url, $options, $respJson, $respObj->getStatusCode());
 
         $headers = $respObj->getHeaders();
@@ -2280,7 +2280,7 @@ class EtripApiService extends AbstractApiService
                     $checkInDateTime,
                     $checkOutDateTime,
                     $filter->rooms->first()->adults,
-                    $filter->rooms->first()->childrenAges->toArray(),
+                    $post['args'][0]['rooms'][0]['childrenAges']->toArray(),
                     $currency,
                     $net,
                     $initial,
@@ -2343,7 +2343,7 @@ class EtripApiService extends AbstractApiService
         return $availabilityCollection;
     }
 
-    private function getJoinedOffers(AvailabilityFilter $filter): AvailabilityCollection
+    private function getJoinedOffers(AvailabilityFilter $filter): array
     {
 
         EtripValidator::make()
@@ -2352,7 +2352,7 @@ class EtripApiService extends AbstractApiService
 
         $cities = $this->apiGetCities();
 
-        $availabilityCollection = new AvailabilityCollection();
+        $availabilityCollection = [];
 
         $urlPackages = $this->apiUrl . '/v2/search/packages';
         $client = HttpClient::create();
@@ -2375,8 +2375,8 @@ class EtripApiService extends AbstractApiService
         }
 
         $ages = [];
-        if ($filter->rooms->first()->children > 0) {
-            foreach ($filter->rooms->first()->childrenAges as $age) {
+        if ($post['args'][0]['rooms'][0]['children'] > 0) {
+            foreach ($post['args'][0]['rooms'][0]['childrenAges'] as $age) {
                 $ages[] = (int) $age;
             }
         }
@@ -2436,8 +2436,8 @@ class EtripApiService extends AbstractApiService
         }
 
         $ages = [];
-        if ($filter->rooms->first()->children > 0) {
-            foreach ($filter->rooms->first()->childrenAges as $age) {
+        if ($post['args'][0]['rooms'][0]['children'] > 0) {
+            foreach ($post['args'][0]['rooms'][0]['childrenAges'] as $age) {
                 $ages[] = (int) $age;
             }
         }
@@ -2474,7 +2474,7 @@ class EtripApiService extends AbstractApiService
         //---------------end request for tours
 
         // --------------get results from packages
-        $respJson = $respObjPackages->getContent(false);
+        $respJson = $respObjPackages->getBody();
         $this->showRequest(HttpClient::METHOD_POST, $urlPackages, $optionsPackages, $respJson, $respObjPackages->getStatusCode());
 
         $headers = $respObjPackages->getHeaders();
@@ -2618,7 +2618,7 @@ class EtripApiService extends AbstractApiService
                 $offer->Code = $availability->Id . '~' . $room->Id . '~' . $mealMerch->Id . '~' 
                     . $room->CheckinAfter . '~' . $room->CheckinBefore . '~' . $offer->Gross . '~' 
                     . $filter->rooms->first()->adults 
-                    . (count($filter->rooms->first()->childrenAges) > 0 ? '~' . implode('|', $filter->rooms->first()->childrenAges->toArray()) : '')
+                    . (count($post['args'][0]['rooms'][0]['childrenAges']) > 0 ? '~' . implode('|', $post['args'][0]['rooms'][0]['childrenAges']->toArray()) : '')
                 ;
 
                 // can be also bus
@@ -2760,7 +2760,7 @@ class EtripApiService extends AbstractApiService
         }
 
         // get result from tours
-        $respJson = $respObj->getContent(false);
+        $respJson = $respObj->getBody();
         $this->showRequest(HttpClient::METHOD_POST, $url, $options, $respJson, $respObj->getStatusCode());
 
         $headers = $respObj->getHeaders();
@@ -2865,7 +2865,7 @@ class EtripApiService extends AbstractApiService
                         $checkInDateTime,
                         $checkOutDateTime,
                         $filter->rooms->first()->adults,
-                        $filter->rooms->first()->childrenAges->toArray(),
+                        $post['args'][0]['rooms'][0]['childrenAges']->toArray(),
                         $currency,
                         $net,
                         $initial,
@@ -2930,13 +2930,13 @@ class EtripApiService extends AbstractApiService
     }
 
     /*
-    private function getTourOffers(AvailabilityFilter $filter): AvailabilityCollection
+    private function getTourOffers(AvailabilityFilter $filter): array
     {
         EtripValidator::make()
             ->validateUsernameAndPassword($this->post)
             ->validateTourOffersFilter($filter);
 
-        $availabilityCollection = new AvailabilityCollection();
+        $availabilityCollection = [];
 
         $url = $this->apiUrl . '/v2/search/packages';
         $client = HttpClient::create();
@@ -2958,8 +2958,8 @@ class EtripApiService extends AbstractApiService
         }
 
         $ages = [];
-        if ($filter->rooms->first()->children > 0) {
-            foreach ($filter->rooms->first()->childrenAges as $age) {
+        if ($post['args'][0]['rooms'][0]['children'] > 0) {
+            foreach ($post['args'][0]['rooms'][0]['childrenAges'] as $age) {
                 $ages[] = (int) $age;
             }
         }
@@ -3003,7 +3003,7 @@ class EtripApiService extends AbstractApiService
         $options['body'] = json_encode($body);
         
         $respObj = $client->request(HttpClient::METHOD_POST, $url, $options);
-        $respJson = $respObj->getContent(false);
+        $respJson = $respObj->getBody();
         $this->showRequest(HttpClient::METHOD_POST, $url, $options, $respJson, $respObj->getStatusCode());
 
         $headers = $respObj->getHeaders();
@@ -3087,7 +3087,7 @@ class EtripApiService extends AbstractApiService
             $offer->Code = $availability->Id . '~' . $room->Id . '~' . $mealMerch->Id . '~' 
                 . $room->CheckinAfter . '~' . $room->CheckinBefore . '~' . $offer->Net . '~' 
                 . $filter->rooms->first()->adults 
-                . ($filter->rooms->first()->childrenAges ? '~' . implode('|', $filter->rooms->first()->childrenAges->toArray()) : '')
+                . ($post['args'][0]['rooms'][0]['childrenAges'] ? '~' . implode('|', $post['args'][0]['rooms'][0]['childrenAges']->toArray()) : '')
             ;
 
             if (empty($responseOffer['flight']['journeys'][0])) {
@@ -3209,7 +3209,7 @@ class EtripApiService extends AbstractApiService
         return $availabilityCollection;
     }*/
 
-    public function apiGetOffers(AvailabilityFilter $filter): AvailabilityCollection
+    public function apiGetOffers(AvailabilityFilter $filter): array
     {
         $availabilityCollection = null;
         if ($filter->serviceTypes->first() === AvailabilityFilter::SERVICE_TYPE_HOTEL) {
@@ -3264,7 +3264,7 @@ class EtripApiService extends AbstractApiService
         ];
         
         $respObj = $client->request(HttpClient::METHOD_GET, $url, $options);
-        $respJson = $respObj->getContent();
+        $respJson = $respObj->getBody();
         $this->showRequest(HttpClient::METHOD_GET, $url, $options, $respJson, $respObj->getStatusCode());
         
         $packages = json_decode($respJson, true);
@@ -3287,7 +3287,7 @@ class EtripApiService extends AbstractApiService
 
                 $selectedCountries[$destinationCity->Country->Id] = $destinationCity->Country->Id;
 
-                $destinations = new CityCollection();
+                $destinations = [];
 
                 foreach ($package['destinations'] as $dest) {
                     $dc = $cities->get($dest['id'] . '-t');
@@ -3363,7 +3363,7 @@ class EtripApiService extends AbstractApiService
         ];
         
         $respObj = $client->request(HttpClient::METHOD_GET, $url, $options);
-        $respJson = $respObj->getContent();
+        $respJson = $respObj->getBody();
         $this->showRequest(HttpClient::METHOD_GET, $url, $options, $respJson, $respObj->getStatusCode());
         
         $packages = json_decode($respJson, true);
@@ -3388,7 +3388,7 @@ class EtripApiService extends AbstractApiService
                 continue;
             }
 
-            $destinations = new CityCollection();
+            $destinations = [];
             $destinations->add($destinationCity);
 
             $description = '';

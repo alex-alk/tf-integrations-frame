@@ -35,10 +35,10 @@ use App\Filters\BookHotelFilter;
 use App\Filters\CitiesFilter;
 use App\Filters\HotelDetailsFilter;
 use App\Filters\HotelsFilter;
-use App\Support\Collections\Custom\AvailabilityCollection;
-use App\Support\Collections\Custom\CityCollection;
-use App\Support\Collections\Custom\CountryCollection;
-use App\Support\Collections\Custom\HotelCollection;
+use App\Support\Collections\Custom\array;
+use App\Support\Collections\Custom\array;
+use App\Support\Collections\Custom\array;
+use App\Support\Collections\Custom\[];
 use App\Support\Collections\Custom\OfferCancelFeeCollection;
 use App\Support\Collections\StringCollection;
 use App\Support\Http\SimpleAsync\HttpClient;
@@ -63,12 +63,12 @@ class GoGlobalApiService extends AbstractApiService
         parent::__construct();
     }
 
-    public function apiGetCountries(): CountryCollection
+    public function apiGetCountries(): array
     {
         Validator::make()->validateUsernameAndPassword($this->post);
 
         $cities = $this->apiGetCities();
-        $list = new CountryCollection();
+        $list = [];
 
         /** @var City $v */
         foreach ($cities as $v) {
@@ -79,7 +79,7 @@ class GoGlobalApiService extends AbstractApiService
         return $list;
     }
 
-    public function apiGetCities(?CitiesFilter $params = null): CityCollection
+    public function apiGetCities(?CitiesFilter $params = null): array
     {
         Validator::make()->validateUsernameAndPassword($this->post);
 
@@ -100,7 +100,7 @@ class GoGlobalApiService extends AbstractApiService
 
             $response = $client->request(HttpClient::METHOD_GET, $url, $options);
 
-            $content = $response->getContent();
+            $content = $response->getBody();
             $this->showRequest(HttpClient::METHOD_GET, $url, $options, $content, $response->getStatusCode());
 
             $downloads = Utils::getDownloadsPath();
@@ -136,7 +136,7 @@ class GoGlobalApiService extends AbstractApiService
                 throw new Exception('File not found in downloads folder');
             }
 
-            $list = new CityCollection();
+            $list = [];
 
             foreach ($array as $v) {
                 $country = new Country();
@@ -155,13 +155,13 @@ class GoGlobalApiService extends AbstractApiService
             Utils::writeToCache($this, $fileCity, json_encode($list));
         } else {
             $citiesArr = json_decode($citiesJson, true);
-            $list = ResponseConverter::convertToCollection($citiesArr, CityCollection::class);
+            $list = ResponseConverter::convertToCollection($citiesArr, array::class);
         }
 
         return $list;
     }
 
-    public function apiGetOffers(AvailabilityFilter $filter): AvailabilityCollection
+    public function apiGetOffers(AvailabilityFilter $filter): array
     {
         Validator::make()->validateUsernameAndPassword($this->post);
         Validator::make()->validateAvailabilityFilter($filter);
@@ -226,9 +226,9 @@ class GoGlobalApiService extends AbstractApiService
         ];
 
         $response = $client->request(HttpClient::METHOD_POST, $url, $options);
-        $this->showRequest(HttpClient::METHOD_POST, $url, $options, $response->getContent(false), $response->getStatusCode());
+        $this->showRequest(HttpClient::METHOD_POST, $url, $options, $response->getBody(), $response->getStatusCode());
 
-        $content = $response->getContent(false);
+        $content = $response->getBody();
         $content = str_replace('ns2:', '', $content);
         $content = str_replace('soap:', '', $content);
         $content = mb_convert_encoding($content, 'UTF-8', 'ISO-8859-1');
@@ -237,7 +237,7 @@ class GoGlobalApiService extends AbstractApiService
 
         $responseHotels = $response->Body->hotelAvailabilityResponse->availResponse;
 
-        $response = new AvailabilityCollection();
+        $response = [];
 
         foreach ($responseHotels->hotelResponse as $responseHotel) {
 
@@ -382,7 +382,7 @@ class GoGlobalApiService extends AbstractApiService
         return $response;
     }
 
-    public function apiGetHotels(?HotelsFilter $filter = null): HotelCollection
+    public function apiGetHotels(?HotelsFilter $filter = null): []
     {
         Validator::make()->validateUsernameAndPassword($this->post);
         $client = HttpClient::create(['user_agent' => 'curl/' . curl_version()['version']]);
@@ -397,8 +397,8 @@ class GoGlobalApiService extends AbstractApiService
 
         //$response = $client->request(HttpClient::METHOD_GET, $url, $options);
 
-        //$this->showRequest(HttpClient::METHOD_GET, $url, $options, $response->getContent(), $response->getStatusCode());
-        //$content = $response->getContent();
+        //$this->showRequest(HttpClient::METHOD_GET, $url, $options, $response->getBody(), $response->getStatusCode());
+        //$content = $response->getBody();
         $downloads = Utils::getDownloadsPath();
         if (!is_dir($downloads . '/' . $this->handle)) {
             mkdir($downloads . '/' . $this->handle, 0775);
@@ -435,7 +435,7 @@ class GoGlobalApiService extends AbstractApiService
             throw new Exception('File not found in downloads folder');
         }
 
-        $list = new HotelCollection();
+        $list = [];
 
         $cities = $this->apiGetCities();
         foreach ($array as $hotelData) {
@@ -508,8 +508,8 @@ class GoGlobalApiService extends AbstractApiService
 
         $response = $client->request(HttpClient::METHOD_POST, $this->apiUrl, $options);
 
-        $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $options, $response->getContent(false), $response->getStatusCode());
-        $content = $response->getContent(false);
+        $this->showRequest(HttpClient::METHOD_POST, $this->apiUrl, $options, $response->getBody(), $response->getStatusCode());
+        $content = $response->getBody();
 
         $hotelXml = new SimpleXMLElement($content);
         $hotelXml = $hotelXml->children('http://www.w3.org/2003/05/soap-envelope')
@@ -609,8 +609,8 @@ class GoGlobalApiService extends AbstractApiService
         ];
 
         $response = $client->request(HttpClient::METHOD_POST, $url, $options);
-        $this->showRequest(HttpClient::METHOD_POST, $url, $options, $response->getContent(false), 0);
-        $content = $response->getContent();
+        $this->showRequest(HttpClient::METHOD_POST, $url, $options, $response->getBody(), 0);
+        $content = $response->getBody();
 
         $content = str_replace('ns2:', '', $content);
         $content = str_replace('soap:', '', $content);
@@ -620,15 +620,15 @@ class GoGlobalApiService extends AbstractApiService
 
         // booking
         $pax = [];
-        foreach ($filter->Items->get(0)->Passengers as $passenger) {
-            if ($passenger->Firstname !== '') {
+        foreach ($post['args'][0]['Items'][0]['Passengers'] as $passenger) {
+            if ($passenger['Firstname'] !== '') {
                 $paxArray = [
-                    '[title]' => $passenger->Gender == 2 ? 'Mrs' : 'Mr',
-                    'firstName' => $passenger->Firstname,
-                    'lastName' => $passenger->Lastname,
+                    '[title]' => $passenger['Gender'] == 2 ? 'Mrs' : 'Mr',
+                    'firstName' => $passenger['Firstname'],
+                    'lastName' => $passenger['Lastname'],
                 ];
-                if (!$passenger->IsAdult) {
-                    $age = (new DateTime())->diff(new DateTime($passenger->BirthDate))->y;
+                if (!$passenger['IsAdult']) {
+                    $age = (new DateTime())->diff(new DateTime($passenger['BirthDate']))->y;
                     $paxArray['[childAge]'] = $age;
                     $paxArray['[isChild]'] = 'true';
                 }
@@ -678,8 +678,8 @@ class GoGlobalApiService extends AbstractApiService
         ];
 
         $response = $client->request(HttpClient::METHOD_POST, $url, $options);
-        $this->showRequest(HttpClient::METHOD_POST, $url, $options, $response->getContent(false), 0);
-        $contentOrig = $response->getContent();
+        $this->showRequest(HttpClient::METHOD_POST, $url, $options, $response->getBody(), 0);
+        $contentOrig = $response->getBody();
 
         $content = str_replace('ns2:', '', $contentOrig);
         $content = str_replace('soap:', '', $content);

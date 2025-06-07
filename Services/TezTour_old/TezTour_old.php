@@ -4763,7 +4763,7 @@ class TezTour_old extends \Omi\TF\TOInterface
 		return static::RequestModeCurl;
 	}
 	
-	public function p($a,$cale=array())
+	public function p($a,$cale=[])
 	{
 		$s='';
 		if(is_array($a)){
