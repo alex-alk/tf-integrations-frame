@@ -3,12 +3,14 @@
 namespace Controllers;
 
 use HttpClient\HttpClient;
+use Integrations\Anex\AnexApiService;
 use Psr\Http\Message\ServerRequestInterface;
 use Router\JsonResponse;
+use Service\OneTourismo\OneTourismoApiService;
+use Services\Amara\AmaraApiService;
 use Services\IntegrationSupport\AbstractApiService;
 use Services\Megatec\MegatecApiService;
 use Services\Odeon\OdeonApiService;
-use Services\OneTourismo\OneTourismoApiService;
 use Throwable;
 
 class ApiController
@@ -138,9 +140,9 @@ class ApiController
             // case 'eurosite':
             //     $service = new EuroSiteApiService();
             //     break;
-            // case 'amara':
-            //     $service = new AmaraApiService();
-            //     break;
+            case 'amara':
+                $service = new AmaraApiService($this->serverRequest, $client);
+                break;
             // case 'etrip-agency':
             //     $service = new EtripAgencyApiService();
             //     break;
@@ -210,8 +212,8 @@ class ApiController
             // case 'irix':
             //     $service = new IrixApiService();
             //     break;
-            // case 'anex':
-            //     $service = new AnexApiService($client);
+            case 'anex':
+                $service = new AnexApiService($this->serverRequest, $this->client);
         }
 
         // if ($service == null) {

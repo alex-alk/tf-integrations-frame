@@ -187,9 +187,9 @@ class OdeonApiServiceTest extends TestCase
     public function test_getHotels_whenInputIsValid_receiveHotels(): void
     {
         self::$body['method'] = self::$api_getHotels;
-        self::$options['body'] = json_encode(self::$body);
+        self::$body = json_encode(self::$body);
 
-        $response = self::$httpClient->request(HttpClient::METHOD_POST, self::$proxyUrl, self::$options);
+        $response = self::$httpClient->request(Request::METHOD_POST, self::$proxyUrl, self::$options);
         $content = $response->getContent();
         $this->assertJsonStringEqualsJsonString($content, 
             '{
@@ -236,9 +236,9 @@ class OdeonApiServiceTest extends TestCase
                 'HotelId' => 2
             ]
         ];
-        self::$options['body'] = json_encode(self::$body);
+        self::$body = json_encode(self::$body);
         
-        $response = self::$httpClient->request(HttpClient::METHOD_POST, self::$proxyUrl, self::$options);
+        $response = self::$httpClient->request(Request::METHOD_POST, self::$proxyUrl, self::$options);
         $content = $response->getContent();
         $this->assertJsonStringEqualsJsonString($content,
             '{
@@ -314,9 +314,9 @@ class OdeonApiServiceTest extends TestCase
                 'days' => 7
             ]
         ];
-        self::$options['body'] = json_encode(self::$body);
+        self::$body = json_encode(self::$body);
         
-        $response = self::$httpClient->request(HttpClient::METHOD_POST, self::$proxyUrl, self::$options);
+        $response = self::$httpClient->request(Request::METHOD_POST, self::$proxyUrl, self::$options);
         $content = $response->getContent();
         $this->assertJsonStringEqualsJsonString($content,
             '{
@@ -645,9 +645,9 @@ class OdeonApiServiceTest extends TestCase
                 'type' => 'charter'
             ]
         ];
-        self::$options['body'] = json_encode(self::$body);
+        self::$body = json_encode(self::$body);
 
-        $response = self::$httpClient->request(HttpClient::METHOD_POST, self::$proxyUrl, self::$options);
+        $response = self::$httpClient->request(Request::METHOD_POST, self::$proxyUrl, self::$options);
         $content = $response->getContent();
         $this->assertJsonStringEqualsJsonString($content, 
             '{
@@ -751,9 +751,9 @@ class OdeonApiServiceTest extends TestCase
                 ]
             ]
         ];
-        self::$options['body'] = json_encode(self::$body);
+        self::$body = json_encode(self::$body);
 
-        $response = self::$httpClient->request(HttpClient::METHOD_POST, self::$proxyUrl, self::$options);
+        $response = self::$httpClient->request(Request::METHOD_POST, self::$proxyUrl, self::$options);
         $content = $response->getContent();
         $this->assertJsonStringEqualsJsonString($content, 
             '{
